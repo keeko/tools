@@ -1,0 +1,23 @@
+{
+	"name" : "keeko/tools",
+	"description" : "Keeko command line helper",
+	"authors" : [{
+			"name" : "gossi",
+			"homepage" : "http://gos.si"
+		}
+	],
+	"license" : [
+		"MIT"
+	],
+	"require" : {
+		"symfony/console" : "~2",
+		"twig/twig" : "~1",
+		"symfony/finder" : "~2",
+		"symfony/filesystem" : "~2"
+	},
+	"autoload" : {
+		"psr-0" : {
+			"keeko\\tools" : "src"
+		}
+	}
+}

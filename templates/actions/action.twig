@@ -1,0 +1,16 @@
+<?php
+namespace {{ namespace }};
+
+use keeko\core\action\AbstractAction;
+use keeko\core\action\ApiActionInterface;
+use {{ common }}\{{ class }}Trait;
+
+class {{ class }} implements {% if api %}Api{% endif %}ActionInterface {
+	use {{ class }}Trait;
+
+{% if api %}
+	public function toJson() {
+		
+	}
+{% endif %}
+}
