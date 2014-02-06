@@ -1,0 +1,24 @@
+<?php
+{{ namespace is defined ? "namespace " ~ namespace ~ ";" : "" }}
+
+{% for use in uses %}
+use {{ use }};
+{% endfor %}
+
+/**
+{% if description is defined %}
+ * {{ description }}
+ *
+{% endif %}
+ * @author Super-Keeko 
+ */
+{{ type }} {{ name }}{{ extends is defined ? " extends " ~ extends : "" }}{% if interfaces is defined %} implements {% for interface in interfaces %}{{ interface }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %} {
+{% for trait in traits %}
+	use {{ trait }};
+{% endfor %}
+
+{% for method in methods %}
+{{ include('method.twig', method) }}
+	
+{% endfor %}
+}

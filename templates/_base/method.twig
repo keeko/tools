@@ -1,0 +1,20 @@
+	/**
+{% if descriptions is defined %}
+	 * {{ description  }}
+	 *
+{% endif %}
+{% if params is defined %}
+{% for param in params %}
+	 * @param {{ param.type }} ${{ param.name }} {{ param.description is defined ? param.description : "" }}{% if not param.required is defined %} (optional){% endif %}.
+{% endfor %}
+{% endif %}
+{% if throws is defined %}
+{% for throw in throws %}
+	 * @throws {{ throw.name }} {{ throw.description is defined ? throw.description }}
+{% endfor %}
+{% endif %}
+{% if return is defined %}     * @return {{ return }} {% endif %}
+	 */
+	{{ visibility is defined ? visibility : "public" }} function {{ name }}({% if params is defined %}{% for param in params %}{% if param.type %}{{ param.type }} {% endif %}${{ param.name }}{% if param.default is defined %} = {{ param.default }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}) {
+		{{ body is defined ? body }}
+	}

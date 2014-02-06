@@ -5,6 +5,7 @@
 	<buildpathentry kind="src" path="vendor/symfony/finder"/>
 	<buildpathentry excluding="Symfony/Component/Console/Tests/" kind="src" path="vendor/symfony/console"/>
 	<buildpathentry kind="src" path="vendor/composer"/>
+	<buildpathentry kind="src" path="vendor/cedriclombardot/twig-generator/src"/>
 	<buildpathentry kind="src" path="vendor/symfony/filesystem"/>
 	<buildpathentry kind="src" path="vendor/twig/twig/lib"/>
 	<buildpathentry kind="src" path="templates"/>

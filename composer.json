@@ -6,14 +6,13 @@
 			"homepage" : "http://gos.si"
 		}
 	],
-	"license" : [
-		"MIT"
-	],
+	"license" : "MIT",
 	"require" : {
 		"symfony/console" : "~2",
 		"twig/twig" : "~1",
 		"symfony/finder" : "~2",
-		"symfony/filesystem" : "~2"
+		"symfony/filesystem" : "~2",
+		"cedriclombardot/twig-generator" : "~1"
 	},
 	"autoload" : {
 		"psr-0" : {

@@ -6,7 +6,7 @@ use Symfony\Component\Console\Command\Command;
 abstract class AbstractCodeGenerateCommand extends Command {
 
 	private $json = null;
-	protected $templateRoot; 
+	protected $templateRoot;
 
 	public function __construct($name = null) {
 		parent::__construct($name);
