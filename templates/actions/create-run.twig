@@ -1,0 +1,13 @@
+$data = json_decode($request->getContent(), true);
+
+// hydrate
+${{ model }} = HydrateUtils::hydrate($data, new {{ class }}(), {{ fields|raw }});
+
+// validate
+if (!${{ model }}->validate()) {
+	throw new ValidationException(${{ model }}->getValidationFailures());
+} else {
+	${{ model }}->save();
+	$this->response->setData(${{ model }});
+	return $this->response->run($request);
+}

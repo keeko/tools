@@ -1,8 +1,8 @@
 #!/usr/bin/env php
 <?php
-require_once __DIR__ . '/../src/bootstrap.php';
+$loader = require_once __DIR__ . '/../vendor/autoload.php';
 
-use keeko\tools\Keeko;
+use keeko\tools\KeekoTools;
 
-$keeko = new Keeko();
+$keeko = new KeekoTools();
 $keeko->run();

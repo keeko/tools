@@ -1,0 +1,8 @@
+// read
+$page = $this->getParam('page');
+$perPage = $this->getParam('per_page');
+${{ model }} = {{ class }}Query::create()->paginate($page, $perPage);
+
+// set response and go
+$this->response->setData(${{ model }});
+return $this->response->run($request);

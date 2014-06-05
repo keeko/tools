@@ -1,0 +1,19 @@
+$out = [];
+
+// build model
+$out['{{ models }}'] = [];
+foreach ($this->data as ${{ model }}) {
+	$out['{{ models }}'][] = $this->{{ model }}ToArray(${{ model }});
+}
+
+// meta
+$out['meta'] = [
+	'total' => $this->data->getNbResults(),
+	'first' => $this->data->getFirstPage(),
+	'next' => $this->data->getNextPage(),
+	'previous' => $this->data->getPreviousPage(),
+	'last' => $this->data->getLastPage()
+];
+
+// return response
+return new JsonResponse($out);

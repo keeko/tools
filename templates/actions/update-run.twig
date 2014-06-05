@@ -1,0 +1,20 @@
+// read
+$id = $this->getParam('id');
+${{ model }} = {{ class }}Query::create()->findOneById($id);
+
+// check existence
+if (${{ model }} === null) {
+	throw new ResourceNotFoundException('{{ model }} not found.');
+}
+
+// hydrate
+$data = json_decode($request->getContent(), true);
+${{ model }} = HydrateUtils::hydrate($data, ${{ model }}, {{ fields|raw }});
+
+// validate
+if (!${{ model }}->validate()) {
+	throw new ValidationException(${{ model }}->getValidationFailures());
+} else {
+	$this->response->setData(${{ model }});
+	return $this->response->run($request);
+}

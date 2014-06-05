@@ -1,0 +1,15 @@
+// read
+$id = $this->getParam('id');
+${{ model }} = {{ class }}Query::create()->findOneById($id);
+
+// check existence
+if (${{ model }} === null) {
+	throw new ResourceNotFoundException('{{ model }} not found.');
+}
+
+// delete
+${{ model }}->delete();
+
+// set response and go
+$this->response->setData(${{ model }});
+return $this->response->run($request);

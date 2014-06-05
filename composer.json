@@ -1,6 +1,6 @@
 {
 	"name" : "keeko/tools",
-	"description" : "Keeko command line helper",
+	"description" : "Keeko command line tools",
 	"authors" : [{
 			"name" : "gossi",
 			"homepage" : "http://gos.si"
@@ -12,11 +12,19 @@
 		"twig/twig" : "~1",
 		"symfony/finder" : "~2",
 		"symfony/filesystem" : "~2",
-		"cedriclombardot/twig-generator" : "~1"
+		"cedriclombardot/twig-generator" : "~1",
+		"jms/cg" : "dev-master",
+		"propel/propel" : "dev-master@dev",
+		"symfony/event-dispatcher" : "~2"
 	},
 	"autoload" : {
-		"psr-0" : {
-			"keeko\\tools" : "src"
+		"psr-4" : {
+			"keeko\\tools\\" : "src"
 		}
-	}
+	},
+	"repositories" : [{
+			"type" : "git",
+			"url" : "https://github.com/gossi/cg-library"
+		}
+	]
 }
