@@ -65,13 +65,25 @@ class GenerateInitActionCommand extends AbstractGenerateCommand {
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$this->runCommand('generate:init', $input, $output);
 		
-		$propel = $this->getPropelModel($input, $output);
+		$package = $this->getPackage($input);
+		$module = $this->getKeekoModule($input);
+		$actions = $this->getKeekoActions($input);
+		$propel = $this->getPropelDatabase($input, $output);
+		$force = $input->getOption('force');
+		
 		$model = $this->getModel($input, $propel);
 		
 		// only a specific model
 		if ($model) {
 			if ($propel->hasTable($model)) {
-				$this->initModel($propel->getTable($model), $input, $output);
+				$actions = $this->initModel($propel->getTable($model), $actions, $input, $output);
+
+				// set default action (on core package)
+				if ($input->getOption('model') === null) {
+					if (!isset($module['default-action']) || empty($module['default-action']) || $force) {
+						$module['default-action'] = $model . '-list';
+					}
+				}
 			} else {
 				throw \InvalidArgumentException(sprintf('Model %s not found.', $model));
 			}
@@ -79,25 +91,19 @@ class GenerateInitActionCommand extends AbstractGenerateCommand {
 		
 		// anyway all models
 		else {
-			$models = [];
-			
-			foreach ($propel->getTables() as $table) {
-				if (!$table->isCrossRef()) {
-					$models[] = $table;
-				}
-			}
-
+			$models = $this->getPropelModels($input, $output);
 			foreach ($models as $model) {
-				$this->generateAction($model, $input, $output);
+				$actions = $this->initModel($model, $actions, $input, $output);
 			}
 		}
+		
+		$module['actions'] = $actions;
+		$package['extra']['keeko']['module'] = $module;
+		
+		$this->saveComposer($package, $input, $output);
 	}
 	
-	protected function initModel(Table $model, InputInterface $input, OutputInterface $output) {
-		$actions = $this->getKeekoActions($input);
-		$package = $this->getPackage($input);
-		$module = $this->getKeekoModule($input);
-		
+	protected function initModel(Table $model, $actions, InputInterface $input, OutputInterface $output) {
 		$modelName = $model->getName();
 		$rootNS = $this->getRootNamespace($input);
 		$actionNS = str_replace('\\\\', '\\', $rootNS . '\\action');
@@ -128,18 +134,7 @@ class GenerateInitActionCommand extends AbstractGenerateCommand {
 		$title = 'Deletes ' . (in_array($modelName[0], ['a', 'e', 'i', 'o', 'u']) ? 'an' : 'a') . ' ' . $modelName;
 		$actions[$name] = $this->createAction($name, $actionNS, $title, $actions, $force);
 		
-		// TODO: Not a good idea here!
-		// set default action
-		if ($input->getOption('model') === null) {
-			if (!isset($module['default-action']) || empty($module['default-action']) || $force) {
-				$module['default-action'] = $modelName . '-list';
-			}
-		}
-		
-		$module['actions'] = $actions;
-		$package['extra']['keeko']['module'] = $module;
-		
-		$this->saveComposer($package, $input, $output);
+		return $actions;
 	}
 	
 	protected function createAction($name, $ns, $title, $actions, $force) {

@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Command\Command;
 use Propel\Generator\Model\Table;
+use Propel\Generator\Model\Database;
 
 class GenerateApiCommand extends AbstractGenerateCommand {
 	
@@ -44,10 +45,8 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$this->runCommand('generate:response', $input, $output);
 	
 		$package = $this->getPackage($input);
-		$propel = $this->getPropelModel($input, $output);
-		$model = $this->getModel($input, $propel);
-		$modelPlural = NameUtils::pluralize($model);
-		$modelObject = $propel->getTable($model)->getPhpName();
+		$propel = $this->getPropelDatabase($input, $output);
+		
 		$module = $this->getKeekoModule($input);
 		$api = isset($module['api']) ? $module['api'] : [];
 		$api['swaggerVersion'] = '1.2';
@@ -64,7 +63,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$models = isset($api['models']) ? $api['models'] : [];
 		
 		// meta
-		$meta = isset($modelPlural['Meta']) ? $modelPlural['Meta'] : [];
+		$meta = isset($models['Meta']) ? $models['Meta'] : [];
 		$meta['id'] = 'Meta';
 		$props = isset($meta['properties']) ? $meta['properties'] : [];
 		$total = isset($props['total']) ? $props['total'] : [];
@@ -90,9 +89,31 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$meta['properties'] = $props;
 		$models['Meta'] = $meta;
 		
+		
+		$model = $this->getModel($input, $propel);
+		if ($model !== null) {
+			$models = $this->generateModel($models, $module, $propel, $model);
+		} else {
+			foreach ($this->getPropelModels($input, $output) as $model) {
+				$models = $this->generateModel($models, $module, $propel, $model->getName());
+			}
+		}
+
+		// save api
+		$api['apis'] = $apis;
+		$api['models'] = $models;
+		
+		$package['extra']['keeko']['module']['api'] = $api;
+		$this->saveComposer($package, $input, $output);
+	}
+	
+	protected function generateModel($models, $module, Database $propel, $model) {
+		$modelPlural = NameUtils::pluralize($model);
+		$modelObject = $propel->getTable($model)->getPhpName();
+		
 		// Paged model
 		$pagedModel = 'Paged' . NameUtils::pluralize($modelObject);
-		$paged = isset($modelPlural[$pagedModel]) ? $modelPlural[$pagedModel] : [];
+		$paged = isset($models[$pagedModel]) ? $models[$pagedModel] : [];
 		$paged['id'] = $pagedModel;
 		
 		$props = isset($paged['properties']) ? $paged['properties'] : [];
@@ -101,7 +122,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$pagedModels['type'] = 'array';
 		$items = isset($pagedModels['items']) ? $pagedModels['items'] : [];
 		$items['$ref'] = $modelObject;
-		$pagedModels['items'] = $items; 
+		$pagedModels['items'] = $items;
 		$props[$modelPlural] = $pagedModels;
 		
 		$pagedMeta = isset($props['meta']) ? $props['meta'] : [];
@@ -131,12 +152,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		
 		$models[$modelObject] = $readableModel;
 		
-		// save api
-		$api['apis'] = $apis;
-		$api['models'] = $models;
-		
-		$package['extra']['keeko']['module']['api'] = $api;
-		$this->saveComposer($package, $input, $output);
+		return $models;
 	}
 	
 	protected function generateModelProperties(Table $propel, $props, $module, $filterComputed = false) {
@@ -159,8 +175,8 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 	}
 	
 	protected function generateOperation(InputInterface $input, OutputInterface $output, $apis, $action) {
-		$propel = $this->getPropelModel($input, $output);
-		$model = $this->getModel($input, $propel);
+		$propel = $this->getPropelDatabase($input, $output);
+		$model = $this->getModelFromName($action['name']);
 		$modelPlural = NameUtils::pluralize($model);
 		$modelObject = $propel->getTable($model)->getPhpName();
 		$type = $this->getType($input, $action['name'], $model);
@@ -260,6 +276,10 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$apis = $this->updateArray($apis, $branchIndex, $branch);
 		
 		return $apis;
+	}
+	
+	private function getModelFromName($name) {
+		return substr($name, 0, strpos($name, '-'));
 	}
 	
 	private function updateArray($array, $index, $value) {

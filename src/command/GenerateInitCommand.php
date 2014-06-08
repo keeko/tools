@@ -142,7 +142,7 @@ class GenerateInitCommand extends AbstractGenerateCommand {
 	protected function initModule($package, InputInterface $input, OutputInterface $output) {
 		$extra = $this->initKeeko($package);
 		$keeko = $extra['keeko'];
-		$force = $input->hasOption('force');
+		$force = $input->getOption('force');
 
 		$title = $this->getTitle($package, $input);
 		$module = isset($keeko['module']) ? $keeko['module'] : [];

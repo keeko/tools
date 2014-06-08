@@ -101,7 +101,7 @@ abstract class AbstractGenerateCommand extends Command {
 			$event = new ConsoleTerminateEvent($command, $input, $output, $exitCode);
 			$app->getDispatcher()->dispatch(ConsoleEvents::TERMINATE, $event);
 		} catch (\Exception $e) {
-			$event = new ConsoleExceptionEvent($command, $input, $output, $e, $event->getExitCode());
+			$event = new ConsoleExceptionEvent($command, $input, $output, $e, 1);
 			$app->getDispatcher()->dispatch(ConsoleEvents::EXCEPTION, $event);
 		
 			throw $event->getException();
@@ -144,8 +144,8 @@ abstract class AbstractGenerateCommand extends Command {
 		return $module['actions'];
 	}
 	
-	protected function getPackage(InputInterface $input) {
-		if ($this->json === null) {
+	protected function getPackage(InputInterface $input, $force = false) {
+		if ($this->json === null || $force) {
 			
 			$jsonFile = $this->getComposerFile($input);
 			
@@ -323,7 +323,7 @@ abstract class AbstractGenerateCommand extends Command {
 	/**
 	 * @return Database
 	 */
-	protected function getPropelModel(InputInterface $input, OutputInterface $output) {
+	protected function getPropelDatabase(InputInterface $input, OutputInterface $output) {
 		if ($this->propel === null) {
 			$schema = $this->getSchema($input);
 			
@@ -331,6 +331,10 @@ abstract class AbstractGenerateCommand extends Command {
 				throw new \RuntimeException(sprintf('Can\'t find schema at %s', $schema));
 			}
 			
+			$cwd = getcwd();
+			chdir(dirname($schema));
+			
+			// load it
 			$manager = new ModelManager();
 			$manager->setSchemas([new \SplFileInfo($schema)]);
 			$manager->setGeneratorConfig(new GeneratorConfig([
@@ -349,9 +353,26 @@ abstract class AbstractGenerateCommand extends Command {
 					$this->propel = $model->getDatabase('keeko', true);
 				}
 			}
+			
+			chdir($cwd);
 		}
 		
 		return $this->propel;
+	}
+	
+	protected function getPropelModels(InputInterface $input, OutputInterface $output) {
+		$namespace = str_replace('\\\\', '\\', $this->getRootNamespace($input) . '\\model');
+		$propel = $this->getPropelDatabase($input, $output);
+
+		$models = [];
+			
+		foreach ($propel->getTables() as $table) {
+			if (!$table->isCrossRef() && $table->getNamespace() == $namespace) {
+				$models[] = $table;
+			}
+		}
+		
+		return $models;
 	}
 	
 	protected function getModel(InputInterface $input, Database $propel) {
@@ -361,7 +382,7 @@ abstract class AbstractGenerateCommand extends Command {
 			if (strpos($schema, 'core') !== false) {
 				$package = $this->getPackage($input);
 				$name = substr($package['name'], strpos($package['name'], '/') + 1);
-				
+
 				if ($propel->hasTable($name)) {
 					$model = $name;
 				}

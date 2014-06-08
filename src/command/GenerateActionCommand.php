@@ -96,7 +96,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		
 		$package = $this->getPackage($input);
 		$module = $this->getKeekoModule($input);
-		$propel = $this->getPropelModel($input, $output);
+		$propel = $this->getPropelDatabase($input, $output);
 		$action = $actions[$name];
 		$model = $this->getModelByName($input, $propel, $name);
 		
