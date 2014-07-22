@@ -186,12 +186,13 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 					break;
 					
 				case 'list':
+					$class->addUseStatement($nsModelName . 'Query');
 					$class->addUseStatement('Symfony\\Component\\OptionsResolver\\OptionsResolverInterface');
 					$class->setMethod(PhpMethod::create('setDefaultParams')
 						->addParameter(PhpParameter::create('resolver')->setType('OptionsResolverInterface'))
 						->setBody($twig->render('list-setDefaultParams.twig'))
 					);
-						
+
 					$body = $twig->render('list-run.twig', [
 						'model' => $model,
 						'class' => $modelName
