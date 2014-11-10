@@ -95,6 +95,12 @@ class InitCommand extends AbstractGenerateCommand {
 				'The slug (if this package is a keeko-module, anyway it\'s ignored)'
 			)
 			->addOption(
+				'default-action',
+				'',
+				InputOption::VALUE_OPTIONAL,
+				'The module\'s default action'
+			)
+			->addOption(
 				'force',
 				'f',
 				InputOption::VALUE_NONE,
@@ -236,6 +242,11 @@ class InitCommand extends AbstractGenerateCommand {
 			$slug = $this->getPackageSlug();
 			$slug = $this->askQuestion(new Question('Slug', $slug));
 			$input->setOption('slug', $slug);
+			
+			// ask for the default action
+			$defaultAction = $this->getPackageDefaultAction();
+			$defaultAction = $this->askQuestion(new Question('Default Action', $defaultAction));
+			$input->setOption('default-action', $defaultAction);
 		}
 	}
 
@@ -324,6 +335,11 @@ class InitCommand extends AbstractGenerateCommand {
 					throw new \Exception('Slug not valid. Must contain a dot(.) and no slash.');
 				}
 				$keeko['slug'] = $slug;
+			}
+			
+			// default-action
+			if (($defaultAction = $this->getPackageDefaultAction()) !== null) {
+				$keeko['default-action'] = $defaultAction;
 			}
 		}
 
@@ -448,6 +464,20 @@ class InitCommand extends AbstractGenerateCommand {
 		}
 		
 		return $slug;
+	}
+	
+	private function getPackageDefaultAction() {
+		$type = $this->getPackageType();
+		if ($type !== 'module') {
+			return;
+		}
+	
+		$input = $this->getInput();
+		$keeko = $this->getPackageKeeko('module');
+		$defaultAction = $input->getOption('default-action');
+		$defaultAction = $defaultAction === null && isset($keeko['default-action']) ? $keeko['default-action'] : $defaultAction;
+	
+		return $defaultAction;
 	}
 
 	private function getPackageTitle($type) {
