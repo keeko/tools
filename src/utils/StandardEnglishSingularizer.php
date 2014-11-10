@@ -5,7 +5,7 @@ namespace keeko\tools\utils;
 use Propel\Common\Pluralizer\StandardEnglishPluralizer;
 
 class StandardEnglishSingularizer extends StandardEnglishPluralizer {
-	
+
 	public function getSingularForm($plural) {
 		// save some time in the case that singular and plural are the same
 		if (in_array(strtolower($plural), $this->uncountable)) {

@@ -1,5 +1,4 @@
 <?php
-
 namespace keeko\tools\command;
 
 use keeko\tools\command\AbstractGenerateCommand;
@@ -9,59 +8,45 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Command\Command;
 use Propel\Generator\Model\Table;
 use Propel\Generator\Model\Database;
+use keeko\tools\helpers\BaseHelperTrait;
+use keeko\tools\helpers\PackageHelperTrait;
+use keeko\tools\helpers\ModelHelperTrait;
+use keeko\tools\helpers\CodeGeneratorHelperTrait;
 
 class GenerateApiCommand extends AbstractGenerateCommand {
+	
+	use BaseHelperTrait;
+	use PackageHelperTrait;
+	use ModelHelperTrait;
+	use CodeGeneratorHelperTrait;
 	
 	protected function configure() {
 		$this
 			->setName('generate:api')
 			->setDescription('Generates the api for the module')
 		;
-	
-		self::configureParameters($this);
-	
+
 		parent::configure();
 	}
-	
-	public static function configureParameters(Command $command) {
-		return GenerateResponseCommand::configureParameters($command);
-	}
-	
-	public function getOptionKeys() {
-		// get keys from dependent commands
-		$command = $this->getApplication()->find('generate:response');
-	
-		return array_merge(parent::getOptionKeys(), $command->getOptionKeys());
-	}
-	
-	public function getArgumentKeys() {
-		// get keys from dependent commands
-		$command = $this->getApplication()->find('generate:response');
-		
-		return array_merge(parent::getArgumentKeys(), $command->getArgumentKeys());
-	}
-	
+
 	protected function execute(InputInterface $input, OutputInterface $output) {
-		$this->runCommand('generate:response', $input, $output);
-	
-		$package = $this->getPackage($input);
-		$propel = $this->getPropelDatabase($input, $output);
-		
-		$module = $this->getKeekoModule($input);
+		$package = $this->getPackage();
+
+		$module = $this->getKeekoModule();
 		$api = isset($module['api']) ? $module['api'] : [];
 		$api['swaggerVersion'] = '1.2';
 		$api['resourcePath'] = '/' . $module['slug'];
 		$apis = isset($api['apis']) ? $api['apis'] : [];
 		
 		// endpoints
-		foreach ($this->getKeekoActions($input) as $name => $action) {
+		foreach ($this->getKeekoActions() as $name => $action) {
 			$action['name'] = $name;
-			$apis = $this->generateOperation($input, $output, $apis, $action);
+			$apis = $this->generateOperation($apis, $action);
 		}
 		
 		// models
 		$models = isset($api['models']) ? $api['models'] : [];
-		
+
 		// meta
 		$meta = isset($models['Meta']) ? $models['Meta'] : [];
 		$meta['id'] = 'Meta';
@@ -69,15 +54,15 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$total = isset($props['total']) ? $props['total'] : [];
 		$total['type'] = 'integer';
 		$props['total'] = $total;
-		
+
 		$first = isset($props['first']) ? $props['first'] : [];
 		$first['type'] = 'string';
 		$props['first'] = $first;
-		
+
 		$next = isset($props['next']) ? $props['next'] : [];
 		$next['type'] = 'string';
 		$props['next'] = $next;
-		
+
 		$previous = isset($props['previous']) ? $props['previous'] : [];
 		$previous['type'] = 'string';
 		$props['previous'] = $previous;
@@ -90,12 +75,12 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$models['Meta'] = $meta;
 		
 		
-		$model = $this->getModel($input, $propel);
+		$model = $this->getModelName();
 		if ($model !== null) {
-			$models = $this->generateModel($models, $module, $propel, $model);
+			$models = $this->generateModel($models, $model);
 		} else {
 			foreach ($this->getPropelModels($input, $output) as $model) {
-				$models = $this->generateModel($models, $module, $propel, $model->getName());
+				$models = $this->generateModel($models, $model->getName());
 			}
 		}
 
@@ -104,12 +89,14 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$api['models'] = $models;
 		
 		$package['extra']['keeko']['module']['api'] = $api;
-		$this->saveComposer($package, $input, $output);
+		$this->savePackage($package);
 	}
 	
-	protected function generateModel($models, $module, Database $propel, $model) {
+	protected function generateModel($models, $model) {
+		$this->logger->notice('Generating API for: ' . $model);
+		$database = $this->getDatabase();
 		$modelPlural = NameUtils::pluralize($model);
-		$modelObject = $propel->getTable($model)->getPhpName();
+		$modelObject = $database->getTable($model)->getPhpName();
 		
 		// Paged model
 		$pagedModel = 'Paged' . NameUtils::pluralize($modelObject);
@@ -133,14 +120,14 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$models[$pagedModel] = $paged;
 		
 		
-		$propelModel = $propel->getTable($model);
+		$propelModel = $database->getTable($model);
 		
 		// writable model
 		$writableModelName = 'Writable' . $modelObject;
 		$writableModel = isset($models[$writableModelName]) ? $models[$writableModelName] : [];
 		$writableModel['id'] = $writableModelName;
 		$writableProps = isset($writableModel['properties']) ? $writableModel['properties'] : [];
-		$writableModel['properties'] = $this->generateModelProperties($propelModel, $writableProps, $module, true);
+		$writableModel['properties'] = $this->generateModelProperties($propelModel, $writableProps, true);
 		
 		$models[$writableModelName] = $writableModel;
 		
@@ -148,16 +135,16 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$readableModel = isset($models[$modelObject]) ? $models[$modelObject] : [];
 		$readableModel['id'] = $modelObject;
 		$readableProps = isset($readableModel['properties']) ? $readableModel['properties'] : [];
-		$readableModel['properties'] = $this->generateModelProperties($propelModel, $readableProps, $module);
+		$readableModel['properties'] = $this->generateModelProperties($propelModel, $readableProps);
 		
 		$models[$modelObject] = $readableModel;
 		
 		return $models;
 	}
 	
-	protected function generateModelProperties(Table $propel, $props, $module, $filterComputed = false) {
+	protected function generateModelProperties(Table $propel, $props, $filterComputed = false) {
 		$model = $propel->getOriginCommonName();
-		$filter = $this->getFilter($module, $model, $filterComputed ? 'write' : 'read');
+		$filter = $this->getFilter($model, $filterComputed ? 'write' : 'read');
 		if ($filterComputed) {
 			$filter = $this->getComputedFields($propel);
 		}
@@ -174,12 +161,14 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		return $props;
 	}
 	
-	protected function generateOperation(InputInterface $input, OutputInterface $output, $apis, $action) {
-		$propel = $this->getPropelDatabase($input, $output);
+	protected function generateOperation($apis, $action) {
+		$this->logger->notice('Generating Operation for: ' . $action['name']);
+		
+		$database = $this->getDatabase();
 		$model = $this->getModelFromName($action['name']);
 		$modelPlural = NameUtils::pluralize($model);
-		$modelObject = $propel->getTable($model)->getPhpName();
-		$type = $this->getType($input, $action['name'], $model);
+		$modelObject = $database->getTable($model)->getPhpName();
+		$type = $this->getActionType($action['name'], $model);
 		
 		// find path branch
 		switch ($type) {
@@ -203,6 +192,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$branch['path'] = $path;
 		$method = $this->getMethod($type);
 		$operations = isset($branch['operations']) ? $branch['operations'] : [];
+		
 		list($operationIndex, $operation) = $this->findOperation($operations, $method);
 		$operation['method'] = strtoupper($method);
 		$operation['summary'] = $action['title'];
@@ -297,7 +287,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 			'list' => 'GET',
 			'create' => 'POST',
 			'read' => 'GET',
-			'update' => 'PATCH',
+			'update' => 'PUT',
 			'delete' => 'DELETE'
 		];
 		

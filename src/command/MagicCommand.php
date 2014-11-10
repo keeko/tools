@@ -6,8 +6,12 @@ use keeko\tools\command\AbstractGenerateCommand;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Command\Command;
+use keeko\tools\helpers\PackageHelperTrait;
+use Symfony\Component\Console\Input\ArrayInput;
 
 class MagicCommand extends AbstractGenerateCommand {
+	
+	use PackageHelperTrait;
 	
 	protected function configure() {
 		$this
@@ -15,45 +19,43 @@ class MagicCommand extends AbstractGenerateCommand {
 			->setDescription('Magically does everything')
 		;
 	
-		self::configureParameters($this);
-	
 		parent::configure();
 	}
 	
-	public static function configureParameters(Command $command) {
-		return GenerateApiCommand::configureParameters($command);
-	}
-	
-	public function getOptionKeys() {
-		// get keys from dependent commands
-		$command = $this->getApplication()->find('generate:api');
-	
-		return array_merge(parent::getOptionKeys(), $command->getOptionKeys());
-	}
-	
-	public function getArgumentKeys() {
-		// get keys from dependent commands
-		$command = $this->getApplication()->find('generate:api');
-		
-		return array_merge(parent::getArgumentKeys(), $command->getArgumentKeys());
-	}
-	
-	
 	public function execute(InputInterface $input, OutputInterface $output) {
+		// pre check
+		$package = $this->getPackage();
+		if (!isset($package['type']) && !isset($package['name'])) {
+			throw new \DomainException('No type and name found in composer.json - please run `keeko init`.');
+		}
+		
+		if ($package['type'] === 'keeko-module') {
+			$module = $this->getKeekoModule();
+			if (count($module) === 0) {
+				throw new \DomainException('No module definition found in composer.json - please run `keeko init`.');
+			}
+		}
+		
+		// let's go		
 		$output->writeln(sprintf('<fg=magenta>%s</fg=magenta>', $this->getRandomHex()));
 		$output->writeln('<fg=cyan>And then a miracle appears ...</fg=cyan>');
-
-		$package = $this->getPackage($input);
 		
-		if (isset($package['type'])) {
-			$type = $package['type'];
-			
-			if ($type === 'keeko-module') {
-// 				echo 'run generate:api';
-				$this->runCommand('generate:api', $input, $output);
-			} else if ($type === 'keeko-app') {
-				$this->runCommand('generate:init', $input, $output);
-			}
+		$args = [];
+		if (($schema = $input->getOption('schema')) !== null) {
+			$args['--schema'] = $schema;
+		}
+		
+		if (($composer = $input->getOption('composer')) !== null) {
+			$args['--composer'] = $composer;
+		}
+		
+		$input = new ArrayInput($args);
+		$input->setInteractive(false);
+		
+		if ($package['type'] === 'keeko-module') {
+			$this->runCommand('generate:action', $input, $output);
+			$this->runCommand('generate:response', $input, $output);
+			$this->runCommand('generate:api', $input, $output);
 		}
 	}
 

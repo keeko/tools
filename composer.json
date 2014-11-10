@@ -12,19 +12,20 @@
 		"twig/twig" : "~1",
 		"symfony/finder" : "~2",
 		"symfony/filesystem" : "~2",
-		"cedriclombardot/twig-generator" : "~1",
-		"jms/cg" : "dev-master",
 		"propel/propel" : "dev-master@dev",
-		"symfony/event-dispatcher" : "~2"
+		"symfony/event-dispatcher" : "~2",
+		"gossi/php-code-generator" : "dev-master",
+		"gossi/json" : "~1",
+		"symfony/process" : "~2",
+		"keeko/core" : "dev-master",
+		"composer/composer" : "@dev"
 	},
 	"autoload" : {
 		"psr-4" : {
 			"keeko\\tools\\" : "src"
 		}
 	},
-	"repositories" : [{
-			"type" : "git",
-			"url" : "https://github.com/gossi/cg-library"
-		}
-	]
+	"extra" : {
+		"local" : "../../"
+	}
 }

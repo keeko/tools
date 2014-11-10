@@ -4,14 +4,13 @@ namespace keeko\tools;
 use Symfony\Component\Console\Application;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use keeko\tools\command\GenerateActionCommand;
-use keeko\tools\command\GenerateInitCommand;
-use keeko\tools\command\GenerateInitActionCommand;
-use keeko\tools\command\GenerateInitResponseCommand;
 use keeko\tools\command\GenerateResponseCommand;
 use keeko\tools\command\MagicCommand;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use keeko\tools\command\GenerateApiCommand;
+use keeko\tools\command\InitCommand;
+
 
 class KeekoTools extends Application {
 
@@ -37,14 +36,11 @@ class KeekoTools extends Application {
 	
 	protected function getDefaultCommands() {
 		$cmds = parent::getDefaultCommands();
+		$cmds[] = new InitCommand();
 		$cmds[] = new GenerateActionCommand();
-		$cmds[] = new GenerateInitCommand();
-		$cmds[] = new GenerateInitActionCommand();
-		$cmds[] = new GenerateInitResponseCommand();
 		$cmds[] = new GenerateResponseCommand();
 		$cmds[] = new GenerateApiCommand();
 		$cmds[] = new MagicCommand();
-		
 
 		return $cmds;
 	}
