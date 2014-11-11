@@ -260,7 +260,7 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 			->setVisibility('protected')
 			->setBody($twig->render('filter.twig', [
 				'model' => $model,
-				'filter' => $this->arrayToCode($this->getFilter($module, $model, 'read'))
+				'filter' => $this->arrayToCode($this->getFilter($model, 'read'))
 			]))
 		);
 		$abstract->setMethod(PhpMethod::create($model . 'ToArray')

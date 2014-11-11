@@ -39,16 +39,21 @@ trait CodeGeneratorHelperTrait {
 	}
 	
 	/**
+	 * @return Database
+	 */
+	abstract protected function getDatabase();
+	
+	/**
 	 * Returns code for hydrating a propel model
 	 * 
 	 * @param array $module
-	 * @param Database $database
 	 * @param string $model
 	 * @return string
 	 */
-	protected function getWriteFields(array $module, Database $database, $model) {
+	protected function getWriteFields(array $module, $model) {
+		$database = $this->getDatabase();
 		$conversions = $this->getConversions($module, $model, 'write');
-		$filter = $this->getFilter($module, $model, 'write');
+		$filter = $this->getFilter($model, 'write');
 		$computed = $this->getComputedFields($database->getTable($model));
 		$filter = array_merge($filter, $computed);
 	
@@ -73,17 +78,6 @@ trait CodeGeneratorHelperTrait {
 		}
 	
 		return sprintf('[%s]', $fields);
-	}
-	
-	/**
-	 * Returns all readable columns for a model
-	 * 
-	 * @param array $module
-	 * @param Database $propel
-	 * @param string $model
-	 */
-	protected function getReadFields(array $module, Database $propel, $model) {
-		return $this->getFields($module, $propel, $model, 'read');
 	}
 	
 	/**
@@ -196,7 +190,7 @@ trait CodeGeneratorHelperTrait {
 			$this->writeln(sprintf('Class <info>%s</info> written at <info>%s</info>', $struct->getQualifiedName(), $fileName));
 		}
 	}
-	
+
 	protected function getSourcePath($namespace) {
 		$relativeSourcePath = NamespaceResolver::getSourcePath($namespace, $this->getPackage());
 		

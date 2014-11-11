@@ -339,7 +339,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 				$body = $twig->render('create-run.twig', [
 					'model' => $model,
 					'class' => $modelName,
-					'fields' => $this->getWriteFields($module, $database, $model)
+					'fields' => $this->getWriteFields($module, $model)
 				]);
 				break;
 
@@ -372,7 +372,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 				$body = $twig->render('read-run.twig', [
 					'model' => $model,
 					'class' => $modelName,
-					'fields' => $this->getWriteFields($module, $database, $model)
+					'fields' => $this->getWriteFields($module, $model)
 				]);
 				break;
 

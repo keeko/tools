@@ -24,11 +24,13 @@ use gossi\docblock\tags\UnknownTag;
 use gossi\docblock\tags\LicenseTag;
 use gossi\codegen\generator\CodeFileGenerator;
 use keeko\tools\helpers\CodeGeneratorHelperTrait;
+use keeko\tools\helpers\ModelHelperTrait;
 
 class InitCommand extends AbstractGenerateCommand {
 	
 	use PackageHelperTrait;
 	use QuestionHelperTrait;
+	use ModelHelperTrait;
 	use CodeGeneratorHelperTrait;
 	
 	private $localPackage;
