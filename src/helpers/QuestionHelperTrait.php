@@ -22,7 +22,7 @@ trait QuestionHelperTrait {
 	 * @return string
 	 */
 	protected function getQuestion($question, $default = null, $sep = ':') {
-		return $default !== null ?
+		return !empty($default) ?
 			sprintf('<info>%s</info> [<comment>%s</comment>]%s ', $question, $default, $sep) :
 			sprintf('<info>%s</info>%s ', $question, $sep);
 	}

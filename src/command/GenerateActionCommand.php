@@ -64,6 +64,11 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 				'',
 				InputOption::VALUE_OPTIONAL,
 				'The type of this action (list|create|read|update|delete) (if ommited template is guessed from action name)'
+			)->addOption(
+				'acl',
+				'',
+				InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
+				'The acl\s for this action (guest, user and/or admin)'
 			)
 		;
 		
@@ -132,8 +137,14 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 				}
 			}
 			$classname = $this->askQuestion(new Question('Classname', $classname));
+			$input->setOption('classname', $classname);
+			
+			// ask for acl
+			$acls = $this->getAcl($action);
+			$aclQuestion = new Question('ACL (comma separated list, with these options: guest, user, admin)', implode(', ', $acls));
+			$acls = $this->askQuestion($aclQuestion);
+			$input->setOption('acl', $acls);
 		}
-		
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
@@ -187,6 +198,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 
 		foreach ($types as $type) {
+			$input->setOption('acl', ['admin']);
 			$input->setOption('type', $type);
 			$name = $model . '-' . $type;
 			$action = $this->getKeekoAction($name);
@@ -237,6 +249,9 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			$action['class'] = $this->guessClassname($name);
 		}
 		
+		// set acl
+		$action['acl'] = $this->getAcl($action);
+		
 		$this->updateAction($name, $action);
 		$this->generateCode($name, $action);
 	}
@@ -244,6 +259,35 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	private function guessClassname($name) {
 		$namespace = NamespaceResolver::getNamespace('src/action', $this->getPackage());
 		return $namespace . NameUtils::toStudlyCase($name) . 'Action';
+	}
+	
+	private function getAcl($action) {
+		$acls = [];
+		$acl = $this->getInput()->getOption('acl');
+		if ($acl !== null && count($acl) > 0) {
+			if (!is_array($acl)) {
+				$acl = [$acl];
+			}
+			foreach ($acl as $group) {
+				if (strpos($group, ',') !== false) {
+					$groups = explode(',', $group);
+					foreach ($groups as $g) {
+						$acls[] = trim($g);
+					}
+				} else {
+					$acls[] = $group;
+				}
+			}
+			
+			return $acls;
+		}
+		
+		// read default from package
+		if (isset($action['acl'])) {
+			return $action['acl'];
+		}
+		
+		return $acls;
 	}
 	
 	/**
