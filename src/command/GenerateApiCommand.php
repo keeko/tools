@@ -79,7 +79,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		if ($model !== null) {
 			$models = $this->generateModel($models, $model);
 		} else {
-			foreach ($this->getPropelModels($input, $output) as $model) {
+			foreach ($this->getModels() as $model) {
 				$models = $this->generateModel($models, $model->getName());
 			}
 		}
@@ -166,8 +166,9 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		
 		$database = $this->getDatabase();
 		$model = $this->getModelFromName($action['name']);
+		$tableName = $database->getTablePrefix() . $model;
 		$modelPlural = NameUtils::pluralize($model);
-		$modelObject = $database->getTable($model)->getPhpName();
+		$modelObject = $database->getTable($tableName)->getPhpName();
 		$type = $this->getActionType($action['name'], $model);
 		
 		// find path branch

@@ -207,6 +207,8 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			}
 			$this->generateAction($name, $action);
 		}
+		
+		$input->setOption('type', null);
 	}
 	
 	private function getActionTitle($model, $type) {

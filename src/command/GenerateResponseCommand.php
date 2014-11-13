@@ -167,7 +167,8 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		
 		// template given
 		if ($type) {
-			$modelName = $database->getTable($model)->getPhpName();
+			$tableName = $database->getTablePrefix() . $model;
+			$modelName = $database->getTable($tableName)->getPhpName();
 
 			// add model to use statements
 			$namespace = $database->getNamespace();

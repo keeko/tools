@@ -309,7 +309,7 @@ class InitCommand extends AbstractGenerateCommand {
 			if (substr($namespace, -2) !== '\\') {
 				$namespace .= '\\';
 			}
-			$this->package['autoload']['psr-4'][$namespace] = 'src';
+			$this->localPackage['autoload']['psr-4'][$namespace] = 'src';
 		}
 		
 		$this->manageDependencies();
@@ -462,7 +462,11 @@ class InitCommand extends AbstractGenerateCommand {
 		$slug = $slug === null && isset($keeko['slug']) ? $keeko['slug'] : $slug;
 		
 		if ($slug === null) {
-			$slug = $this->getSlug($this->localPackage);
+			$package = ['name' => $input->getOption('name')];
+			if (count($this->localPackage)) {
+				$package = $this->localPackage;
+			}
+			$slug = $this->getSlug($package);
 		}
 		
 		return $slug;
@@ -547,14 +551,14 @@ class InitCommand extends AbstractGenerateCommand {
 	
 	private function hasAutoload() {
 		return isset($this->localPackage['autoload']) 
-			&& ((isset($this->package['autload']['psr-0']) 
-					&& (in_array('src', $this->package['autload']['psr-0']) 
-						|| in_array('src/', $this->package['autload']['psr-0'])
+			&& ((isset($this->localPackage['autload']['psr-0']) 
+					&& (in_array('src', $this->localPackage['autload']['psr-0']) 
+						|| in_array('src/', $this->localPackage['autload']['psr-0'])
 					)
 				)
-				|| (isset($this->package['autload']['psr-4']) 
-					&& (in_array('src', $this->package['autload']['psr-4']) 
-						|| in_array('src/', $this->package['autload']['psr-4'])
+				|| (isset($this->localPackage['autload']['psr-4']) 
+					&& (in_array('src', $this->localPackage['autload']['psr-4']) 
+						|| in_array('src/', $this->localPackage['autload']['psr-4'])
 					)
 				)
 			);
