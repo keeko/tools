@@ -92,11 +92,12 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$this->savePackage($package);
 	}
 	
-	protected function generateModel($models, $model) {
-		$this->logger->notice('Generating API for: ' . $model);
+	protected function generateModel($models, $tableName) {
+		$this->logger->notice('Generating API for: ' . $tableName);
 		$database = $this->getDatabase();
-		$modelPlural = NameUtils::pluralize($model);
-		$modelObject = $database->getTable($model)->getPhpName();
+		$table = $database->getTable($tableName);
+		$modelObject = $table->getPhpName();
+		$modelPlural = NameUtils::pluralize($table->getOriginCommonName());
 		
 		// Paged model
 		$pagedModel = 'Paged' . NameUtils::pluralize($modelObject);
@@ -120,7 +121,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$models[$pagedModel] = $paged;
 		
 		
-		$propelModel = $database->getTable($model);
+		$propelModel = $database->getTable($tableName);
 		
 		// writable model
 		$writableModelName = 'Writable' . $modelObject;

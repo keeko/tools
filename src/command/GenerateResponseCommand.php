@@ -164,10 +164,10 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		$loader = new \Twig_Loader_Filesystem($this->templateRoot . '/response/' . $format . '/');
 		$twig = new \Twig_Environment($loader);
 		$type = $this->getActionType($name, $model);
+		$tableName = $database->getTablePrefix() . $model;
 		
 		// template given
-		if ($type) {
-			$tableName = $database->getTablePrefix() . $model;
+		if ($type && $database->hasTable($tableName)) {
 			$modelName = $database->getTable($tableName)->getPhpName();
 
 			// add model to use statements
