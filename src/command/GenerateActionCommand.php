@@ -370,7 +370,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		$module = $this->getKeekoModule();
 		$database = $this->getDatabase();
 		$model = $this->getModelNameByActionName($name);
-		$modelName = $database->getTable($model)->getPhpName();
+		$modelName = $this->getModel($model)->getPhpName();
 		
 		// add model to use statements
 		$namespace = $database->getNamespace();

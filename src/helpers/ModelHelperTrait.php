@@ -18,6 +18,8 @@ trait ModelHelperTrait {
 	
 	abstract protected function getPackage();
 	
+	abstract protected function getPackageVendor();
+	
 	/**
 	 * Returns the propel schema. The three locations, where the schema is looked up in:
 	 * 
@@ -55,6 +57,10 @@ trait ModelHelperTrait {
 	
 	protected function isCoreSchema() {
 		return strpos($this->getSchema(), 'core') !== false;
+	}
+	
+	protected function hasSchema() {
+		return $this->getSchema() !== null && ($this->isCoreSchema() ? $this->getPackageVendor() == 'keeko' : true);
 	}
 	
 	/**
@@ -116,7 +122,14 @@ trait ModelHelperTrait {
 	 * @return Table
 	 */
 	protected function getModel($name) {
-		return $this->getDatabase()->getTable($name);
+		$db = $this->getDatabase();
+		$table = $db->getTable($name);
+		
+		if ($table === null) {
+			$table = $db->getTable($db->getTablePrefix() . $name); 
+		}
+
+		return $table;
 	}
 	
 	/**

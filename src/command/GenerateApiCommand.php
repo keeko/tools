@@ -93,7 +93,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 	}
 	
 	protected function generateModel($models, $tableName) {
-		$this->logger->notice('Generating API for: ' . $tableName);
+		$this->logger->notice('Generating Model for: ' . $tableName);
 		$database = $this->getDatabase();
 		$table = $database->getTable($tableName);
 		$modelObject = $table->getPhpName();
@@ -168,8 +168,14 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$database = $this->getDatabase();
 		$model = $this->getModelFromName($action['name']);
 		$tableName = $database->getTablePrefix() . $model;
-		$modelPlural = NameUtils::pluralize($model);
+		
+		if (!$database->hasTable($tableName)) {
+			return $apis;
+		}
+		
 		$modelObject = $database->getTable($tableName)->getPhpName();
+		$modelPlural = NameUtils::pluralize($model);
+		
 		$type = $this->getActionType($action['name'], $model);
 		
 		// find path branch
@@ -265,6 +271,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 
 		$operations = $this->updateArray($operations, $operationIndex, $operation);
 		$branch['operations'] = $operations;
+		
 		$apis = $this->updateArray($apis, $branchIndex, $branch);
 		
 		return $apis;

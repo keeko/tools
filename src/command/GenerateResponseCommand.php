@@ -49,6 +49,13 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 				'The response format to create',
 				'json'
 			)
+			->addOption(
+				'template',
+				'',
+				InputOption::VALUE_OPTIONAL,
+				'The template for the body method (blank or twig)',
+				'blank'
+			)
 		;
 
 		parent::configure();
@@ -75,8 +82,6 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		if ($name === null) {
 			$formatQuestion = new ConfirmationQuestion('Do you want to generate a response for a specific action?');
 			$specificAction = $this->askConfirmation($formatQuestion);
-		} else {
-			$specificAction = true;
 		}
 		
 		// ask which action
@@ -99,6 +104,12 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		$formatQuestion->setAutocompleterValues(['json', 'html']);
 		$format = $this->askQuestion($formatQuestion);
 		$input->setOption('format', $format);
+		
+		// ask which template
+		$templateQuestion = new Question('Which template', 'blank');
+		$templateQuestion->setAutocompleterValues(['blank', 'twig']);
+		$template = $this->askQuestion($templateQuestion);
+		$input->setOption('template', $template);
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
@@ -136,6 +147,7 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		$action = $actions[$name];
 		$model = $this->getModelNameByActionName($name);
 		$format = $input->getOption('format');
+		$template = $input->getOption('template');
 		
 		if (!isset($action['response'])) {
 			$action['response'] = [];
@@ -160,14 +172,14 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		$class->setLongDescription(isset($action['description']) ? $action['description'] : '');
 		$this->addAuthors($class, $package);
 		
-		// set up templates
+		// set up tempaltes
 		$loader = new \Twig_Loader_Filesystem($this->templateRoot . '/response/' . $format . '/');
 		$twig = new \Twig_Environment($loader);
 		$type = $this->getActionType($name, $model);
 		$tableName = $database->getTablePrefix() . $model;
 		
-		// template given
-		if ($type && $database->hasTable($tableName)) {
+		// model given
+		if ($type && $this->hasSchema() && $database->hasTable($tableName)) {
 			$modelName = $database->getTable($tableName)->getPhpName();
 
 			// add model to use statements
@@ -211,9 +223,14 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 			}
 		}
 		
-		// no template given - render a blank template
+		// no model given - render given template
 		else {
-			$body = $twig->render('blank-run.twig');
+			if ($template == 'twig') {
+				$file = str_replace(['-create', '-edit'], '-form', $name);
+				$body = $twig->render('twig-run.twig', ['name' => $file]);
+			} else {
+				$body = $twig->render('blank-run.twig');
+			}
 		}
 
 		// add run method
@@ -229,7 +246,6 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 	}
 	
 	protected function generateAbstractResponse($model, $modelName, $type, $format, $actionName) {
-		$module = $this->getKeekoModule();
 		$database = $this->getDatabase();
 		
 		$abstractName = str_replace([ucfirst($format), ucfirst($type)], '', $actionName);

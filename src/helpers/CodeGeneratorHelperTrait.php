@@ -5,10 +5,6 @@ use gossi\codegen\model\AbstractPhpStruct;
 use gossi\docblock\Docblock;
 use gossi\docblock\tags\AuthorTag;
 use Propel\Generator\Model\Table;
-use Propel\Generator\Model\Database;
-use Symfony\Component\Console\Input\InputInterface;
-use gossi\codegen\model\PhpClass;
-use gossi\codegen\generator\CodeGenerator;
 use Symfony\Component\Filesystem\Filesystem;
 use gossi\codegen\generator\CodeFileGenerator;
 
@@ -39,9 +35,9 @@ trait CodeGeneratorHelperTrait {
 	}
 	
 	/**
-	 * @return Database
+	 * @return Table
 	 */
-	abstract protected function getDatabase();
+	abstract protected function getModel($name);
 	
 	/**
 	 * Returns code for hydrating a propel model
@@ -51,14 +47,13 @@ trait CodeGeneratorHelperTrait {
 	 * @return string
 	 */
 	protected function getWriteFields(array $module, $model) {
-		$database = $this->getDatabase();
 		$conversions = $this->getConversions($module, $model, 'write');
 		$filter = $this->getFilter($model, 'write');
-		$computed = $this->getComputedFields($database->getTable($model));
+		$computed = $this->getComputedFields($this->getModel($model));
 		$filter = array_merge($filter, $computed);
 	
 		$fields = '';
-		$cols = $database->getTable($model)->getColumns();
+		$cols = $this->getModel($model)->getColumns();
 		foreach ($cols as $col) {
 			$prop = $col->getName();
 	
