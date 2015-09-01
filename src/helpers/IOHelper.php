@@ -1,5 +1,4 @@
 <?php
-
 namespace keeko\tools\helpers;
 
 use Symfony\Component\Console\Helper\HelperInterface;

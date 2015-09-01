@@ -11,24 +11,26 @@ use gossi\docblock\tags\AuthorTag;
 use gossi\docblock\Docblock;
 use Symfony\Component\Console\Command\Command;
 use Propel\Generator\Model\Database;
-use keeko\tools\helpers\PackageHelperTrait;
-use keeko\tools\helpers\ModelHelperTrait;
-use keeko\tools\helpers\CodeGeneratorHelperTrait;
 use gossi\codegen\model\PhpClass;
 use gossi\codegen\model\PhpTrait;
 use gossi\codegen\model\AbstractPhpStruct;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
-use keeko\tools\helpers\NamespaceResolver;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use keeko\tools\helpers\QuestionHelperTrait;
 use Symfony\Component\Console\Question\Question;
+use keeko\tools\generator\GeneratorFactory;
+use keeko\tools\helpers\PackageServiceTrait;
+use keeko\tools\helpers\ModelServiceTrait;
+use keeko\tools\helpers\CodeGeneratorServiceTrait;
+use keeko\tools\utils\NamespaceResolver;
+use keeko\core\schema\ActionSchema;
+use phootwork\file\File;
 
 class GenerateActionCommand extends AbstractGenerateCommand {
 	
-	use PackageHelperTrait;
-	use ModelHelperTrait;
-	use CodeGeneratorHelperTrait;
+	use ModelServiceTrait;
+	use CodeGeneratorServiceTrait;
 	use QuestionHelperTrait;
 
 	protected function configure() {
@@ -80,8 +82,8 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	 * all required information are available
 	 */
 	private function preCheck() {
-		$module = $this->getKeekoModule();
-		if (count($module) == 0) {
+		$module = $this->getModule();
+		if ($module === null) {
 			throw new \DomainException('No module definition found in composer.json - please run `keeko init`.');
 		}
 	}
@@ -103,8 +105,8 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 		
 		// ask questions for a model
-		if ($generateModel && !($this->getPackageVendor() === 'keeko' && $this->isCoreSchema())) {
-			
+		if ($generateModel && !($this->package->getVendorName() === 'keeko' && $this->isCoreSchema())) {
+
 			$schema = str_replace(getcwd(), '', $this->getSchema());
 			$allQuestion = new ConfirmationQuestion(sprintf('For all models in the schema (%s)?', $schema));
 			$allModels = $this->askConfirmation($allQuestion);
@@ -116,22 +118,24 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 				$input->setOption('model', $model);
 			}
 		} else if (!$generateModel) {
-			$action = $this->getKeekoAction($name);
+			$action = $this->getAction($name);
 			
 			// ask for title
+			$pkgTitle = $action->getTitle();
 			$title = $input->getOption('title');
-			if ($title === null && isset($action['title'])) {
-				$title = $action['title'];
+			if ($title === null && !empty($pkgTitle)) {
+				$title = $pkgTitle;
 			}
 			$titleQuestion = new Question('What\'s the title for your action?', $title);
 			$title = $this->askQuestion($titleQuestion);
 			$input->setOption('title', $title);
 			
 			// ask for classname
+			$pkgClass = $action->getClass();
 			$classname = $input->getOption('classname');
 			if ($classname === null) {
-				if (isset($action['class'])) {
-					$classname = $action['class'];
+				if (!empty($pkgClass)) {
+					$classname = $pkgClass;
 				} else {
 					$classname = $this->guessClassname($name);
 				}
@@ -159,7 +163,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 
 		// only a specific action
 		if ($name) {
-			$this->generateAction($name, $this->getKeekoAction($name));
+			$this->generateAction($name, $this->getAction($name));
 		}
 
 		// create action(s) from a model
@@ -168,8 +172,8 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 		
 		// if this is a core-module, find the related model
-		else if ($this->getPackageVendor() == 'keeko' && $this->isCoreSchema()) {
-			$model = $this->getPackageNameWithoutVendor();
+		else if ($this->getVendorName() == 'keeko' && $this->isCoreSchema()) {
+			$model = $this->getPackageName();
 			if ($this->hasModel($model)) {
 				$input->setOption('model', $model);
 				$this->generateModel($model);
@@ -177,7 +181,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 				$this->logger->error('Tried to find model on my own, wasn\'t lucky - please provide model with the --model option');
 			}
 		}
-		
+
 		// anyway, generate all
 		else {
 			foreach ($this->getModels() as $model) {
@@ -187,12 +191,13 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		
 		$this->savePackage();
 	}
-	
-	private function generateModel($model) {
-		$this->logger->info('Generate Action from Model: ' . $model);
+
+	private function generateModel($modelName) {
+		$this->logger->info('Generate Action from Model: ' . $modelName);
 		$input = $this->getInput();
-		if (($type = $type = $input->getOption('type')) !== null) {
-			$types = [$type];
+		$typeDump = $input->getOption('type');
+		if ($typeDump !== null) {
+			$types = [$typeDump];
 		} else {
 			$types = ['create', 'read', 'list', 'update', 'delete'];
 		}
@@ -200,15 +205,16 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		foreach ($types as $type) {
 			$input->setOption('acl', ['admin']);
 			$input->setOption('type', $type);
-			$name = $model . '-' . $type;
-			$action = $this->getKeekoAction($name);
-			if (!isset($action['title'])) {
-				$action['title'] = $this->getActionTitle($model, $type);
+			$actionName = $modelName . '-' . $type;
+			$action = $this->getAction($actionName);
+			$title = $action->getTitle();
+			if (empty($title)) {
+				$action->setTitle($this->getActionTitle($modelName, $type));
 			}
-			$this->generateAction($name, $action);
+			$this->generateAction($actionName, $action);
 		}
 		
-		$input->setOption('type', null);
+		$input->setOption('type', $typeDump);
 	}
 	
 	private function getActionTitle($model, $type) {
@@ -226,36 +232,37 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 
 	
 	/**
-	 * Generates an action. 
+	 * Generates an action.
 	 *  
-	 * @param string $name
+	 * @param string $actionName
+	 * @param ActionSchema $action the action node from composer.json
 	 */
-	private function generateAction($name, $action) {
-		$this->logger->info('Generate Action: ' . $name);
+	private function generateAction($actionName, ActionSchema $action) {
+		$this->logger->info('Generate Action: ' . $actionName);
 		$input = $this->getInput();
 		
 		if (($title = $input->getOption('title')) !== null) {
-			$action['title'] = $title;
+			$action->setTitle($title);
 		}
 		
-		if (!isset($action['title'])) {
-			throw new \RuntimeException(sprintf('Cannot create action %s, because I am missing a title for it', $name));
+		if ($action->getTitle() === null) {
+			throw new \RuntimeException(sprintf('Cannot create action %s, because I am missing a title for it', $actionName));
 		}
 		
 		if (($classname = $input->getOption('classname')) !== null) {
-			$action['class'] = $classname;
+			$action->setClass($classname);
 		}
 		
 		// guess classname if there is none set yet
-		if (!isset($action['class'])) {
-			$action['class'] = $this->guessClassname($name);
+		if ($action->getClass() === null) {
+			$action->setClass($this->guessClassname($actionName));
 		}
 		
 		// set acl
-		$action['acl'] = $this->getAcl($action);
+		$action->setAcl($this->getAcl($action));
 		
-		$this->updateAction($name, $action);
-		$this->generateCode($name, $action);
+		// generate code
+		$this->generateCode($actionName, $action);
 	}
 	
 	private function guessClassname($name) {
@@ -263,7 +270,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		return $namespace . NameUtils::toStudlyCase($name) . 'Action';
 	}
 	
-	private function getAcl($action) {
+	private function getAcl(ActionSchema $action) {
 		$acls = [];
 		$acl = $this->getInput()->getOption('acl');
 		if ($acl !== null && count($acl) > 0) {
@@ -285,10 +292,10 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 		
 		// read default from package
-		if (isset($action['acl'])) {
-			return $action['acl'];
+		if (!$action->getAcl()->isEmpty()) {
+			return $action->getAcl()->toArray();
 		}
-		
+
 		return $acls;
 	}
 	
@@ -296,14 +303,14 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	 * Generates code for an action
 	 * 
 	 * @param string $name
-	 * @param array $action
+	 * @param ActionSchema $action
 	 */
-	private function generateCode($name, $action) {
+	private function generateCode($name, ActionSchema $action) {
 		$input = $this->getInput();
 		$trait = null;
 		
 		// class
-		$class = new PhpClass($action['class']);
+		$class = new PhpClass($action->getClass());
 		$filename = $this->getFilename($class);
 		$traitNs = $class->getNamespace() . '\\base';
 		$traitName = $class->getName() . 'Trait';
@@ -312,35 +319,33 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		// load from reflection, when class exists
 		if (file_exists($filename)) {
 			// load trait
-			$folder = $this->getSourcePath($traitNs);
-			if ($folder !== null && file_exists($folder . '/' . $traitName . '.php')) {
-				require_once($folder . '/' . $traitName . '.php');
-			}
+			$trait = new PhpTrait($traitNs . '\\' . $traitName);
+			$traitFile = new File($this->getFilename($trait));
 
+			if ($traitFile->exists()) {
+				require_once($traitFile->getPathname());
+			}
+		
 			// load class
 			require_once($filename);
-			$class = PhpClass::fromReflection(new \ReflectionClass($action['class']));
-		} 
+			$class = PhpClass::fromReflection(new \ReflectionClass($action->getClass()));
+		}
 		
-		// anyway seed required information
+		// anyway seed class information
 		else {
 			$class->addUseStatement('keeko\\core\\action\\AbstractAction');
 			$class->setParentClassName('AbstractAction');
-			$class->setDescription($action['title']);
-			$class->setLongDescription(isset($action['description']) ? $action['description'] : '');
+			$class->setDescription($action->getTitle());
+			$class->setLongDescription($action->getDescription());
 			$this->addAuthors($class, $this->getPackage());
 		}
 		
 		// create base trait
 		if ($input->getOption('model') !== null) {
-			$trait = PhpTrait::create($traitNs . '\\' . $traitName)
-				->addUseStatement('Symfony\\Component\\HttpFoundation\\Request')
-				->addUseStatement('Symfony\\Component\\HttpFoundation\\Response')
-				->setDescription('Base methods for ' . $action['title'])
-				->setLongDescription('This code is automatically created');
-			
+			$generator = GeneratorFactory::createActionTraitGenerator($this->getInput()->getOption('type'), $this->service);
+			$trait = $generator->generate($traitNs . '\\' . $traitName, $action);
+
 			$this->addAuthors($trait, $this->getPackage());
-			$this->generateModelRunMethod($trait, $name);
 			$this->dumpStruct($trait, true);
 			
 			if (!$class->hasTrait($trait)) {
@@ -359,108 +364,6 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 
 		$this->dumpStruct($class, $overwrite);
-	}
-	
-	private function generateModelRunMethod(AbstractPhpStruct $struct, $name) {
-		$loader = new \Twig_Loader_Filesystem($this->templateRoot . '/actions');
-		$twig = new \Twig_Environment($loader);
-		
-		$body = '';
-		$input = $this->getInput();
-		$module = $this->getKeekoModule();
-		$database = $this->getDatabase();
-		$model = $this->getModelNameByActionName($name);
-		$modelName = $this->getModel($model)->getPhpName();
-		
-		// add model to use statements
-		$namespace = $database->getNamespace();
-		$nsModelName = $namespace . '\\' . $modelName;
-		$struct->addUseStatement($nsModelName);
-
-		switch ($input->getOption('type')) {
-			case 'create':
-				$struct->addUseStatement('keeko\\core\\exceptions\\ValidationException');
-				$struct->addUseStatement('keeko\\core\\utils\\HydrateUtils');
-
-				$body = $twig->render('create-run.twig', [
-					'model' => $model,
-					'class' => $modelName,
-					'fields' => $this->getWriteFields($module, $model)
-				]);
-				break;
-
-			case 'read':
-				$struct->addUseStatement($nsModelName . 'Query');
-				$struct->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');
-				$struct->addUseStatement('Symfony\\Component\\OptionsResolver\\OptionsResolverInterface');
-				$struct->setMethod(PhpMethod::create('setDefaultParams')
-					->addParameter(PhpParameter::create('resolver')->setType('OptionsResolverInterface'))
-					->setBody($twig->render('read-setDefaultParams.twig'))
-				);
-
-				$body = $twig->render('read-run.twig', [
-					'model' => $model,
-					'class' => $modelName
-				]);
-				break;
-
-			case 'update':
-				$struct->addUseStatement($nsModelName . 'Query');
-				$struct->addUseStatement('keeko\\core\\exceptions\\ValidationException');
-				$struct->addUseStatement('keeko\\core\\utils\\HydrateUtils');
-				$struct->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');
-				$struct->addUseStatement('Symfony\\Component\\OptionsResolver\\OptionsResolverInterface');
-				$struct->setMethod(PhpMethod::create('setDefaultParams')
-					->addParameter(PhpParameter::create('resolver')->setType('OptionsResolverInterface'))
-					->setBody($twig->render('update-setDefaultParams.twig'))
-				);
-
-				$body = $twig->render('read-run.twig', [
-					'model' => $model,
-					'class' => $modelName,
-					'fields' => $this->getWriteFields($module, $model)
-				]);
-				break;
-
-			case 'delete':
-				$struct->addUseStatement($nsModelName . 'Query');
-				$struct->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');
-				$struct->addUseStatement('Symfony\\Component\\OptionsResolver\\OptionsResolverInterface');
-				$struct->setMethod(PhpMethod::create('setDefaultParams')
-					->addParameter(PhpParameter::create('resolver')->setType('OptionsResolverInterface'))
-					->setBody($twig->render('delete-setDefaultParams.twig'))
-				);
-
-				$body = $twig->render('delete-run.twig', [
-					'model' => $model,
-					'class' => $modelName
-				]);
-				break;
-
-			case 'list':
-				$struct->addUseStatement($nsModelName . 'Query');
-				$struct->addUseStatement('Symfony\\Component\\OptionsResolver\\OptionsResolverInterface');
-				$struct->setMethod(PhpMethod::create('setDefaultParams')
-					->addParameter(PhpParameter::create('resolver')->setType('OptionsResolverInterface'))
-					->setBody($twig->render('list-setDefaultParams.twig'))
-				);
-
-				$body = $twig->render('list-run.twig', [
-					'model' => $model,
-					'class' => $modelName
-				]);
-				break;
-		}
-		
-		$struct->setMethod($this->generateRunMethod($body));
-	}
-	
-	private function generateRunMethod($body = '') {
-		return PhpMethod::create('run')
-			->setDescription('Automatically generated run method')
-			->setType('Response')
-			->addParameter(PhpParameter::create('request')->setType('Request'))
-			->setBody($body);
 	}
 
 }

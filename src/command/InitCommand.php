@@ -5,35 +5,27 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Command\Command;
-use keeko\tools\helpers\PackageHelperTrait;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessUtils;
-use gossi\json\Json;
 use keeko\tools\helpers\QuestionHelperTrait;
 use gossi\codegen\model\PhpClass;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
-use gossi\codegen\generator\CodeGenerator;
-use Symfony\Component\Filesystem\Filesystem;
-use gossi\docblock\tags\AuthorTag;
 use gossi\docblock\Docblock;
-use gossi\docblock\tags\UnknownTag;
 use gossi\docblock\tags\LicenseTag;
-use gossi\codegen\generator\CodeFileGenerator;
-use keeko\tools\helpers\CodeGeneratorHelperTrait;
-use keeko\tools\helpers\ModelHelperTrait;
+use keeko\tools\helpers\IOServiceTrait;
+use keeko\core\schema\PackageSchema;
+use keeko\core\schema\AuthorSchema;
+use keeko\core\schema\ModuleSchema;
 
 class InitCommand extends AbstractGenerateCommand {
 	
-	use PackageHelperTrait;
 	use QuestionHelperTrait;
-	use ModelHelperTrait;
-	use CodeGeneratorHelperTrait;
-	
-	private $localPackage;
+	use IOServiceTrait;
+
 	private $gitConfig;
 
 	protected function configure() {
@@ -109,15 +101,12 @@ class InitCommand extends AbstractGenerateCommand {
 				'Allows to overwrite existing values'
 			)
 		;
+		
+		$this->configureGlobalOptions();
 	}
 
 	protected function initialize(InputInterface $input, OutputInterface $output) {
 		parent::initialize($input, $output);
-		try {
-			$this->localPackage = $this->getPackage();
-		} catch (\Exception $e) {
-			$this->localPackage = [];
-		}
 	}
 
 	protected function interact(InputInterface $input, OutputInterface $output) {
@@ -140,8 +129,9 @@ class InitCommand extends AbstractGenerateCommand {
 			$name = basename($cwd);
 			$name = preg_replace('{(?:([a-z])([A-Z])|([A-Z])([A-Z][a-z]))}', '\\1\\3-\\2\\4', $name);
 			$name = strtolower($name);
-			if (isset($this->localPackage['name'])) {
-				$name = $this->localPackage['name'];
+			$localName = $this->package->getFullName();
+			if (!empty($localName)) {
+				$name = $this->package->getFullName();
 			} else if (isset($git['github.user'])) {
 				$name = $git['github.user'] . '/' . $name;
 			} elseif (!empty($_SERVER['USERNAME'])) {
@@ -169,7 +159,7 @@ class InitCommand extends AbstractGenerateCommand {
 		}
 		
 		// asking for the author
-		if (!isset($this->localPackage['authors']) || $force) {
+		if ($this->package->getAuthors()->isEmpty() || $force) {
 			$author = $input->getOption('author');
 			if ($author === null && isset($git['user.name'])) {
 				$author = $git['user.name'];
@@ -239,7 +229,6 @@ class InitCommand extends AbstractGenerateCommand {
 
 		// -- module
 		if ($type === 'module') {
-			
 			// ask for the slug
 			$slug = $this->getPackageSlug();
 			$slug = $this->askQuestion(new Question('Slug', $slug));
@@ -253,63 +242,67 @@ class InitCommand extends AbstractGenerateCommand {
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
+		$this->generatePackage($input);
+		$this->generateCode($input);
+	}
+	
+	private function generatePackage(InputInterface $input) {
 		$force = $input->getOption('force');
 		
 		// name
-		if (!isset($this->localPackage['name']) && $input->getOption('name') === null) {
+		$localName = $this->package->getFullName();
+		if (empty($localName) && $input->getOption('name') === null) {
 			throw new \RuntimeException('No name for the package given');
 		}
 		
-		if (($force || !isset($this->localPackage['name'])) && ($name = $input->getOption('name')) !== null) {
+		if (($force || empty($localName)) && ($name = $input->getOption('name')) !== null) {
 			$this->validateName($name);
-			$this->localPackage['name'] = $name;
+			$this->package->setFullName($name);
 		}
-
+		
 		// description
 		if (($desc = $input->getOption('description')) !== null) {
-			$this->localPackage['description'] = $desc;
+			$this->package->setDescription($desc);
 		}
 		
 		// type
 		if (($type = $input->getOption('type')) !== null) {
 			if (in_array($type, ['app', 'module'])) {
-				$this->localPackage['type'] = 'keeko-' . $type;
+				$this->package->setType('keeko-' . $type);
 			}
 		}
 		
 		// license
 		if (($license = $input->getOption('license')) !== null) {
-			$this->localPackage['license'] = $license;
+			$this->package->setLicense($license);
 		}
 		
 		// author
-		if (($author = $input->getOption('author')) !== null 
-				&& (!isset($this->localPackage['authors']) || $force)) {
+		if (($author = $input->getOption('author')) !== null
+		&& ($this->package->getAuthors()->isEmpty() || $force)) {
 			list($name, $email) = sscanf($author, '%s <%s>');
-
-			$author = [];
-			if ($name !== null) {
-				$author['name'] = $name;
+		
+			$author = new AuthorSchema();
+			$author->setName($name);
+		
+			if (substr($email, -1) == '>') {
+				$email = substr($email, 0, -1);
 			}
+			$author->setEmail($email);
 				
-			if ($email !== null) {
-				if (substr($email, -1) == '>') {
-					$email = substr($email, 0, -1);
-				}
-				$author['email'] = $email;
-			}
-				
-			if (count($author)) {
-				$this->localPackage['authors'] = [$author];
-			}
+			$this->package->getAuthors()->add($author);
 		}
 		
 		// autoload
-		if (($namespace = $input->getOption('namespace')) !== null && !$this->hasAutoload()) {
+		if (!$this->hasAutoload()) {
+			$namespace = $input->getOption('namespace');
+			if ($namespace === null) {
+				$namespace = str_replace('/', '\\', $this->package->getFullName());
+			}
 			if (substr($namespace, -2) !== '\\') {
 				$namespace .= '\\';
 			}
-			$this->localPackage['autoload']['psr-4'][$namespace] = 'src';
+			$this->setAutoload($namespace);
 		}
 		
 		$this->manageDependencies();
@@ -318,138 +311,147 @@ class InitCommand extends AbstractGenerateCommand {
 		
 		// title
 		$keeko = $this->getPackageKeeko($type);
-		if (($title = $this->getPackageTitle( $type)) !== null) {
-			$keeko['title'] = $title;
+		if (($title = $this->getPackageTitle()) !== null) {
+			$keeko->setTitle($title);
 		}
 		
 		// class
-		if (($classname = $this->getPackageClass($type)) !== null) {
-			$keeko['class'] = $classname;
+		if (($classname = $this->getPackageClass()) !== null) {
+			$keeko->setClass($classname);
 		}
 		
 		// additions for keeko-module
-		if ($type === 'module') {
-			
+		if ($keeko instanceof ModuleSchema) {
 			// slug
 			if (($slug = $this->getPackageSlug()) !== null) {
 				// validate slug
 				if (strpos($slug, '.') === false && strpos($slug, '/') !== false) {
 					throw new \Exception('Slug not valid. Must contain a dot(.) and no slash.');
 				}
-				$keeko['slug'] = $slug;
+				$keeko->setSlug($slug);
 			}
-			
-			// default-action
-			if (($defaultAction = $this->getPackageDefaultAction()) !== null) {
-				$keeko['default-action'] = $defaultAction;
-			}
-		}
 
-		if ($type !== null) {
-			if (!isset($this->localPackage['extra'])) {
-				$this->localPackage['extra'] = [];
-			}
-			$this->localPackage['extra']['keeko'][$type] = $keeko;
-		}	
+			// default-action
+// 			if (($defaultAction = $this->getPackageDefaultAction()) !== null) {
+// 				$keeko->setDefaultAction($defaultAction);
+// 			}
+		}
 		
-		$this->savePackage($this->localPackage);
-		$this->generateClass($input);
+		$this->savePackage($this->package);
 	}
-	
+
 	private function manageDependencies() {
 		// add require statements
-		$require = isset($this->localPackage['require']) ? $this->localPackage['require'] : [];
-		
-		if (!isset($require['php'])) {
-			$require['php'] = '>=5.4';
-		}
-		
-		if (!isset($require['keeko/composer-installer'])) {
-			$require['keeko/composer-installer'] = '*';
+		$require = $this->package->getRequire();
+
+		if (!$require->has('php')) {
+			$require->set('php', '>=5.4');
 		}
 
-		$this->localPackage['require'] = $require;
+		if (!$require->has('keeko/composer-installer')) {
+			$require->set('keeko/composer-installer', '*');
+		}
 
 		// add require dev statements
-		$requireDev = isset($this->localPackage['require-dev']) ? $this->localPackage['require-dev'] : [];
-		$requireDev['composer/composer'] = '@dev';
-		$requireDev['keeko/core'] = 'dev-master';
-		$requireDev['propel/propel'] = '@dev';
+		$requireDev = $this->package->getRequireDev();
+		$requireDev->set('composer/composer', '@dev');
+		$requireDev->set('keeko/core', 'dev-master');
+		$requireDev->set('propel/propel', '@dev');
+	}
 
-		$this->localPackage['require-dev'] = $requireDev;
+	private function generateCode(InputInterface $input) {
+		$class = $this->generateClass($input);
+		$type = $this->getPackageType();
+
+		switch ($type) {
+			case 'app':
+				$this->handleAppClass($class);
+				break;
+				
+			case 'module':
+				$this->handleModuleClass($class);
+				break;
+		}
+		
+		$codegenService = $this->getService()->getCodeGeneratorService();
+		$codegenService->dumpStruct($class, true);
 	}
 
 	private function generateClass(InputInterface $input) {
-		if (!isset($this->localPackage['extra']) || !isset($this->package['extra']['keeko'])) {
-			return;
-		}
-		
 		$type = $this->getPackageType();
-		$fqcn = str_replace('\\', '/', $this->package['extra']['keeko'][$type]['class']);
+		$package = $this->package->getKeeko()->getKeekoPackage($type);
+		$fqcn = str_replace('\\', '/', $package->getClass());
 		$classname = basename($fqcn);
-		$filename = 'src/' . $classname . '.php';
+		$filename = $this->service->getProject()->getRootPath() . '/src/' . $classname . '.php';
 		$fqcn = str_replace('/', '\\', $fqcn);
-
+		
 		if (!file_exists($filename) || $input->getOption('force')) {
 			$class = PhpClass::create($fqcn);
-			$class->setDescription($this->package['extra']['keeko'][$type]['title']);
-			if ($type === 'module') {
-				$class->setParentClassName('AbstractModule');
-				$class->addUseStatement('keeko\\core\\module\\AbstractModule');
-			} else if ($type === 'app') {
-				$class->setParentClassName('AbstractApplication');
-				$class->addUseStatement('keeko\\core\\application\\AbstractApplication');
-			}
+			$class->setDescription($package->getTitle());
 			
 			$docblock = $class->getDocblock();
-			$docblock->appendTag(new LicenseTag($this->localPackage['license']));
-			$this->addAuthors($class, $this->localPackage);
-			
-			if ($type === 'module') {
-				$this->addModuleMethods($class);
-			} else if ($type === 'app') {
-				$this->addAppMethods($class);
-			}
-			
-			$generator = new CodeFileGenerator();
-			$code = $generator->generate($class);
-			
-			$fs = new Filesystem();
-			$fs->dumpFile($filename, $code, 0755);
-
-			$this->writeln(sprintf('Class <info>%s</info> written at <info>%s</info>', $fqcn, $filename));
-		}
-	}
-
-	private function addAppMethods(PhpClass $class) {
-		// public function run(Request $request, $path)
-		$class->setMethod(PhpMethod::create('run')
-			->addParameter(PhpParameter::create('request')->setType('Request'))
-			->addParameter(PhpParameter::create('path')->setType('string'))
-		);
-		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
-	}
-	
-	private function addModuleMethods(PhpClass $class) {
-		$class->setMethod(PhpMethod::create('install'));
-		$class->setMethod(PhpMethod::create('uninstall'));
-		$class->setMethod(PhpMethod::create('update')
-			->addParameter(PhpParameter::create('from')->setType('mixed'))
-			->addParameter(PhpParameter::create('to')->setType('mixed'))
-		);
-	}
-	
-	private function getPackageKeeko($type) {
-		$extra = isset($this->localPackage['extra']) ? $this->localPackage['extra'] : [];
-		$keeko = isset($extra['keeko']) ? $extra['keeko'] : [];
-		if (isset($keeko[$type])) {
-			$keeko = $keeko[$type];
+			$docblock->appendTag(new LicenseTag($this->package->getLicense()));
+			$codegenService = $this->getService()->getCodeGeneratorService();
+			$codegenService->addAuthors($class, $this->package);
 		} else {
-			$keeko = [];
+			require_once $filename;
+
+			$class = PhpClass::fromReflection(new \ReflectionClass($fqcn));
 		}
-		return $keeko;
+		
+		return $class;
+	}
+
+	private function handleAppClass(PhpClass $class) {
+		// set parent
+		$class->setParentClassName('AbstractApplication');
+		$class->addUseStatement('keeko\\core\\application\\AbstractApplication');
+
+		// method: run(Request $request, $path)
+		if (!$class->hasMethod('run')) {
+			$class->setMethod(PhpMethod::create('run')
+				->addParameter(PhpParameter::create('request')->setType('Request'))
+				->addParameter(PhpParameter::create('path')->setType('string'))
+			);
+			$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
+		}
 	}
 	
+	private function handleModuleClass(PhpClass $class) {
+		// set parent
+		$class->setParentClassName('AbstractModule');
+		$class->addUseStatement('keeko\\core\\module\\AbstractModule');
+		
+		// method: install()
+		if (!$class->hasMethod('install')) {
+			$class->setMethod(PhpMethod::create('install'));
+		}
+		
+		// method: uninstall()
+		if (!$class->hasMethod('uninstall')) {
+			$class->setMethod(PhpMethod::create('uninstall'));
+		}
+		
+		// method: update($from, $to)
+		if (!$class->hasMethod('update')) {
+			$class->setMethod(PhpMethod::create('update')
+				->addParameter(PhpParameter::create('from')->setType('mixed'))
+				->addParameter(PhpParameter::create('to')->setType('mixed'))
+			);
+		}
+	}
+
+	private function getPackageKeeko($type) {
+		$keeko = $this->package->getKeeko();
+		$pkg = $keeko->getKeekoPackage($type);
+		
+		if ($pkg == null) {
+			throw new \Exception(sprintf('Unknown package type <%s>', $type));
+		}
+		
+		return $pkg;
+	}
+
 	private function getPackageSlug() {
 		$type = $this->getPackageType();
 		if ($type !== 'module') {
@@ -458,41 +460,41 @@ class InitCommand extends AbstractGenerateCommand {
 
 		$input = $this->getInput();
 		$keeko = $this->getPackageKeeko('module');
+		$pkgSlug = $keeko->getSlug();
 		$slug = $input->getOption('slug');
-		$slug = $slug === null && isset($keeko['slug']) ? $keeko['slug'] : $slug;
+		$slug = $slug === null && !empty($pkgSlug) ? $pkgSlug : $slug;
 		
+		// fallback to default value
 		if ($slug === null) {
-			$package = ['name' => $input->getOption('name')];
-			if (count($this->localPackage)) {
-				$package = $this->localPackage;
-			}
-			$slug = $this->getSlug($package);
+			$slug = str_replace('/', '.', $this->package->getFullName());
 		}
 		
 		return $slug;
 	}
 	
-	private function getPackageDefaultAction() {
-		$type = $this->getPackageType();
-		if ($type !== 'module') {
-			return;
-		}
+// 	private function getPackageDefaultAction() {
+// 		$type = $this->getPackageType();
+// 		if ($type !== 'module') {
+// 			return;
+// 		}
 	
-		$input = $this->getInput();
-		$keeko = $this->getPackageKeeko('module');
-		$defaultAction = $input->getOption('default-action');
-		$defaultAction = $defaultAction === null && isset($keeko['default-action']) ? $keeko['default-action'] : $defaultAction;
+// 		$input = $this->getInput();
+// 		$keeko = $this->getPackageKeeko('module');
+// 		$defaultAction = $input->getOption('default-action');
+// 		$defaultAction = $defaultAction === null && isset($keeko['default-action']) ? $keeko['default-action'] : $defaultAction;
 	
-		return $defaultAction;
-	}
+// 		return $defaultAction;
+// 	}
 
-	private function getPackageTitle($type) {
+	private function getPackageTitle() {
 		$input = $this->getInput();
+		$type = $this->getPackageType();
 		$keeko = $this->getPackageKeeko($type);
+		$pkgTitle = $keeko->getTitle();
 		$title = $input->getOption('title');
-		$title = $title === null && isset($keeko['title']) ? $keeko['title'] : $title;
+		$title = $title === null && !empty($pkgTitle) ? $pkgTitle : $title;
 		
-		// default value
+		// fallback to default value
 		if ($title === null) {
 			$title = ucwords(str_replace('/', ' ', $input->getOption('name')));
 		}
@@ -500,68 +502,61 @@ class InitCommand extends AbstractGenerateCommand {
 		return $title;
 	}
 	
-	private function getPackageClass($type) {
+	private function getPackageClass() {
 		$input = $this->getInput();
+		$type = $this->getPackageType();
 		$keeko = $this->getPackageKeeko($type);
+		$pkgClass = $keeko->getClass();
 		$classname = $input->getOption('classname');
-		$classname = $classname === null && isset($keeko['class']) ? $keeko['class'] : $classname;
+		$classname = $classname === null && !empty($pkgClass) ? $pkgClass : $classname;
 	
 		// default value
 		if ($classname === null) {
+			$pkgName = $this->package->getFullName();
+			$parts = explode('/', $pkgName);
 			$ns = $input->getOption('namespace');
-			$parts = explode('\\', $ns);
-			if (count($parts) > 1) {
-				$classname = $ns . '\\' . ucfirst($parts[1]);
-				
-				// suffix
-				if ($type === 'module') {
-					$classname .= 'Module';
-				} else if ($type === 'app') {
-					$classname .= 'Application';
-				}
+			$namespace = !empty($ns) ? $ns : str_replace('/', '\\', $pkgName);
+			$classname = $namespace . '\\' . ucfirst($parts[1]);
+
+			// suffix
+			if ($type === 'module') {
+				$classname .= 'Module';
+			} else if ($type === 'app') {
+				$classname .= 'Application';
 			}
 		}
-	
+
 		return $classname;
 	}
 	
 	private function getPackageType() {
 		$input = $this->getInput();
 		$type = $input->getOption('type');
-		return $type === null && isset($this->localPackage['type']) 
-			? str_replace('keeko-', '', $this->localPackage['type']) 
+		$pkgType = $this->package->getType();
+		return $type === null && !empty($pkgType) 
+			? str_replace('keeko-', '', $pkgType) 
 			: $type;
 	}
 	
 	private function getPackageDescription() {
 		$input = $this->getInput();
 		$desc = $input->getOption('description');
-		return $desc === null && isset($this->localPackage['description']) 
-			? $this->localPackage['description'] 
-			: $desc;
+		$pkgDesc = $this->package->getDescription();
+		return $desc === null && !empty($pkgDesc) ? $pkgDesc : $desc;
 	}
 	
 	private function getPackageLicense() {
 		$input = $this->getInput();
 		$license = $input->getOption('license');
-		return $license === null && isset($this->localPackage['license']) 
-			? $this->localPackage['license'] 
-			: $license;
+		$pkgLicense = $this->package->getLicense();
+		return $license === null && !empty($pkgLicense) ? $pkgLicense : $license;
 	}
 	
 	private function hasAutoload() {
-		return isset($this->localPackage['autoload']) 
-			&& ((isset($this->localPackage['autload']['psr-0']) 
-					&& (in_array('src', $this->localPackage['autload']['psr-0']) 
-						|| in_array('src/', $this->localPackage['autload']['psr-0'])
-					)
-				)
-				|| (isset($this->localPackage['autload']['psr-4']) 
-					&& (in_array('src', $this->localPackage['autload']['psr-4']) 
-						|| in_array('src/', $this->localPackage['autload']['psr-4'])
-					)
-				)
-			);
+		$psr4 = $this->package->getAutoload()->getPsr4();
+		$psr0 = $this->package->getAutoload()->getPsr0();
+
+		return $psr4->searchPath('src') || $psr0->searchPath('src');
 	}
 	
 	private function validateName($name) {
@@ -573,50 +568,13 @@ class InitCommand extends AbstractGenerateCommand {
 	}
 	
 	private function setAutoload($namespace) {
-		if (!isset($this->localPackage['autoload'])) {
-			$this->localPackage['autoload'] = [];
-		}
-	
-		$autoload = $this->localPackage['autoload'];
-		$psr4 = [];
-		$psr0 = [];
-	
-		if (isset($autoload['psr-4'])) {
-			$psr4 = $autoload['psr-4'];
-		}
-	
-		if (isset($autoload['psr-0'])) {
-			$psr0 = $autoload['psr-0'];
-		}
-	
-		// check if src/ is in $psr4
-		foreach ($psr4 as $ns => $path) {
-			if ($path === 'src' || $path === 'src/') {
-				unset($psr4[$ns]);
-				break;
-			}
-		}
-	
-		// check if src/ is in $psr0
-		foreach ($psr0 as $ns => $path) {
-			if ($path === 'src' || $path === 'src/') {
-				echo 'unset ' . $ns . ' on psr0';
-				unset($psr0[$ns]);
-				break;
-			}
-		}
-	
+		$autoload = $this->package->getAutoload();
+		
+		// remove existing src/ entry
+		$autoload->removePath('src');
+		
 		// add src/ to psr4
-		$psr4[$namespace] = 'src';
-	
-		$autoload['psr-4'] = $psr4;
-		$autoload['psr-0'] = $psr0;
-	
-		if (count($psr0) == 0) {
-			unset($autoload['psr-0']);
-		}
-	
-		$this->localPackage['autoload'] = $autoload;
+		$autoload->getPsr4()->addPath($namespace, 'src/');
 	}
 	
 	protected function getGitConfig() {

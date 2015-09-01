@@ -1,36 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <buildpath>
 	<buildpathentry kind="src" path="vendor/symfony/validator"/>
+	<buildpathentry kind="src" path="vendor/phpunit/php-timer/src"/>
 	<buildpathentry kind="src" path="vendor/keeko/composer-installer/src"/>
-	<buildpathentry kind="src" path="vendor/seld/jsonlint/src/Seld/JsonLint"/>
+	<buildpathentry kind="src" path="vendor/seld/cli-prompt/src"/>
+	<buildpathentry kind="src" path="vendor/phootwork/json/src"/>
 	<buildpathentry kind="src" path="vendor/ircmaxell/password-compat/lib"/>
 	<buildpathentry kind="src" path="vendor/symfony/translation"/>
-	<buildpathentry kind="src" path="vendor/symfony/event-dispatcher"/>
-	<buildpathentry kind="src" path="src"/>
+	<buildpathentry kind="src" path="vendor/seld/jsonlint/src/Seld/JsonLint"/>
+	<buildpathentry kind="src" path="vendor/symfony/http-foundation/Resources/stubs"/>
 	<buildpathentry kind="src" path="vendor/composer/composer/src"/>
-	<buildpathentry kind="src" path="core/database"/>
-	<buildpathentry kind="src" path="core/vendor"/>
-	<buildpathentry kind="con" path="org.eclipse.php.core.LANGUAGE"/>
+	<buildpathentry kind="src" path="src"/>
+	<buildpathentry kind="src" path="vendor/symfony/event-dispatcher"/>
+	<buildpathentry kind="src" path="vendor/phpspec/prophecy/src"/>
 	<buildpathentry kind="src" path="vendor/symfony/yaml"/>
+	<buildpathentry kind="con" path="org.eclipse.php.core.LANGUAGE"/>
+	<buildpathentry kind="src" path="vendor/phpdocumentor/reflection-docblock/src"/>
+	<buildpathentry kind="src" path="vendor/sebastian/exporter/src"/>
+	<buildpathentry kind="src" path="vendor/phpunit/php-text-template/src"/>
 	<buildpathentry kind="src" path="vendor/symfony/process"/>
-	<buildpathentry kind="src" path="vendor/gossi/collection/src"/>
-	<buildpathentry kind="src" path="vendor/symfony/http-foundation/Symfony/Component/HttpFoundation/Resources/stubs"/>
-	<buildpathentry kind="src" path="vendor/gossi/json/src"/>
-	<buildpathentry kind="src" path="vendor/symfony/routing"/>
+	<buildpathentry kind="src" path="vendor/kriswallsmith/assetic/src"/>
+	<buildpathentry kind="src" path="vendor/sebastian/recursion-context/src"/>
+	<buildpathentry kind="src" path="vendor/doctrine/instantiator/src/Doctrine/Instantiator"/>
+	<buildpathentry excluding="Resources/stubs/" kind="src" path="vendor/symfony/http-foundation"/>
 	<buildpathentry kind="src" path="templates"/>
-	<buildpathentry excluding="Symfony/Component/HttpFoundation/Resources/stubs/" kind="src" path="vendor/symfony/http-foundation"/>
+	<buildpathentry kind="src" path="vendor/symfony/routing"/>
+	<buildpathentry kind="src" path="vendor/composer/spdx-licenses/src"/>
+	<buildpathentry kind="src" path="vendor/mikey179/vfsStream/src/main/php"/>
+	<buildpathentry kind="src" path="vendor/sebastian/comparator/src"/>
+	<buildpathentry kind="src" path="vendor/phpunit/phpunit-mock-objects/src"/>
 	<buildpathentry kind="src" path="vendor/propel/propel/src"/>
 	<buildpathentry excluding="Symfony/Component/Console/Tests/" kind="src" path="vendor/symfony/console"/>
-	<buildpathentry kind="src" path="vendor/gossi/common/src"/>
+	<buildpathentry kind="src" path="vendor/phootwork/collection/src"/>
+	<buildpathentry kind="src" path="vendor/monolog/monolog/src/Monolog"/>
+	<buildpathentry kind="src" path="vendor/phootwork/file/src"/>
+	<buildpathentry kind="src" path="core/src"/>
+	<buildpathentry kind="src" path="vendor/sebastian/version/src"/>
+	<buildpathentry kind="src" path="tests"/>
 	<buildpathentry kind="src" path="vendor/gossi/docblock/src"/>
+	<buildpathentry kind="src" path="vendor/phpunit/php-token-stream/src"/>
+	<buildpathentry kind="src" path="vendor/sebastian/environment/src"/>
+	<buildpathentry kind="src" path="vendor/phpunit/phpunit/src"/>
+	<buildpathentry kind="src" path="vendor/phpunit/php-file-iterator/src"/>
 	<buildpathentry kind="src" path="vendor/psr/log"/>
+	<buildpathentry kind="src" path="vendor/sebastian/diff/src"/>
+	<buildpathentry kind="src" path="vendor/seld/phar-utils/src"/>
 	<buildpathentry kind="src" path="vendor/symfony/finder"/>
 	<buildpathentry kind="src" path="vendor/justinrainbow/json-schema/src"/>
-	<buildpathentry kind="src" path="vendor/symfony/filesystem"/>
+	<buildpathentry kind="src" path="vendor/sebastian/global-state/src"/>
 	<buildpathentry kind="src" path="vendor/symfony/options-resolver"/>
 	<buildpathentry kind="src" path="vendor/twig/twig/lib"/>
+	<buildpathentry kind="src" path="vendor/symfony/filesystem"/>
 	<buildpathentry kind="src" path="vendor/gossi/php-code-generator/src"/>
-	<buildpathentry kind="src" path="vendor/gossi/tokenizer/src"/>
-	<buildpathentry excluding="composer/" kind="src" path="vendor/composer"/>
+	<buildpathentry kind="src" path="vendor/phootwork/tokenizer/src"/>
+	<buildpathentry kind="src" path="vendor/phootwork/lang/src"/>
+	<buildpathentry kind="src" path="vendor/phpunit/php-code-coverage/src"/>
+	<buildpathentry excluding="composer/|spdx-licenses/" kind="src" path="vendor/composer"/>
 	<buildpathentry kind="src" path="vendor/symfony/config"/>
 </buildpath>

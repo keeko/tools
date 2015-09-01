@@ -3,6 +3,7 @@ namespace keeko\tools\helpers;
 
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+
 /**
  * Helper for questions
  * 
@@ -32,18 +33,14 @@ trait QuestionHelperTrait {
 	 */
 	abstract protected function getHelperSet();
 	
-	abstract protected function getInput();
-	
-	abstract protected function getOutput();
-	
 	private $dialog;
 	
 	private function ask(Question $question) {
 		if ($this->dialog === null) {
 			$this->dialog = $this->getHelperSet()->get('question');
 		}
-		$input = $this->getInput();
-		$output = $this->getOutput();
+		$input = $this->getHelperSet()->get('io')->getInput();
+		$output = $this->getHelperSet()->get('io')->getOutput();
 		return $this->dialog->ask($input, $output, $question);
 	}
 	

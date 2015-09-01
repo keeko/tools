@@ -20,40 +20,83 @@ use gossi\codegen\generator\CodeGenerator;
 use gossi\codegen\model\PhpClass;
 use gossi\codegen\model\AbstractPhpStruct;
 use keeko\tools\helpers\IOHelper;
-use keeko\tools\helpers\BaseHelperTrait;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Psr\Log\LogLevel;
+use keeko\tools\services\CommandService;
+use keeko\tools\services\IOService;
+use keeko\tools\model\Project;
+use keeko\core\schema\PackageSchema;
+use keeko\tools\helpers\PackageServiceTrait;
+use keeko\tools\helpers\IOServiceTrait;
 
 abstract class AbstractGenerateCommand extends Command {
 
-	use BaseHelperTrait;
+	use PackageServiceTrait;
+	use IOServiceTrait;
 	
 	protected $templateRoot;
 	protected $logger;
+	protected $service;
+
+	/** @var Project */
+	protected $project;
 
 	public function __construct($name = null) {
 		parent::__construct($name);
-		
-		$this->templateRoot = __DIR__ . '/../../templates';
 	}
-	 
+
 	/* (non-PHPdoc)
 	 * @see \Symfony\Component\Console\Command\Command::initialize()
 	 */
 	protected function initialize(InputInterface $input, OutputInterface $output) {
+		// io
 		$io = new IOHelper();
 		$io->setInput($input);
 		$io->setOutput($output);
 		$this->getHelperSet()->set($io);
+	
+		// services
+		$this->service = new CommandService($this);
+		$this->project = $this->service->getProject();
+		$this->package = $this->service->getPackageService()->getPackage();
 		
+		// logger
 		$this->logger = new ConsoleLogger($output, [
 			LogLevel::NOTICE => OutputInterface::VERBOSITY_VERBOSE,
 			LogLevel::INFO   => OutputInterface::VERBOSITY_VERBOSE,
 		]);
 	}
 
+	/**
+	 * @return CommandService
+	 */
+	protected function getService() {
+		return $this->service;
+	}
+
 
 	protected function configure() {
+// 		$this
+// 			->addOption(
+// 				'schema',
+// 				's',
+// 				InputOption::VALUE_OPTIONAL,
+// 				'Path to the database schema (if ommited, database/schema.xml is used)',
+// 				null
+// 			)
+// 			->addOption(
+// 				'force',
+// 				'f',
+// 				InputOption::VALUE_OPTIONAL,
+// 				'Forces to owerwrite',
+// 				false
+// 			)
+// 		;
+		
+		$this->configureGlobalOptions();
+	}
+	
+	protected function configureGenerateOptions() {
 		$this
 			->addOption(
 				'schema',
@@ -62,20 +105,18 @@ abstract class AbstractGenerateCommand extends Command {
 				'Path to the database schema (if ommited, database/schema.xml is used)',
 				null
 			)
+		;
+	}
+	
+	protected function configureGlobalOptions() {
+		$this
 			->addOption(
-				'composer',
-				'',
+				'workdir',
+				'w',
 				InputOption::VALUE_OPTIONAL,
-				'Path to the composer.json (if ommited, composer.json from the current directory is used)',
+				'Specify the working directory (if ommited, current working directory is used)',
 				null
 			)
-// 			->addOption(
-// 				'force',
-// 				'f',
-// 				InputOption::VALUE_OPTIONAL,
-// 				'Forces to owerwrite',
-// 				false
-// 			)
 		;
 	}
 	

@@ -1,42 +1,44 @@
 <?php
-namespace keeko\tools\helpers;
+namespace keeko\tools\services;
 
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Propel\Generator\Util\QuickBuilder;
-use Propel\Generator\Model\Database;
+use phootwork\collection\ArrayList;
 use Propel\Generator\Model\Table;
+use Propel\Generator\Model\Database;
+use Propel\Generator\Util\QuickBuilder;
+use phootwork\lang\Text;
+use keeko\core\schema\ActionSchema;
 
-trait ModelHelperTrait {
+class ModelService extends AbstractService {
 
 	private $models = null;
 	private $schema = null;
 	private $namespace = null;
-
+	
 	/** @var Database */
 	private $database = null;
 	
-	abstract protected function getPackage();
-	
-	abstract protected function getPackageVendor();
+	public function __construct(CommandService $service) {
+		parent::__construct($service);
+	}
 	
 	/**
 	 * Returns the propel schema. The three locations, where the schema is looked up in:
-	 * 
+	 *
 	 * 1. --schema option (if available)
 	 * 2. database/schema.xml
 	 * 3. core/database/schema.xml
-	 * 
+	 *
 	 * @throws \RuntimeException
 	 * @return string the path to the schema
 	 */
-	protected function getSchema() {
+	public function getSchema() {
 		if ($this->schema === null) {
+			$workDir = $this->service->getProject()->getRootPath();
 			$schema = null;
 			$schemas = [
-				$this->getInput()->hasOption('schema') ? $this->getInput()->getOption('schema') : '',
-				getcwd() . '/database/schema.xml',
-				getcwd() . '/core/database/schema.xml'
+					$this->getInput()->hasOption('schema') ? $this->getInput()->getOption('schema') : '',
+					$workDir . '/database/schema.xml',
+					$workDir . '/core/database/schema.xml'
 			];
 			foreach ($schemas as $path) {
 				if (file_exists($path)) {
@@ -45,7 +47,7 @@ trait ModelHelperTrait {
 				}
 			}
 			$this->schema = $schema;
-			
+				
 			if ($schema === null) {
 				$locations = implode(', ', $schemas);
 				throw new \RuntimeException(sprintf('Can\'t find schema in these locations: %s', $locations));
@@ -55,105 +57,118 @@ trait ModelHelperTrait {
 		return $this->schema;
 	}
 	
-	protected function isCoreSchema() {
+	public function isCoreSchema() {
 		return strpos($this->getSchema(), 'core') !== false;
 	}
 	
-	protected function hasSchema() {
-		return $this->getSchema() !== null && ($this->isCoreSchema() ? $this->getPackageVendor() == 'keeko' : true);
+	public function hasSchema() {
+		$vendorName = $this->service->getPackageService()->getVendorName();
+		return $this->getSchema() !== null && ($this->isCoreSchema() ? $vendorName == 'keeko' : true);
 	}
 	
 	/**
 	 * Returns the propel database
-	 * 
+	 *
 	 * @return Database
 	 */
-	protected function getDatabase() {
+	public function getDatabase() {
 		if ($this->database === null) {
 			$builder = new QuickBuilder();
 			$builder->setSchema(file_get_contents($this->getSchema()));
 			$this->database = $builder->getDatabase();
 		}
-
+	
 		return $this->database;
 	}
 	
 	/**
-	 * Returns all model names
-	 * 
-	 * @return String[]
+	 * Returns the tableName for a given name
+	 *
+	 * @param String $name tableName or modelName
+	 * @return String tableName
 	 */
-	protected function getModelNames() {
+	public function getTableName($name) {
+		$db = $this->getDatabase();
+		if (!Text::create($name)->startsWith($db->getTablePrefix())) {
+			$name = $db->getTablePrefix() . $name;
+		}
+	
+		return $name;
+	}
+	
+	/**
+	 * Returns all model names
+	 *
+	 * @return String[] an array of modelName
+	 */
+	public function getModelNames() {
 		$names = [];
 		$database = $this->getDatabase();
 		foreach ($database->getTables() as $table) {
 			$names[] = $table->getOriginCommonName();
 		}
-		
+	
 		return $names;
 	}
 	
 	/**
 	 * Returns the propel models from the database, where table namespace matches package namespace
-	 * 
-	 * @return Table[]
+	 *
+	 * @return ArrayList<Table>
 	 */
-	protected function getModels() {
+	public function getModels() {
 		if ($this->models === null) {
 			$namespace = str_replace('\\\\', '\\', $this->getRootNamespace() . '\\model');
 			$propel = $this->getDatabase();
-		
-			$this->models = [];
-				
+	
+			$this->models = new ArrayList();
+	
 			foreach ($propel->getTables() as $table) {
 				if (!$table->isCrossRef() && $table->getNamespace() == $namespace) {
-					$this->models[] = $table;
+					$this->models->add($table);
 				}
 			}
 		}
-
+	
 		return $this->models;
 	}
-	
+
 	/**
 	 * Returns the model for the given name
-	 * 
-	 * @param String $name
+	 *
+	 * @param String $name modelName or tableName
 	 * @return Table
 	 */
-	protected function getModel($name) {
+	public function getModel($name) {
+		$tableName = $this->getTableName($name);
 		$db = $this->getDatabase();
-		$table = $db->getTable($name);
-		
-		if ($table === null) {
-			$table = $db->getTable($db->getTablePrefix() . $name); 
-		}
-
+		$table = $db->getTable($tableName);
+	
 		return $table;
 	}
 	
 	/**
 	 * Checks whether the given model exists
 	 *
-	 * @param String $name
+	 * @param String $name tableName or modelName
 	 * @return boolean
 	 */
-	protected function hasModel($name) {
-		return $this->getDatabase()->hasTable($name);
+	public function hasModel($name) {
+		return $this->getDatabase()->hasTable($this->getTableName($name), true);
 	}
 
 	/**
 	 * Returns the root namespace for this package
-	 * 
+	 *
 	 * @return string the namespace
 	 */
-	protected function getRootNamespace() {
+	public function getRootNamespace() {
 		if ($this->namespace === null) {
-			$ns = $this->getInput()->hasOption('namespace') 
-				? $this->getInput()->getOption('namespace') 
-				: null;
+			$ns = $this->getInput()->hasOption('namespace')
+			? $this->getInput()->getOption('namespace')
+			: null;
 			if ($ns === null) {
-				$package = $this->getPackage();
+				$package = $this->service->getPackageService()->getPackage();
 					
 				if (!isset($package['autoload'])) {
 					throw new \DomainException(sprintf('No autoload for %s.', $package['name']));
@@ -170,36 +185,42 @@ trait ModelHelperTrait {
 					}
 				}
 			}
-			
+				
 			$this->namespace = $ns;
 		}
 	
 		return $this->namespace;
 	}
-	
+
 	/**
-	 * 
+	 * Retrieves the model name for the given package
+	 *
 	 * @return String
 	 */
-	protected function getModelName() {
+	public function getModelName() {
 		$model = $this->getInput()->hasOption('model') ? $this->getInput()->getOption('model') : null;
 		if ($model === null) {
 			$schema = $this->getSchema();
 			if (strpos($schema, 'core') !== false) {
-				$package = $this->getPackage();
+				$package = $this->service->getPackageService()->getPackage();
 				$name = substr($package['name'], strpos($package['name'], '/') + 1);
 	
-				$propel = $this->getDatabase();
-				if ($propel->hasTable($name)) {
+				if ($this->hasModel($name)) {
 					$model = $name;
 				}
 			}
 		}
 		return $model;
 	}
-
 	
-	protected function getModelNameByActionName($name) {
+	/**
+	 * Parses the model name from a given action name
+	 *
+	 * @param ActionSchema $action
+	 * @return String modelName
+	 */
+	public function getModelNameByAction(ActionSchema $action) {
+		$name = $action->getName();
 		$model = $this->getModelName();
 		if ($model === null && ($pos = strpos($name, '-')) !== false) {
 			$model = substr($name, 0, $pos);
@@ -207,4 +228,17 @@ trait ModelHelperTrait {
 		return $model;
 	}
 
+	/**
+	 * Returns the full model object name, including namespace
+	 * 
+	 * @param ActionSchema $action
+	 * @return String fullModelObjectName
+	 */
+	public function getFullModelObjectName(ActionSchema $action) {
+		$database = $this->getDatabase();
+		$model = $this->getModel($action->getName());
+		$modelObjectName = $model->getPhpName();
+
+		return $database->getNamespace() . '\\' . $modelObjectName;
+	}
 }

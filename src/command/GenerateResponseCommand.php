@@ -15,20 +15,17 @@ use gossi\codegen\model\PhpClass;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
 use gossi\codegen\generator\CodeGenerator;
-use keeko\tools\helpers\BaseHelperTrait;
-use keeko\tools\helpers\PackageHelperTrait;
-use keeko\tools\helpers\ModelHelperTrait;
-use keeko\tools\helpers\CodeGeneratorHelperTrait;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use keeko\tools\helpers\QuestionHelperTrait;
 use Symfony\Component\Console\Question\Question;
+use keeko\tools\helpers\PackageServiceTrait;
+use keeko\tools\helpers\ModelServiceTrait;
+use keeko\tools\helpers\CodeGeneratorServiceTrait;
 
 class GenerateResponseCommand extends AbstractGenerateCommand {
 
-	use BaseHelperTrait;
-	use PackageHelperTrait;
-	use ModelHelperTrait;
-	use CodeGeneratorHelperTrait;
+	use ModelServiceTrait;
+	use CodeGeneratorServiceTrait;
 	use QuestionHelperTrait;
 	
 	protected $abstracts = [];

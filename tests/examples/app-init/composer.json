@@ -1,0 +1,33 @@
+{
+	"name": "keeko/test",
+	"description": "Test description",
+	"type": "keeko-app",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Tester"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"keeko\\test\\": "src/"
+		}
+	},
+	"require": {
+		"php": ">=5.4",
+		"keeko/composer-installer": "*"
+	},
+	"require-dev": {
+		"composer/composer": "@dev",
+		"keeko/core": "dev-master",
+		"propel/propel": "@dev"
+	},
+	"extra": {
+		"keeko": {
+			"app": {
+				"title": "Test Package",
+				"class": "keeko\\test\\TestApplication"
+			}
+		}
+	}
+}
