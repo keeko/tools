@@ -1,5 +1,9 @@
 # Keeko CLI Tools
 
+[![Build Status](https://travis-ci.org/keeko/tools.svg?branch=master)](https://travis-ci.org/keeko/tools)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/keeko/tools/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/keeko/tools)
+[![Code Coverage](https://scrutinizer-ci.com/g/keeko/tools/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/keeko/tools)
+
 Keeko command line tools.
 
 ## Installation
