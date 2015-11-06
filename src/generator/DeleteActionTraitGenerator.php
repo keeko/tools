@@ -5,16 +5,18 @@ use gossi\codegen\model\PhpTrait;
 use keeko\core\schema\ActionSchema;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
+use keeko\tools\utils\NameUtils;
 
-class DeleteActionTraitGenerator extends AbstractTraitGenerator {
+class DeleteActionTraitGenerator extends AbstractActionGenerator {
 
 	/* (non-PHPdoc)
 	 * @see \keeko\tools\generator\AbstractTraitGenerator::addMethods()
 	 */
 	protected function addMethods(PhpTrait $trait, ActionSchema $action) {
-		$modelName = $this->getModelNameByAction($action);
-		$model = $this->getModel($modelName);
-		$fullModelObjectName = $this->getFullModelObjectName($action);
+		$modelName = $this->modelService->getModelNameByAction($action);
+		$modelVariableName = NameUtils::toCamelCase($modelName);
+		$modelObjectName = NameUtils::toStudlyCase($modelName);
+		$fullModelObjectName = $this->modelService->getFullModelObjectName($action);
 
 		// method: setDefaultParams(OptionsResolverInterface $resolver)
 		$this->addSetDefaultParamsMethod($trait, $this->twig->render('delete-setDefaultParams.twig'));
@@ -24,8 +26,8 @@ class DeleteActionTraitGenerator extends AbstractTraitGenerator {
 		$trait->addUseStatement($fullModelObjectName . 'Query');
 		$trait->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');
 		$trait->setMethod($this->generateRunMethod($this->twig->render('delete-run.twig', [
-			'model' => $model,
-			'class' => $modelName
+			'model' => $modelVariableName,
+			'class' => $modelObjectName
 		])));
 	}
 

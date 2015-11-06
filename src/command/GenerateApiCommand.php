@@ -8,9 +8,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Command\Command;
 use Propel\Generator\Model\Table;
 use Propel\Generator\Model\Database;
-use keeko\tools\helpers\PackageServiceTrait;
-use keeko\tools\helpers\ModelServiceTrait;
-use keeko\tools\helpers\CodeGeneratorServiceTrait;
 use phootwork\json\Json;
 use phootwork\json\JsonException;
 use keeko\tools\exceptions\JsonEmptyException;
@@ -18,8 +15,6 @@ use Symfony\Component\Filesystem\Filesystem;
 
 class GenerateApiCommand extends AbstractGenerateCommand {
 
-	use ModelServiceTrait;
-	use CodeGeneratorServiceTrait;
 	
 	protected function configure() {
 		$this

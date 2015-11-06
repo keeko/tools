@@ -18,14 +18,9 @@ use gossi\codegen\generator\CodeGenerator;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use keeko\tools\helpers\QuestionHelperTrait;
 use Symfony\Component\Console\Question\Question;
-use keeko\tools\helpers\PackageServiceTrait;
-use keeko\tools\helpers\ModelServiceTrait;
-use keeko\tools\helpers\CodeGeneratorServiceTrait;
 
 class GenerateResponseCommand extends AbstractGenerateCommand {
 
-	use ModelServiceTrait;
-	use CodeGeneratorServiceTrait;
 	use QuestionHelperTrait;
 	
 	protected $abstracts = [];

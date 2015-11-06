@@ -1,15 +1,6 @@
 <?php
 namespace keeko\tools\tests;
 
-use keeko\tools\KeekoTools;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\NullOutput;
-use Symfony\Component\Console\Output\OutputInterface;
-use org\bovigo\vfs\vfsStream;
-use org\bovigo\vfs\vfsStreamDirectory;
-use phootwork\file\File;
-use keeko\core\schema\PackageSchema;
-
 class InitCommandTest extends AbstractCommandTestCase {
 	
 	public function testBlankInitApp() {
@@ -39,10 +30,10 @@ class InitCommandTest extends AbstractCommandTestCase {
 		
 		// compare files
 		// source code
-		$this->assertEqualsFixture('app-init/TestApplication.php', $this->root->getChild('src/TestApplication.php')->url());
+		$this->assertEqualsExample('app-init/src/TestApplication.php', $this->root->getChild('src/TestApplication.php')->url());
 		
 		// composer.json
-		$this->assertEqualsFixture('app-init/composer.json', $this->root->getChild('composer.json')->url());
+		$this->assertEqualsExample('app-init/composer.json', $this->root->getChild('composer.json')->url());
 	}
 
 	public function testBlankInitModule() {
@@ -71,13 +62,13 @@ class InitCommandTest extends AbstractCommandTestCase {
 		$this->assertEquals('Keeko User Module', $module->getTitle());
 		$this->assertEquals('keeko\\user\\UserModule', $module->getClass());
 		$this->assertEquals('user', $module->getSlug());
-		
+
 		// compare files
 		// source code
-		$this->assertEqualsFixture('module-init/UserModule.php', $this->root->getChild('src/UserModule.php')->url());
-		
+		$this->assertEqualsExample('module-init/src/UserModule.php', $this->root->getChild('src/UserModule.php')->url());
+
 		// composer.json
-		$this->assertEqualsFixture('module-init/composer.json', $this->root->getChild('composer.json')->url());
+		$this->assertEqualsExample('module-init/composer.json', $this->root->getChild('composer.json')->url());
 	}
 
 	public function testNamespaceOption() {

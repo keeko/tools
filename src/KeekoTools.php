@@ -52,5 +52,4 @@ class KeekoTools extends Application {
 	public function getDispatcher() {
 		return $this->keekoDispatcher;
 	}
-
 }

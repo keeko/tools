@@ -3,16 +3,18 @@ namespace keeko\tools\generator;
 
 use gossi\codegen\model\PhpTrait;
 use keeko\core\schema\ActionSchema;
+use keeko\tools\utils\NameUtils;
 
-class UpdateActionTraitGenerator extends AbstractTraitGenerator {
+class UpdateActionTraitGenerator extends AbstractActionGenerator {
 
 	/* (non-PHPdoc)
 	 * @see \keeko\tools\generator\AbstractTraitGenerator::addMethods()
 	 */
 	protected function addMethods(PhpTrait $trait, ActionSchema $action) {
-		$modelName = $this->getModelNameByAction($action);
-		$model = $this->getModel($modelName);
-		$fullModelObjectName = $this->getFullModelObjectName($action);
+		$modelName = $this->modelService->getModelNameByAction($action);
+		$modelVariableName = NameUtils::toCamelCase($modelName);
+		$modelObjectName = NameUtils::toStudlyCase($modelName);
+		$fullModelObjectName = $this->modelService->getFullModelObjectName($action);
 	
 		// method: setDefaultParams(OptionsResolverInterface $resolver)
 		$this->addSetDefaultParamsMethod($trait, $this->twig->render('update-setDefaultParams.twig'));
@@ -24,9 +26,9 @@ class UpdateActionTraitGenerator extends AbstractTraitGenerator {
 		$trait->addUseStatement('keeko\\core\\utils\\HydrateUtils');
 		$trait->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');
 		$trait->setMethod($this->generateRunMethod($this->twig->render('update-run.twig', [
-			'model' => $model,
-			'class' => $modelName,
-			'fields' => $this->getWriteFields($modelName)
+			'model' => $modelVariableName,
+			'class' => $modelObjectName,
+			'fields' => $this->codegenService->getWriteFields($modelName)
 		])));
 	}
 }

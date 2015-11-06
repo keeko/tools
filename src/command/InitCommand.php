@@ -16,7 +16,6 @@ use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
 use gossi\docblock\Docblock;
 use gossi\docblock\tags\LicenseTag;
-use keeko\tools\helpers\IOServiceTrait;
 use keeko\core\schema\PackageSchema;
 use keeko\core\schema\AuthorSchema;
 use keeko\core\schema\ModuleSchema;
@@ -24,7 +23,6 @@ use keeko\core\schema\ModuleSchema;
 class InitCommand extends AbstractGenerateCommand {
 	
 	use QuestionHelperTrait;
-	use IOServiceTrait;
 
 	private $gitConfig;
 
@@ -310,7 +308,7 @@ class InitCommand extends AbstractGenerateCommand {
 		// KEEKO
 		
 		// title
-		$keeko = $this->getPackageKeeko($type);
+		$keeko = $this->packageService->getKeeko()->getKeekoPackage($type);
 		if (($title = $this->getPackageTitle()) !== null) {
 			$keeko->setTitle($title);
 		}
@@ -337,7 +335,7 @@ class InitCommand extends AbstractGenerateCommand {
 // 			}
 		}
 		
-		$this->savePackage($this->package);
+		$this->packageService->savePackage($this->package);
 	}
 
 	private function manageDependencies() {
@@ -372,9 +370,8 @@ class InitCommand extends AbstractGenerateCommand {
 				$this->handleModuleClass($class);
 				break;
 		}
-		
-		$codegenService = $this->getService()->getCodeGeneratorService();
-		$codegenService->dumpStruct($class, true);
+
+		$this->codegenService->dumpStruct($class, true);
 	}
 
 	private function generateClass(InputInterface $input) {
@@ -382,7 +379,7 @@ class InitCommand extends AbstractGenerateCommand {
 		$package = $this->package->getKeeko()->getKeekoPackage($type);
 		$fqcn = str_replace('\\', '/', $package->getClass());
 		$classname = basename($fqcn);
-		$filename = $this->service->getProject()->getRootPath() . '/src/' . $classname . '.php';
+		$filename = $this->project->getRootPath() . '/src/' . $classname . '.php';
 		$fqcn = str_replace('/', '\\', $fqcn);
 		
 		if (!file_exists($filename) || $input->getOption('force')) {
@@ -391,8 +388,7 @@ class InitCommand extends AbstractGenerateCommand {
 			
 			$docblock = $class->getDocblock();
 			$docblock->appendTag(new LicenseTag($this->package->getLicense()));
-			$codegenService = $this->getService()->getCodeGeneratorService();
-			$codegenService->addAuthors($class, $this->package);
+			$this->codegenService->addAuthors($class, $this->package);
 		} else {
 			require_once $filename;
 
@@ -458,7 +454,7 @@ class InitCommand extends AbstractGenerateCommand {
 			return;
 		}
 
-		$input = $this->getInput();
+		$input = $this->io->getInput();
 		$keeko = $this->getPackageKeeko('module');
 		$pkgSlug = $keeko->getSlug();
 		$slug = $input->getOption('slug');
@@ -487,7 +483,7 @@ class InitCommand extends AbstractGenerateCommand {
 // 	}
 
 	private function getPackageTitle() {
-		$input = $this->getInput();
+		$input = $this->io->getInput();
 		$type = $this->getPackageType();
 		$keeko = $this->getPackageKeeko($type);
 		$pkgTitle = $keeko->getTitle();
@@ -503,7 +499,7 @@ class InitCommand extends AbstractGenerateCommand {
 	}
 	
 	private function getPackageClass() {
-		$input = $this->getInput();
+		$input = $this->io->getInput();
 		$type = $this->getPackageType();
 		$keeko = $this->getPackageKeeko($type);
 		$pkgClass = $keeko->getClass();
@@ -530,7 +526,7 @@ class InitCommand extends AbstractGenerateCommand {
 	}
 	
 	private function getPackageType() {
-		$input = $this->getInput();
+		$input = $this->io->getInput();
 		$type = $input->getOption('type');
 		$pkgType = $this->package->getType();
 		return $type === null && !empty($pkgType) 
@@ -539,14 +535,14 @@ class InitCommand extends AbstractGenerateCommand {
 	}
 	
 	private function getPackageDescription() {
-		$input = $this->getInput();
+		$input = $this->io->getInput();
 		$desc = $input->getOption('description');
 		$pkgDesc = $this->package->getDescription();
 		return $desc === null && !empty($pkgDesc) ? $pkgDesc : $desc;
 	}
 	
 	private function getPackageLicense() {
-		$input = $this->getInput();
+		$input = $this->io->getInput();
 		$license = $input->getOption('license');
 		$pkgLicense = $this->package->getLicense();
 		return $license === null && !empty($pkgLicense) ? $pkgLicense : $license;

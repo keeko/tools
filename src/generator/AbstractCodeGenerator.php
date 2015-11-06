@@ -4,31 +4,28 @@ namespace keeko\tools\generator;
 use gossi\codegen\model\PhpTrait;
 use keeko\core\schema\ActionSchema;
 use keeko\tools\services\CommandService;
-use keeko\tools\helpers\IOServiceTrait;
-use keeko\tools\helpers\ModelServiceTrait;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
-use keeko\tools\helpers\CodeGeneratorServiceTrait;
+use keeko\tools\helpers\ServiceLoaderTrait;
 
-abstract class AbstractTraitGenerator {
+abstract class AbstractCodeGenerator {
 	
-	use IOServiceTrait;
-	use ModelServiceTrait;
-	use CodeGeneratorServiceTrait;
+	use ServiceLoaderTrait;
 
 	private $trait;
-
-	/** @var CommandService */
-	protected $service;
 	
 	/** @var \Twig_Environment */
 	protected $twig;
 
 	public function __construct(CommandService $service) {
-		$this->service = $service;
+		$this->loadServices($service);
 		
-		$loader = new \Twig_Loader_Filesystem($this->service->getConfig()->getTemplateRoot() . '/actions');
+		$loader = new \Twig_Loader_Filesystem($this->service->getConfig()->getTemplateRoot() . '/' . $this->getTemplateFolder());
 		$this->twig = new \Twig_Environment($loader);
+	}
+	
+	protected function getTemplateFolder() {
+		return '';
 	}
 
 	/**
@@ -48,8 +45,8 @@ abstract class AbstractTraitGenerator {
 		$this->trait = PhpTrait::create($name)
 			->addUseStatement('Symfony\\Component\\HttpFoundation\\Request')
 			->addUseStatement('Symfony\\Component\\HttpFoundation\\Response')
-			->setDescription('Base methods for ' . $action->getTitle())
-			->setLongDescription('This code is automatically created. Modifications will probably be overwritten');
+			->setDescription('Base methods for ' . $action->getClass())
+			->setLongDescription('This code is automatically created. Modifications will probably be overwritten.');
 		
 		$this->addMethods($this->trait, $action);
 		

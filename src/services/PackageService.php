@@ -1,17 +1,13 @@
 <?php
 namespace keeko\tools\services;
 
-use phootwork\json\Json;
-use phootwork\json\JsonException;
-use keeko\tools\exceptions\JsonEmptyException;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Filesystem\Exception\FileNotFoundException;
+use keeko\core\schema\ActionSchema;
+use keeko\core\schema\AppSchema;
+use keeko\core\schema\KeekoSchema;
+use keeko\core\schema\ModuleSchema;
 use keeko\core\schema\PackageSchema;
 use phootwork\file\exception\FileException;
 use phootwork\file\File;
-use keeko\core\schema\KeekoSchema;
-use keeko\core\schema\ModuleSchema;
-use keeko\core\schema\AppSchema;
 
 class PackageService extends AbstractService {
 
@@ -21,10 +17,6 @@ class PackageService extends AbstractService {
 	private $module = null;
 	private $actions = null;
 	private $app = null;
-
-	public function __construct(CommandService $service) {
-		parent::__construct($service);
-	}
 	
 	/**
 	 *
@@ -97,7 +89,7 @@ class PackageService extends AbstractService {
 		if ($module !== null && $module->hasAction($name)) {
 			return $module->getAction($name);
 		}
-	
+
 		return null;
 	}
 

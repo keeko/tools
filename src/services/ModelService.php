@@ -7,6 +7,7 @@ use Propel\Generator\Model\Database;
 use Propel\Generator\Util\QuickBuilder;
 use phootwork\lang\Text;
 use keeko\core\schema\ActionSchema;
+use keeko\tools\utils\NamespaceResolver;
 
 class ModelService extends AbstractService {
 
@@ -16,11 +17,7 @@ class ModelService extends AbstractService {
 	
 	/** @var Database */
 	private $database = null;
-	
-	public function __construct(CommandService $service) {
-		parent::__construct($service);
-	}
-	
+
 	/**
 	 * Returns the propel schema. The three locations, where the schema is looked up in:
 	 *
@@ -32,11 +29,12 @@ class ModelService extends AbstractService {
 	 * @return string the path to the schema
 	 */
 	public function getSchema() {
+		$input = $this->io->getInput();
 		if ($this->schema === null) {
 			$workDir = $this->service->getProject()->getRootPath();
 			$schema = null;
 			$schemas = [
-					$this->getInput()->hasOption('schema') ? $this->getInput()->getOption('schema') : '',
+					$input->hasOption('schema') ? $input->getOption('schema') : '',
 					$workDir . '/database/schema.xml',
 					$workDir . '/core/database/schema.xml'
 			];
@@ -142,6 +140,10 @@ class ModelService extends AbstractService {
 	public function getModel($name) {
 		$tableName = $this->getTableName($name);
 		$db = $this->getDatabase();
+// 		echo $db->getNamespace();
+// 		foreach ($db->getTables() as $table) {
+// 			echo $table->getName();
+// 		}
 		$table = $db->getTable($tableName);
 	
 		return $table;
@@ -165,25 +167,11 @@ class ModelService extends AbstractService {
 	public function getRootNamespace() {
 		if ($this->namespace === null) {
 			$ns = $this->getInput()->hasOption('namespace')
-			? $this->getInput()->getOption('namespace')
-			: null;
+				? $this->getInput()->getOption('namespace')
+				: null;
 			if ($ns === null) {
 				$package = $this->service->getPackageService()->getPackage();
-					
-				if (!isset($package['autoload'])) {
-					throw new \DomainException(sprintf('No autoload for %s.', $package['name']));
-				}
-					
-				if (!isset($package['autoload']['psr-4'])) {
-					throw new \DomainException(sprintf('No psr-4 autoload for %s.', $package['name']));
-				}
-					
-				foreach ($package['autoload']['psr-4'] as $namespace => $path) {
-					if ($path === 'src' || $path === 'src/') {
-						$ns = $namespace;
-						break;
-					}
-				}
+				$ns = NamespaceResolver::getNamespace('src', $package);
 			}
 				
 			$this->namespace = $ns;
@@ -198,7 +186,8 @@ class ModelService extends AbstractService {
 	 * @return String
 	 */
 	public function getModelName() {
-		$model = $this->getInput()->hasOption('model') ? $this->getInput()->getOption('model') : null;
+		$input = $this->io->getInput();
+		$model = $input->hasOption('model') ? $input->getOption('model') : null;
 		if ($model === null) {
 			$schema = $this->getSchema();
 			if (strpos($schema, 'core') !== false) {
@@ -236,7 +225,8 @@ class ModelService extends AbstractService {
 	 */
 	public function getFullModelObjectName(ActionSchema $action) {
 		$database = $this->getDatabase();
-		$model = $this->getModel($action->getName());
+		$modelName = $this->getModelNameByAction($action);
+		$model = $this->getModel($modelName);
 		$modelObjectName = $model->getPhpName();
 
 		return $database->getNamespace() . '\\' . $modelObjectName;

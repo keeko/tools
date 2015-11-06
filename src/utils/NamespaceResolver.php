@@ -2,6 +2,8 @@
 namespace keeko\tools\utils;
 
 use keeko\core\schema\PackageSchema;
+use phootwork\file\Path;
+use phootwork\lang\Text;
 
 class NamespaceResolver {
 	
@@ -14,63 +16,37 @@ class NamespaceResolver {
 	 */
 	public static function getSourcePath($namespace, PackageSchema $package) {
 		$relativeSourcePath = null;
-		
 		$autoload = $package->getAutoload();
-		$paths = $autoload->getPsr4()->getPaths($namespace . '\\');
 		
-		if (count($paths) == 0) {
-			$paths = $autoload->getPsr0()->getPaths($namespace);
-		}
+		$suffix = '';
+		$ns = new Path(str_replace('\\', '/', $namespace));
+		$ns->removeTrailingSeparator();
 		
-		if (count($paths) > 0) {
-			$relativeSourcePath = $paths[0];
-		}
+		do {
+			$namespace = $ns->getPathname()->replace('/', '\\')->toString();
+			
+			// find paths in psr-s
+			$relativeSourcePath = $autoload->getPsr4()->getPath($namespace . '\\');
 
-// 		// old version
-// 		if (isset($package['autoload'])) {
-	
-// 			// check psr-4 first
-// 			if (isset($package['autoload']['psr-4'])) {
-// 				$relativeSourcePath = static::getSourcePathFromPsr($namespace . '\\', $package['autoload']['psr-4']);
-// 			}
-	
-// 			// anyway check psr-0
-// 			else if ($relativeSourcePath === null && isset($package['autoload']['psr-0'])) {
-// 				$relativeSourcePath = static::getSourcePathFromPsr($namespace, $package['autoload']['psr-0']);
-// 			}
-// 		}
-		
-		return $relativeSourcePath;
-	}
-	
-	/**
-	 * Returns the path for a given namespace in a psr section or null if none can be found.
-	 *
-	 * @param string $namespace
-	 * @param array $psr
-	 * @return string|null
-	 */
-	private static function getSourcePathFromPsr($namespace, $psr) {
-		// get longest match first
-		$match = '';
-		foreach (array_keys($psr) as $ns) {
-			if (strpos($namespace, $ns) !== false && strlen($ns) > strlen($match)) {
-				$match = $ns;
+			if ($relativeSourcePath === null) {
+				$relativeSourcePath = $autoload->getPsr0()->getPath($namespace);
 			}
-		}
-	
-		// add tail
-		if ($match !== '') {
-			$path = $psr[$match];
-	
-			$tail = str_replace($match, '', $namespace);
-			$path .= '/' . str_replace('\\', '/', $tail);
-	
-			return str_replace('//', '/', $path);
-		}
-	
-		return null;
+
+			// keep track of suffix
+			if ($relativeSourcePath === null) {
+				$suffix = $ns->lastSegment() . (!empty($suffix) ? '/' : '') . $suffix;
+				$ns = $ns->upToSegment($ns->segmentCount() - 1);
+			}
+		} while ($relativeSourcePath == null && $ns->segmentCount() >= 1);
+		
+		$path = new Path($relativeSourcePath);
+		$path->removeTrailingSeparator();
+		$path = $path->append($suffix);
+		$path->addTrailingSeparator();
+		
+		return $path->getPathname()->toString();
 	}
+
 	
 	/**
 	 * Returns the namespace for a given path or null if none can be found.
@@ -80,52 +56,43 @@ class NamespaceResolver {
 	 * @return string|null
 	 */
 	public static function getNamespace($path, PackageSchema $package) {
+		$autoload = $package->getAutoload();
 		$namespace = null;
 		
-		$autoload = $package->getAutoload();
-		$namespace = $autoload->getPsr4()->searchPath($path);
+		$suffix = '';
+		$namespace = null;
+		$path = new Path($path);
+		$path->removeTrailingSeparator();
 		
-		if ($namespace === null) {
-			$namespace = $autoload->getPsr0()->searchPath($path);
-		}
-
-// 		// old way
-// 		if (isset($package['autoload'])) {
-		
-// 			// check psr-4 first
-// 			if (isset($package['autoload']['psr-4'])) {
-// 				$namespace = static::getNamespaceFromPsr($path, $package['autoload']['psr-4']);
-// 			}
-		
-// 			// anyway check psr-0
-// 			else if ($namespace === null && isset($package['autoload']['psr-0'])) {
-// 				$namespace = static::getNamespaceFromPsr($path, $package['autoload']['psr-0']);
-// 			}
-// 		}
-		
-		return $namespace;
-	}
-	
-	private static function getNamespaceFromPsr($path, $psr) {
-		// get longest match first
-		$match = '';
-		$path = trim($path, '/');
-		foreach ($psr as $ns => $folder) {
-			if (strpos($path, $folder) !== false && strlen($ns) > strlen($match)) {
-				$match = $ns;
+		do {
+			$pathname = $path->getPathname()->toString();
+			
+			// find namespace in psr-4
+			$namespace = $autoload->getPsr4()->getNamespace($pathname);
+			if ($namespace === null) {
+				$namespace = $autoload->getPsr4()->getNamespace($pathname . '/');
 			}
+			
+			// find namespace in psr-0
+			if ($namespace === null) {
+				$namespace = $autoload->getPsr0()->getNamespace($pathname);
+			}
+			if ($namespace === null) {
+				$namespace = $autoload->getPsr0()->getNamespace($pathname . '/');
+			}
+			
+			// keep track of suffix
+			if ($namespace === null) {
+				$suffix = $path->lastSegment() . (!empty($suffix) ? '\\' : '') . $suffix;
+				$path = $path->upToSegment($path->segmentCount() - 1);
+			}
+		} while ($namespace === null && $path->segmentCount() >= 1);
+		
+		$namespace = new Text($namespace . $suffix);
+		if ($namespace->endsWith('\\')) {
+			$namespace = $namespace->substring(0, -1);
 		}
-		
-		// add tail
-		if ($match !== '') {
-			$namespace = $match;
-		
-			$tail = str_replace($psr[$match], '', $path);
-			$namespace .= '\\' . str_replace('/', '\\', $tail) . '\\';
 
-			return preg_replace('/(\\\)\\1+/', '$1', $namespace);
-		}
-		
-		return null;
+		return $namespace->toString();
 	}
 }

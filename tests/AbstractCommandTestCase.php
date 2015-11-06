@@ -20,12 +20,12 @@ class AbstractCommandTestCase extends \PHPUnit_Framework_TestCase {
 // 		$this->root->getChild('example')->chmod(0777);
 	}
 
-	protected function loadFixture($fixture) {
-		vfsStream::copyFromFileSystem(__DIR__ . '/fixtures/' . $fixture, $this->root);
+	protected function loadExample($fixture) {
+		vfsStream::copyFromFileSystem(__DIR__ . '/examples/' . $fixture, $this->root);
 	}
 
-	protected function getFixtureFile($filename) {
-		$filename = __DIR__ . '/fixtures/' . $filename;
+	protected function getExampleFile($filename) {
+		$filename = __DIR__ . '/examples/' . $filename;
 		
 		if (file_exists($filename)) {
 			return file_get_contents($filename);
@@ -34,8 +34,8 @@ class AbstractCommandTestCase extends \PHPUnit_Framework_TestCase {
 		return '';
 	}
 	
-	public function assertEqualsFixture($fixture, $actual) {
-		$fixture = $this->getFixtureFile($fixture);
+	public function assertEqualsExample($fixture, $actual) {
+		$fixture = $this->getExampleFile($fixture);
 		$actual = file_get_contents($actual);
 		
 		$this->assertEquals($fixture, $actual);

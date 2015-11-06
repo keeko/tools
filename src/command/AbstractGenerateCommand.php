@@ -26,20 +26,14 @@ use keeko\tools\services\CommandService;
 use keeko\tools\services\IOService;
 use keeko\tools\model\Project;
 use keeko\core\schema\PackageSchema;
-use keeko\tools\helpers\PackageServiceTrait;
-use keeko\tools\helpers\IOServiceTrait;
+use keeko\tools\helpers\ServiceLoaderTrait;
 
 abstract class AbstractGenerateCommand extends Command {
 
-	use PackageServiceTrait;
-	use IOServiceTrait;
+	use ServiceLoaderTrait;
 	
-	protected $templateRoot;
-	protected $logger;
-	protected $service;
-
-	/** @var Project */
-	protected $project;
+	/** @var PackageSchema */
+	protected $package;
 
 	public function __construct($name = null) {
 		parent::__construct($name);
@@ -54,17 +48,17 @@ abstract class AbstractGenerateCommand extends Command {
 		$io->setInput($input);
 		$io->setOutput($output);
 		$this->getHelperSet()->set($io);
-	
-		// services
-		$this->service = new CommandService($this);
-		$this->project = $this->service->getProject();
-		$this->package = $this->service->getPackageService()->getPackage();
 		
 		// logger
-		$this->logger = new ConsoleLogger($output, [
+		$logger = new ConsoleLogger($output, [
 			LogLevel::NOTICE => OutputInterface::VERBOSITY_VERBOSE,
 			LogLevel::INFO   => OutputInterface::VERBOSITY_VERBOSE,
 		]);
+	
+		// services
+		$service = new CommandService($this, $logger);
+		$this->loadServices($service);
+		$this->package = $service->getPackageService()->getPackage();
 	}
 
 	/**

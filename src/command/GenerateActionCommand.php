@@ -20,17 +20,13 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 use keeko\tools\helpers\QuestionHelperTrait;
 use Symfony\Component\Console\Question\Question;
 use keeko\tools\generator\GeneratorFactory;
-use keeko\tools\helpers\PackageServiceTrait;
-use keeko\tools\helpers\ModelServiceTrait;
-use keeko\tools\helpers\CodeGeneratorServiceTrait;
 use keeko\tools\utils\NamespaceResolver;
 use keeko\core\schema\ActionSchema;
 use phootwork\file\File;
+use phootwork\lang\Text;
 
 class GenerateActionCommand extends AbstractGenerateCommand {
-	
-	use ModelServiceTrait;
-	use CodeGeneratorServiceTrait;
+
 	use QuestionHelperTrait;
 
 	protected function configure() {
@@ -72,6 +68,13 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 				InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
 				'The acl\s for this action (guest, user and/or admin)'
 			)
+			->addOption(
+				'schema',
+				's',
+				InputOption::VALUE_OPTIONAL,
+				'Path to the database schema (if ommited, database/schema.xml is used)',
+				null
+			)
 		;
 		
 		parent::configure();
@@ -82,7 +85,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	 * all required information are available
 	 */
 	private function preCheck() {
-		$module = $this->getModule();
+		$module = $this->packageService->getModule();
 		if ($module === null) {
 			throw new \DomainException('No module definition found in composer.json - please run `keeko init`.');
 		}
@@ -113,7 +116,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 
 			if (!$allModels) {
 				$modelQuestion = new Question('Which model');
-				$modelQuestion->setAutocompleterValues($this->getModelNames());
+				$modelQuestion->setAutocompleterValues($this->modelService->getModelNames());
 				$model = $this->askQuestion($modelQuestion);
 				$input->setOption('model', $model);
 			}
@@ -163,7 +166,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 
 		// only a specific action
 		if ($name) {
-			$this->generateAction($name, $this->getAction($name));
+			$this->generateAction($name);
 		}
 
 		// create action(s) from a model
@@ -173,7 +176,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		
 		// if this is a core-module, find the related model
 		else if ($this->getVendorName() == 'keeko' && $this->isCoreSchema()) {
-			$model = $this->getPackageName();
+			$model = $this->package->getName();
 			if ($this->hasModel($model)) {
 				$input->setOption('model', $model);
 				$this->generateModel($model);
@@ -189,12 +192,12 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			}
 		}
 		
-		$this->savePackage();
+		$this->packageService->savePackage();
 	}
 
 	private function generateModel($modelName) {
 		$this->logger->info('Generate Action from Model: ' . $modelName);
-		$input = $this->getInput();
+		$input = $this->io->getInput();
 		$typeDump = $input->getOption('type');
 		if ($typeDump !== null) {
 			$types = [$typeDump];
@@ -207,11 +210,10 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			$input->setOption('type', $type);
 			$actionName = $modelName . '-' . $type;
 			$action = $this->getAction($actionName);
-			$title = $action->getTitle();
-			if (empty($title)) {
+			if (Text::create($action->getTitle())->isEmpty()) {
 				$action->setTitle($this->getActionTitle($modelName, $type));
 			}
-			$this->generateAction($actionName, $action);
+			$this->generateAction($actionName);
 		}
 		
 		$input->setOption('type', $typeDump);
@@ -237,24 +239,27 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	 * @param string $actionName
 	 * @param ActionSchema $action the action node from composer.json
 	 */
-	private function generateAction($actionName, ActionSchema $action) {
+	private function generateAction($actionName) {
 		$this->logger->info('Generate Action: ' . $actionName);
-		$input = $this->getInput();
+		$input = $this->io->getInput();
+		
+		// get action and create it if it doesn't exist
+		$action = $this->getAction($actionName);
 		
 		if (($title = $input->getOption('title')) !== null) {
 			$action->setTitle($title);
 		}
-		
-		if ($action->getTitle() === null) {
+
+		if (Text::create($action->getTitle())->isEmpty()) {
 			throw new \RuntimeException(sprintf('Cannot create action %s, because I am missing a title for it', $actionName));
 		}
-		
+
 		if (($classname = $input->getOption('classname')) !== null) {
 			$action->setClass($classname);
 		}
 		
 		// guess classname if there is none set yet
-		if ($action->getClass() === null) {
+		if (Text::create($action->getClass())->isEmpty()) {
 			$action->setClass($this->guessClassname($actionName));
 		}
 		
@@ -266,13 +271,28 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	}
 	
 	private function guessClassname($name) {
-		$namespace = NamespaceResolver::getNamespace('src/action', $this->getPackage());
-		return $namespace . NameUtils::toStudlyCase($name) . 'Action';
+		$namespace = NamespaceResolver::getNamespace('src/action', $this->package);
+		return $namespace . '\\' . NameUtils::toStudlyCase($name) . 'Action';
+	}
+	
+	/**
+	 * 
+	 * @param string $actionName
+	 * @return ActionSchema
+	 */
+	private function getAction($actionName) {
+		$action = $this->packageService->getAction($actionName);
+		if ($action == null) {
+			$action = new ActionSchema($actionName);
+			$module = $this->packageService->getModule();
+			$module->addAction($action);
+		}
+		return $action;
 	}
 	
 	private function getAcl(ActionSchema $action) {
 		$acls = [];
-		$acl = $this->getInput()->getOption('acl');
+		$acl = $this->io->getInput()->getOption('acl');
 		if ($acl !== null && count($acl) > 0) {
 			if (!is_array($acl)) {
 				$acl = [$acl];
@@ -306,12 +326,12 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	 * @param ActionSchema $action
 	 */
 	private function generateCode($name, ActionSchema $action) {
-		$input = $this->getInput();
+		$input = $this->io->getInput();
 		$trait = null;
-		
+
 		// class
 		$class = new PhpClass($action->getClass());
-		$filename = $this->getFilename($class);
+		$filename = $this->codegenService->getFilename($class);
 		$traitNs = $class->getNamespace() . '\\base';
 		$traitName = $class->getName() . 'Trait';
 		$overwrite = false;
@@ -320,7 +340,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		if (file_exists($filename)) {
 			// load trait
 			$trait = new PhpTrait($traitNs . '\\' . $traitName);
-			$traitFile = new File($this->getFilename($trait));
+			$traitFile = new File($this->codegenService->getFilename($trait));
 
 			if ($traitFile->exists()) {
 				require_once($traitFile->getPathname());
@@ -337,16 +357,16 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			$class->setParentClassName('AbstractAction');
 			$class->setDescription($action->getTitle());
 			$class->setLongDescription($action->getDescription());
-			$this->addAuthors($class, $this->getPackage());
+			$this->codegenService->addAuthors($class, $this->package);
 		}
 		
 		// create base trait
 		if ($input->getOption('model') !== null) {
-			$generator = GeneratorFactory::createActionTraitGenerator($this->getInput()->getOption('type'), $this->service);
+			$generator = GeneratorFactory::createActionTraitGenerator($this->io->getInput()->getOption('type'), $this->service);
 			$trait = $generator->generate($traitNs . '\\' . $traitName, $action);
 
-			$this->addAuthors($trait, $this->getPackage());
-			$this->dumpStruct($trait, true);
+			$this->codegenService->addAuthors($trait, $this->package);
+			$this->codegenService->dumpStruct($trait, true);
 			
 			if (!$class->hasTrait($trait)) {
 				$class->addTrait($trait);
@@ -363,7 +383,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			}
 		}
 
-		$this->dumpStruct($class, $overwrite);
+		$this->codegenService->dumpStruct($class, $overwrite);
 	}
 
 }

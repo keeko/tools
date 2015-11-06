@@ -1,27 +1,23 @@
 <?php
 namespace keeko\tools\services;
 
-use phootwork\collection\CollectionUtils;
 use gossi\codegen\model\AbstractPhpStruct;
 use gossi\docblock\tags\AuthorTag;
 use Propel\Generator\Model\Table;
-use phootwork\collection\ArrayList;
 use gossi\codegen\generator\CodeFileGenerator;
 use keeko\tools\utils\NamespaceResolver;
 use keeko\core\schema\PackageSchema;
 use keeko\core\schema\AuthorSchema;
 use phootwork\file\File;
-use keeko\tools\helpers\IOServiceTrait;
 use phootwork\file\Path;
+use keeko\core\schema\CodegenSchema;
 
 class CodeGeneratorService extends AbstractService {
-
-	use IOServiceTrait;
 	
 	private $codegen;
 	
 	public function getCodegenFile() {
-		$basepath = dirname($this->service->getPackageService()->getComposerFile());
+		$basepath = dirname($this->project->getComposerFileName());
 		return $basepath . '/codegen.json';
 	}
 	
@@ -30,35 +26,35 @@ class CodeGeneratorService extends AbstractService {
 	 *
 	 * @throws JsonEmptyException
 	 * @throws \RuntimeException
-	 * @return Map
+	 * @return CodegenSchema
 	 */
 	public function getCodegen() {
 		if ($this->codegen === null) {
-			return $this->service->getJsonService()->read($this->getCodegenFile());
+			$this->codegen = CodegenSchema::fromFile($this->getCodegenFile());
 		}
 		
 		return $this->codegen;
 	}
 	
-	/**
-	 * Returns the codegen part for the given action name or an empty map
-	 *
-	 * @param string $name
-	 * @return Map
-	 */
-	public function getCodegenAction($name) {
-		$codegen = $this->getCodegen();
+// 	/**
+// 	 * Returns the codegen part for the given action name or an empty map
+// 	 *
+// 	 * @param string $name
+// 	 * @return Map
+// 	 */
+// 	public function getCodegenAction($name) {
+// 		$codegen = $this->getCodegen();
 	
-		if (isset($codegen['actions'])) {
-			$actions = $codegen['actions'];
+// 		if (isset($codegen['actions'])) {
+// 			$actions = $codegen['actions'];
 				
-			if (isset($actions[$name])) {
-				return $actions[$name];
-			}
-		}
+// 			if (isset($actions[$name])) {
+// 				return $actions[$name];
+// 			}
+// 		}
 	
-		return null;
-	}
+// 		return null;
+// 	}
 	
 	/**
 	 * Adds authors to the docblock of the given struct
@@ -89,17 +85,19 @@ class CodeGeneratorService extends AbstractService {
 	/**
 	 * Returns code for hydrating a propel model
 	 *
-	 * @param string $model
+	 * @param string $modelName
 	 * @return string
 	 */
-	public function getWriteFields($model) {
-		$conversions = $this->getConversions($model, 'write');
-		$filter = $this->getFilter($model, 'write');
-		$computed = $this->getComputedFields($this->getModel($model));
+	public function getWriteFields($modelName) {
+		$codegen = $this->getCodegen();
+		$conversions = $codegen->getWriteConversion($modelName);
+		$filter = $codegen->getWriteFilter($modelName);
+		$model = $this->modelService->getModel($modelName);
+		$computed = $this->getComputedFields($model);
 		$filter = array_merge($filter, $computed);
-	
+
 		$fields = '';
-		$cols = $this->service->getModelService()->getModel($model)->getColumns();
+		$cols = $model->getColumns();
 		foreach ($cols as $col) {
 			$prop = $col->getName();
 	
@@ -121,36 +119,27 @@ class CodeGeneratorService extends AbstractService {
 		return sprintf('[%s]', $fields);
 	}
 	
-	/**
-	 * Returns conversions for model columns
-	 *
-	 * @param string $model
-	 * @param string $type
-	 * @return array
-	 */
-	public function getConversions($model, $type) {
-		return $this->getActionProp($model, $type, 'conversion');
-	}
+// 	/**
+// 	 * Returns conversions for model columns
+// 	 *
+// 	 * @param string $model
+// 	 * @param string $type
+// 	 * @return array
+// 	 */
+// 	public function getConversions($model, $type) {
+// 		return $this->getActionProp($model, $type, 'conversion');
+// 	}
 	
-	/**
-	 * Returns model columns that should be filtered
-	 *
-	 * @param string $model
-	 * @param string $type
-	 * @return array
-	 */
-	public function getFilter($model, $type) {
-		return $this->getActionProp($model, $type, 'filter');
-	}
-	
-	private function getActionProp($model, $type, $prop) {
-		$action = $this->getCodegenAction($model);
-		if ($action !== null && isset($action[$type]) && isset($action[$type][$prop])) {
-			return $action[$type][$prop];
-		}
-		
-		return [];
-	}
+// 	/**
+// 	 * Returns model columns that should be filtered
+// 	 *
+// 	 * @param string $model
+// 	 * @param string $type
+// 	 * @return array
+// 	 */
+// 	public function getFilter($model, $type) {
+// 		return $this->getActionProp($model, $type, 'filter');
+// 	}
 	
 	/**
 	 * Returns computed model fields
@@ -198,14 +187,14 @@ class CodeGeneratorService extends AbstractService {
 	}
 
 	public function getFilename(AbstractPhpStruct $struct) {
-		$package = $this->service->getPackageService()->getPackage();
+		$package = $this->packageService->getPackage();
 		$relativeSourcePath = NamespaceResolver::getSourcePath($struct->getNamespace(), $package);
 		
 		if ($relativeSourcePath === null) {
 			return null;
 		}
-		
-		$jsonFile = $this->service->getProject()->getComposerFileName();
+
+		$jsonFile = $this->project->getComposerFileName();
 		$path = new Path(dirname($jsonFile));
 		$path = $path->append($relativeSourcePath);
 		$path = $path->append($struct->getName() . '.php');
@@ -214,15 +203,18 @@ class CodeGeneratorService extends AbstractService {
 	
 	public function dumpStruct(AbstractPhpStruct $struct, $overwrite = false) {
 		$filename = $this->getFilename($struct);
+		$file = new File($filename);
 
-		if ($filename !== null && file_exists($filename) ? $overwrite : true) {
+		if ($filename !== null && $file->exists() ? $overwrite : true) {
+			// generate code
 			$generator = new CodeFileGenerator();
 			$code = $generator->generate($struct);
-	
-			$file = new File($filename);
+
+			// write code to file
 			$file->write($code);
-	
-			$this->writeln(sprintf('Class <info>%s</info> written at <info>%s</info>', $struct->getQualifiedName(), $filename));
+			
+			// tell user about
+			$this->io->writeln(sprintf('Class <info>%s</info> written at <info>%s</info>', $struct->getQualifiedName(), $filename));
 		}
 	}
 }

@@ -18,6 +18,10 @@ class NameUtils {
 			return ucfirst(str_replace(['-','_'], '',$matches[0]));
 		}, $input));
 	}
+	
+	public static function toCamelCase($input) {
+		return lcfirst(self::toStudlyCase($input));
+	}
 
 	/**
 	 * Returns the plural form of the input
