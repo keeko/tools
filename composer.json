@@ -19,7 +19,8 @@
 		"symfony/process" : "~2",
 		"gossi/php-code-generator" : "dev-master",
 		"phootwork/json" : "~1",
-		"phootwork/file" : "~0"
+		"phootwork/file" : "~0",
+		"keeko/core" : "dev-master"
 	},
 	"autoload" : {
 		"psr-4" : {
