@@ -167,9 +167,9 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 		
 		// if this is a core-module, find the related model
-		else if ($this->getVendorName() == 'keeko' && $this->isCoreSchema()) {
+		else if ($this->package->getVendor() == 'keeko' && $this->modelService->isCoreSchema()) {
 			$model = $this->package->getName();
-			if ($this->hasModel($model)) {
+			if ($this->modelService->hasModel($model)) {
 				$input->setOption('model', $model);
 				$this->generateModel($model);
 			} else {
@@ -353,7 +353,11 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		
 		// create base trait
 		if ($input->getOption('model') !== null) {
-			$generator = GeneratorFactory::createActionTraitGenerator($this->io->getInput()->getOption('type'), $this->service);
+			if (($type = $input->getOption('type')) === null) {
+				$text = Text::create($action->getName());
+				$type = $text->substring($text->indexOf('-') + 1)->toString();
+			}
+			$generator = GeneratorFactory::createActionTraitGenerator($type, $this->service);
 			$trait = $generator->generate($traitNs . '\\' . $traitName, $action);
 
 			$this->codegenService->addAuthors($trait, $this->package);
@@ -364,12 +368,10 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 				$overwrite = true;
 			}
 		} else {
+			// create blank action methods
 			if (!$class->hasMethod('run')) {
-				$loader = new \Twig_Loader_Filesystem($this->templateRoot . '/actions');
-				$twig = new \Twig_Environment($loader);
-				$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
-				$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
-				$class->setMethod($this->generateRunMethod($twig->render('blank-run.twig')));
+				$generator = GeneratorFactory::createBlankActionGenerator($this->service);
+				$class = $generator->generate($class);
 				$overwrite = true;
 			}
 		}

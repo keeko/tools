@@ -24,8 +24,8 @@ class AbstractCommandTestCase extends \PHPUnit_Framework_TestCase {
 		vfsStream::copyFromFileSystem(__DIR__ . '/examples/' . $fixture, $this->root);
 	}
 
-	protected function getExampleFile($filename) {
-		$filename = __DIR__ . '/examples/' . $filename;
+	protected function getFile($folder, $filename) {
+		$filename = __DIR__ . '/' . $folder .'/' . $filename;
 		
 		if (file_exists($filename)) {
 			return file_get_contents($filename);
@@ -34,11 +34,26 @@ class AbstractCommandTestCase extends \PHPUnit_Framework_TestCase {
 		return '';
 	}
 	
-	public function assertEqualsExample($fixture, $actual) {
-		$fixture = $this->getExampleFile($fixture);
+	protected function getExampleFile($filename) {
+		return $this->getFile('examples', $filename);
+	}
+	
+	protected function getFixtureFile($filename) {
+		return $this->getFile('fixtures', $filename);
+	}
+	
+	private function assertEqualsFile($expected, $actual) {
 		$actual = file_get_contents($actual);
 		
-		$this->assertEquals($fixture, $actual);
+		$this->assertEquals($expected, $actual);
+	}
+	
+	public function assertEqualsExample($example, $actual) {
+		$this->assertEqualsFile($this->getExampleFile($example), $actual);
+	}
+	
+	public function assertEqualsFixture($fixture, $actual) {
+		$this->assertEqualsFile($this->getFixtureFile($fixture), $actual);
 	}
 	
 	protected function runInit($input) {

@@ -3,11 +3,9 @@ namespace keeko\tools\generator;
 
 use gossi\codegen\model\PhpTrait;
 use keeko\core\schema\ActionSchema;
-use gossi\codegen\model\PhpMethod;
-use gossi\codegen\model\PhpParameter;
 use keeko\tools\utils\NameUtils;
 
-class DeleteActionTraitGenerator extends AbstractActionGenerator {
+class DeleteActionTraitGenerator extends AbstractActionTraitGenerator {
 
 	/* (non-PHPdoc)
 	 * @see \keeko\tools\generator\AbstractTraitGenerator::addMethods()
@@ -21,7 +19,7 @@ class DeleteActionTraitGenerator extends AbstractActionGenerator {
 		// method: setDefaultParams(OptionsResolverInterface $resolver)
 		$this->addSetDefaultParamsMethod($trait, $this->twig->render('delete-setDefaultParams.twig'));
 
-		// method: body()
+		// method: run(Request $request)
 		$trait->addUseStatement($fullModelObjectName);
 		$trait->addUseStatement($fullModelObjectName . 'Query');
 		$trait->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');

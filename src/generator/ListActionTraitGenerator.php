@@ -5,7 +5,7 @@ use gossi\codegen\model\PhpTrait;
 use keeko\core\schema\ActionSchema;
 use keeko\tools\utils\NameUtils;
 
-class ListActionTraitGenerator extends AbstractActionGenerator {
+class ListActionTraitGenerator extends AbstractActionTraitGenerator {
 		
 	/* (non-PHPdoc)
 	 * @see \keeko\tools\generator\AbstractTraitGenerator::addMethods()
@@ -19,7 +19,7 @@ class ListActionTraitGenerator extends AbstractActionGenerator {
 		// method: setDefaultParams(OptionsResolverInterface $resolver)
 		$this->addSetDefaultParamsMethod($trait, $this->twig->render('list-setDefaultParams.twig'));
 		
-		// method: body()
+		// method: run(Request $request)
 		$trait->addUseStatement($fullModelObjectName);
 		$trait->addUseStatement($fullModelObjectName . 'Query');
 		$trait->setMethod($this->generateRunMethod($this->twig->render('list-run.twig', [

@@ -1,32 +1,20 @@
 <?php
 namespace keeko\tools\command;
 
+use keeko\core\schema\PackageSchema;
+use keeko\tools\helpers\IOHelper;
+use keeko\tools\helpers\ServiceLoaderTrait;
+use keeko\tools\services\CommandService;
+use Psr\Log\LogLevel;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputInterface;
-use Propel\Generator\Manager\ModelManager;
-use Symfony\Component\Console\Output\OutputInterface;
-use Propel\Generator\Config\GeneratorConfig;
-use Propel\Generator\Model\Database;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Console\Input\ArrayInput;
-use keeko\tools\utils\NameUtils;
-use Propel\Generator\Model\Table;
-use gossi\docblock\tags\AuthorTag;
-use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleExceptionEvent;
-use gossi\codegen\generator\CodeGenerator;
-use gossi\codegen\model\PhpClass;
-use gossi\codegen\model\AbstractPhpStruct;
-use keeko\tools\helpers\IOHelper;
+use Symfony\Component\Console\Event\ConsoleTerminateEvent;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
-use Psr\Log\LogLevel;
-use keeko\tools\services\CommandService;
-use keeko\tools\services\IOService;
-use keeko\tools\model\Project;
-use keeko\core\schema\PackageSchema;
-use keeko\tools\helpers\ServiceLoaderTrait;
+use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class AbstractGenerateCommand extends Command {
 

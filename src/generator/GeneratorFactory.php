@@ -9,7 +9,7 @@ class GeneratorFactory {
 	 * Creates a generator for the given trait type
 	 * 
 	 * @param string $type
-	 * @return AbstractTraitGenerator
+	 * @return AbstractActionTraitGenerator
 	 */
 	public static function createActionTraitGenerator($type, CommandService $service) {
 		switch ($type) {
@@ -28,5 +28,14 @@ class GeneratorFactory {
 			case 'delete':
 				return new DeleteActionTraitGenerator($service);
 		}
+	}
+	
+	/**
+	 * 
+	 * @param CommandService $service
+	 * @return BlankActionGenerator
+	 */
+	public static function createBlankActionGenerator(CommandService $service) {
+		return new BlankActionGenerator($service);
 	}
 }
