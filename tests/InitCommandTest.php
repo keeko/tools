@@ -44,7 +44,7 @@ class InitCommandTest extends AbstractCommandTestCase {
 			'--author' => 'Tester',
 			'--license' => 'MIT',
 			'--title' => 'Keeko User Module',
-			'--slug' => 'user'
+// 			'--slug' => 'user'
 		]);
 		
 		$this->assertTrue($this->root->hasChild('src/UserModule.php'));

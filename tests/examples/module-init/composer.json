@@ -26,9 +26,7 @@
 		"keeko": {
 			"module": {
 				"title": "Keeko User Module",
-				"class": "keeko\\user\\UserModule",
-				"slug": "user",
-				"actions": []
+				"class": "keeko\\user\\UserModule"
 			}
 		}
 	}

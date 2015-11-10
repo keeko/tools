@@ -35,13 +35,13 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 
 		$module = $package->getKeeko()->getModule();
 		$this->assertEquals(5, $module->getActionNames()->size());
-// 		$this->assertTrue($module->getActionNames()->contains('user-create'));
-// 		$this->assertTrue($this->root->hasChild('src/action/UserCreateAction.php'));
-// 		$this->assertTrue($this->root->hasChild('src/action/base/UserCreateActionTrait.php'));
+		$this->assertTrue($module->getActionNames()->contains('user-create'));
+		$this->assertTrue($this->root->hasChild('src/action/UserCreateAction.php'));
+		$this->assertTrue($this->root->hasChild('src/action/base/UserCreateActionTrait.php'));
 
-// 		$action = $module->getAction('user-create');
-// 		$this->assertEquals('user-create', $action->getName());
-// 		$this->assertEquals('keeko\\user\\action\\UserCreateAction', $action->getClass());
-// 		$this->assertEquals([], $action->getAcl()->toArray());
+		$action = $module->getAction('user-create');
+		$this->assertEquals('user-create', $action->getName());
+		$this->assertEquals('keeko\\user\\action\\UserCreateAction', $action->getClass());
+		$this->assertEquals([], $action->getAcl()->toArray());
 	}
 }

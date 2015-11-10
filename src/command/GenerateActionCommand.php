@@ -1,29 +1,21 @@
 <?php
 namespace keeko\tools\command;
 
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Filesystem\Filesystem;
-use keeko\tools\utils\NameUtils;
-use gossi\docblock\tags\AuthorTag;
-use gossi\docblock\Docblock;
-use Symfony\Component\Console\Command\Command;
-use Propel\Generator\Model\Database;
 use gossi\codegen\model\PhpClass;
 use gossi\codegen\model\PhpTrait;
-use gossi\codegen\model\AbstractPhpStruct;
-use gossi\codegen\model\PhpMethod;
-use gossi\codegen\model\PhpParameter;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
-use keeko\tools\helpers\QuestionHelperTrait;
-use Symfony\Component\Console\Question\Question;
-use keeko\tools\generator\GeneratorFactory;
-use keeko\tools\utils\NamespaceResolver;
 use keeko\core\schema\ActionSchema;
+use keeko\tools\generator\GeneratorFactory;
+use keeko\tools\helpers\QuestionHelperTrait;
+use keeko\tools\utils\NamespaceResolver;
+use keeko\tools\utils\NameUtils;
 use phootwork\file\File;
 use phootwork\lang\Text;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\Console\Question\Question;
 
 class GenerateActionCommand extends AbstractGenerateCommand {
 
@@ -218,12 +210,12 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		
 		$input->setOption('type', $typeDump);
 	}
-	
+
 	private function getActionTitle($model, $type) {
 		switch ($type) {
 			case 'list':
 				return 'List all ' . NameUtils::pluralize($model);
-				
+
 			case 'create':
 			case 'read':
 			case 'update':
@@ -267,7 +259,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		$action->setAcl($this->getAcl($action));
 		
 		// generate code
-		$this->generateCode($actionName, $action);
+		$this->generateCode($action);
 	}
 	
 	private function guessClassname($name) {
@@ -322,10 +314,9 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	/**
 	 * Generates code for an action
 	 * 
-	 * @param string $name
 	 * @param ActionSchema $action
 	 */
-	private function generateCode($name, ActionSchema $action) {
+	private function generateCode(ActionSchema $action) {
 		$input = $this->io->getInput();
 		$trait = null;
 

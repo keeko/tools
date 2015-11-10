@@ -1,24 +1,20 @@
 <?php
 namespace keeko\tools\command;
 
-use Symfony\Component\Console\Input\InputOption;
+use gossi\codegen\model\PhpClass;
+use gossi\codegen\model\PhpMethod;
+use gossi\codegen\model\PhpParameter;
+use gossi\docblock\tags\LicenseTag;
+use keeko\core\schema\AuthorSchema;
+use keeko\core\schema\ModuleSchema;
+use keeko\tools\helpers\QuestionHelperTrait;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessUtils;
-use keeko\tools\helpers\QuestionHelperTrait;
-use gossi\codegen\model\PhpClass;
-use gossi\codegen\model\PhpMethod;
-use gossi\codegen\model\PhpParameter;
-use gossi\docblock\Docblock;
-use gossi\docblock\tags\LicenseTag;
-use keeko\core\schema\PackageSchema;
-use keeko\core\schema\AuthorSchema;
-use keeko\core\schema\ModuleSchema;
 
 class InitCommand extends AbstractGenerateCommand {
 	
@@ -80,12 +76,12 @@ class InitCommand extends AbstractGenerateCommand {
 				'The main class name (If ommited, there is a default handler)',
 				null
 			)
-			->addOption(
-				'slug',
-				'',
-				InputOption::VALUE_OPTIONAL,
-				'The slug (if this package is a keeko-module, anyway it\'s ignored)'
-			)
+// 			->addOption(
+// 				'slug',
+// 				'',
+// 				InputOption::VALUE_OPTIONAL,
+// 				'The slug (if this package is a keeko-module, anyway it\'s ignored)'
+// 			)
 			->addOption(
 				'default-action',
 				'',
@@ -227,10 +223,10 @@ class InitCommand extends AbstractGenerateCommand {
 
 		// -- module
 		if ($type === 'module') {
-			// ask for the slug
-			$slug = $this->getPackageSlug();
-			$slug = $this->askQuestion(new Question('Slug', $slug));
-			$input->setOption('slug', $slug);
+// 			// ask for the slug
+// 			$slug = $this->getPackageSlug();
+// 			$slug = $this->askQuestion(new Question('Slug', $slug));
+// 			$input->setOption('slug', $slug);
 			
 			// ask for the default action
 			$defaultAction = $this->getPackageDefaultAction();
@@ -321,13 +317,13 @@ class InitCommand extends AbstractGenerateCommand {
 		// additions for keeko-module
 		if ($keeko instanceof ModuleSchema) {
 			// slug
-			if (($slug = $this->getPackageSlug()) !== null) {
-				// validate slug
-				if (strpos($slug, '.') === false && strpos($slug, '/') !== false) {
-					throw new \Exception('Slug not valid. Must contain a dot(.) and no slash.');
-				}
-				$keeko->setSlug($slug);
-			}
+// 			if (($slug = $this->getPackageSlug()) !== null) {
+// 				// validate slug
+// 				if (strpos($slug, '.') === false && strpos($slug, '/') !== false) {
+// 					throw new \Exception('Slug not valid. Must contain a dot(.) and no slash.');
+// 				}
+// 				$keeko->setSlug($slug);
+// 			}
 
 			// default-action
 // 			if (($defaultAction = $this->getPackageDefaultAction()) !== null) {
@@ -448,25 +444,25 @@ class InitCommand extends AbstractGenerateCommand {
 		return $pkg;
 	}
 
-	private function getPackageSlug() {
-		$type = $this->getPackageType();
-		if ($type !== 'module') {
-			return;
-		}
+// 	private function getPackageSlug() {
+// 		$type = $this->getPackageType();
+// 		if ($type !== 'module') {
+// 			return;
+// 		}
 
-		$input = $this->io->getInput();
-		$keeko = $this->getPackageKeeko('module');
-		$pkgSlug = $keeko->getSlug();
-		$slug = $input->getOption('slug');
-		$slug = $slug === null && !empty($pkgSlug) ? $pkgSlug : $slug;
+// 		$input = $this->io->getInput();
+// 		$keeko = $this->getPackageKeeko('module');
+// 		$pkgSlug = $keeko->getSlug();
+// 		$slug = $input->getOption('slug');
+// 		$slug = $slug === null && !empty($pkgSlug) ? $pkgSlug : $slug;
 		
-		// fallback to default value
-		if ($slug === null) {
-			$slug = str_replace('/', '.', $this->package->getFullName());
-		}
+// 		// fallback to default value
+// 		if ($slug === null) {
+// 			$slug = str_replace('/', '.', $this->package->getFullName());
+// 		}
 		
-		return $slug;
-	}
+// 		return $slug;
+// 	}
 	
 // 	private function getPackageDefaultAction() {
 // 		$type = $this->getPackageType();
@@ -550,9 +546,8 @@ class InitCommand extends AbstractGenerateCommand {
 	
 	private function hasAutoload() {
 		$psr4 = $this->package->getAutoload()->getPsr4();
-		$psr0 = $this->package->getAutoload()->getPsr0();
 
-		return $psr4->searchPath('src') || $psr0->searchPath('src');
+		return $psr4->getNamespace('src');
 	}
 	
 	private function validateName($name) {
@@ -567,10 +562,11 @@ class InitCommand extends AbstractGenerateCommand {
 		$autoload = $this->package->getAutoload();
 		
 		// remove existing src/ entry
-		$autoload->removePath('src');
+		$autoload->getPsr0()->removePath('src');
+		$autoload->getPsr4()->removePath('src');
 		
 		// add src/ to psr4
-		$autoload->getPsr4()->addPath($namespace, 'src/');
+		$autoload->getPsr4()->setPath($namespace, 'src/');
 	}
 	
 	protected function getGitConfig() {
