@@ -4,12 +4,12 @@
 	<buildpathentry kind="src" path="vendor/phpunit/php-timer/src"/>
 	<buildpathentry kind="src" path="vendor/keeko/composer-installer/src"/>
 	<buildpathentry kind="src" path="vendor/seld/cli-prompt/src"/>
+	<buildpathentry kind="src" path="vendor/justinrainbow/json-schema/src/JsonSchema"/>
 	<buildpathentry kind="src" path="vendor/phootwork/json/src"/>
 	<buildpathentry kind="src" path="vendor/ircmaxell/password-compat/lib"/>
 	<buildpathentry kind="src" path="vendor/symfony/translation"/>
 	<buildpathentry kind="src" path="vendor/seld/jsonlint/src/Seld/JsonLint"/>
 	<buildpathentry kind="src" path="vendor/symfony/http-foundation/Resources/stubs"/>
-	<buildpathentry kind="src" path="vendor/composer/composer/src"/>
 	<buildpathentry kind="src" path="src"/>
 	<buildpathentry kind="src" path="vendor/symfony/event-dispatcher"/>
 	<buildpathentry kind="src" path="vendor/phpspec/prophecy/src"/>
@@ -21,6 +21,7 @@
 	<buildpathentry kind="src" path="vendor/symfony/process"/>
 	<buildpathentry kind="src" path="vendor/kriswallsmith/assetic/src"/>
 	<buildpathentry kind="src" path="vendor/sebastian/recursion-context/src"/>
+	<buildpathentry kind="src" path="vendor/composer/composer/src/Composer"/>
 	<buildpathentry kind="src" path="vendor/doctrine/instantiator/src/Doctrine/Instantiator"/>
 	<buildpathentry excluding="Resources/stubs/" kind="src" path="vendor/symfony/http-foundation"/>
 	<buildpathentry kind="src" path="templates"/>
@@ -33,6 +34,7 @@
 	<buildpathentry excluding="Symfony/Component/Console/Tests/" kind="src" path="vendor/symfony/console"/>
 	<buildpathentry kind="src" path="vendor/phootwork/collection/src"/>
 	<buildpathentry kind="src" path="vendor/monolog/monolog/src/Monolog"/>
+	<buildpathentry kind="src" path="vendor/composer/semver/src"/>
 	<buildpathentry kind="src" path="vendor/phootwork/file/src"/>
 	<buildpathentry kind="src" path="core/src"/>
 	<buildpathentry kind="src" path="vendor/sebastian/version/src"/>
@@ -46,7 +48,6 @@
 	<buildpathentry kind="src" path="vendor/sebastian/diff/src"/>
 	<buildpathentry kind="src" path="vendor/seld/phar-utils/src"/>
 	<buildpathentry kind="src" path="vendor/symfony/finder"/>
-	<buildpathentry kind="src" path="vendor/justinrainbow/json-schema/src"/>
 	<buildpathentry kind="src" path="vendor/sebastian/global-state/src"/>
 	<buildpathentry kind="src" path="vendor/symfony/options-resolver"/>
 	<buildpathentry kind="src" path="vendor/twig/twig/lib"/>
@@ -55,6 +56,6 @@
 	<buildpathentry kind="src" path="vendor/phootwork/tokenizer/src"/>
 	<buildpathentry kind="src" path="vendor/phootwork/lang/src"/>
 	<buildpathentry kind="src" path="vendor/phpunit/php-code-coverage/src"/>
-	<buildpathentry excluding="composer/|spdx-licenses/" kind="src" path="vendor/composer"/>
+	<buildpathentry excluding="composer/|semver/|spdx-licenses/" kind="src" path="vendor/composer"/>
 	<buildpathentry kind="src" path="vendor/symfony/config"/>
 </buildpath>

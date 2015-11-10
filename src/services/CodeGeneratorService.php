@@ -198,7 +198,7 @@ class CodeGeneratorService extends AbstractService {
 		$path = new Path(dirname($jsonFile));
 		$path = $path->append($relativeSourcePath);
 		$path = $path->append($struct->getName() . '.php');
-		return $path;
+		return $path->toString();
 	}
 	
 	public function dumpStruct(AbstractPhpStruct $struct, $overwrite = false) {
