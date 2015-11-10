@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "22366a428551ff75ddb5c843cb272d43",
-    "content-hash": "1edaed150268f7d2a0ed876664eabc27",
+    "hash": "0ff3a213c6ae21d3e78b09eed9ba9956",
+    "content-hash": "c91b15f44336e5cbf63c55ba48564e56",
     "packages": [
         {
             "name": "composer/composer",
@@ -13,12 +13,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "07da4892456cc2f297a1b1c252a1f75cd12b85ea"
+                "reference": "649dc78f086e9f9cb7f4eb681ae17b95f896c823"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/07da4892456cc2f297a1b1c252a1f75cd12b85ea",
-                "reference": "07da4892456cc2f297a1b1c252a1f75cd12b85ea",
+                "url": "https://api.github.com/repos/composer/composer/zipball/649dc78f086e9f9cb7f4eb681ae17b95f896c823",
+                "reference": "649dc78f086e9f9cb7f4eb681ae17b95f896c823",
                 "shasum": ""
             },
             "require": {
@@ -79,7 +79,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2015-11-05 10:24:43"
+            "time": "2015-11-06 22:33:38"
         },
         {
             "name": "composer/semver",
@@ -303,48 +303,6 @@
             "time": "2015-11-05 15:25:35"
         },
         {
-            "name": "ircmaxell/password-compat",
-            "version": "v1.0.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/ircmaxell/password_compat.git",
-                "reference": "5c5cde8822a69545767f7c7f3058cb15ff84614c"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/ircmaxell/password_compat/zipball/5c5cde8822a69545767f7c7f3058cb15ff84614c",
-                "reference": "5c5cde8822a69545767f7c7f3058cb15ff84614c",
-                "shasum": ""
-            },
-            "require-dev": {
-                "phpunit/phpunit": "4.*"
-            },
-            "type": "library",
-            "autoload": {
-                "files": [
-                    "lib/password.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Anthony Ferrara",
-                    "email": "ircmaxell@php.net",
-                    "homepage": "http://blog.ircmaxell.com"
-                }
-            ],
-            "description": "A compatibility library for the proposed simplified password hashing algorithm: https://wiki.php.net/rfc/password_hash",
-            "homepage": "https://github.com/ircmaxell/password_compat",
-            "keywords": [
-                "hashing",
-                "password"
-            ],
-            "time": "2014-11-20 16:49:30"
-        },
-        {
             "name": "justinrainbow/json-schema",
             "version": "1.5.0",
             "source": {
@@ -411,266 +369,17 @@
             "time": "2015-09-08 22:28:04"
         },
         {
-            "name": "keeko/composer-installer",
-            "version": "0.21",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/keeko/composer-installer.git",
-                "reference": "a98a7e3cdb595166a2442d2fc942d0d240aa751a"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/keeko/composer-installer/zipball/a98a7e3cdb595166a2442d2fc942d0d240aa751a",
-                "reference": "a98a7e3cdb595166a2442d2fc942d0d240aa751a",
-                "shasum": ""
-            },
-            "require": {
-                "composer-plugin-api": "1.0.0",
-                "php": ">=5.4"
-            },
-            "require-dev": {
-                "composer/composer": "master-dev"
-            },
-            "type": "composer-plugin",
-            "extra": {
-                "class": "\\keeko\\composer\\KeekoComposerPlugin"
-            },
-            "autoload": {
-                "psr-4": {
-                    "keeko\\composer\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "gossi",
-                    "homepage": "http://gos.si"
-                }
-            ],
-            "description": "Keeko component installer",
-            "time": "2014-12-22 23:52:52"
-        },
-        {
-            "name": "keeko/core",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/keeko/core.git",
-                "reference": "20e4935db55123541525f654b6694e1e311a2963"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/keeko/core/zipball/20e4935db55123541525f654b6694e1e311a2963",
-                "reference": "20e4935db55123541525f654b6694e1e311a2963",
-                "shasum": ""
-            },
-            "require": {
-                "composer/composer": "dev-master@dev",
-                "ircmaxell/password-compat": "~1",
-                "keeko/composer-installer": "*",
-                "kriswallsmith/assetic": "~1",
-                "monolog/monolog": "~1",
-                "phootwork/collection": "~1",
-                "propel/propel": "2.0.0-alpha4@alpha",
-                "symfony/config": "~2",
-                "symfony/filesystem": "~2",
-                "symfony/finder": "~2",
-                "symfony/http-foundation": "~2",
-                "symfony/options-resolver": "~2",
-                "symfony/routing": "~2",
-                "symfony/translation": "~2",
-                "symfony/yaml": "~2",
-                "twig/twig": "~1"
-            },
-            "type": "keeko-core",
-            "autoload": {
-                "psr-4": {
-                    "keeko\\core\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "gossi",
-                    "homepage": "http://gos.si"
-                }
-            ],
-            "description": "Keeko core",
-            "time": "2015-05-19 14:58:33"
-        },
-        {
-            "name": "kriswallsmith/assetic",
-            "version": "v1.3.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/kriswallsmith/assetic.git",
-                "reference": "cb92b179dddfb8a3f341d53bd27e088f24d9c2e5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/kriswallsmith/assetic/zipball/cb92b179dddfb8a3f341d53bd27e088f24d9c2e5",
-                "reference": "cb92b179dddfb8a3f341d53bd27e088f24d9c2e5",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.1",
-                "symfony/process": "~2.1"
-            },
-            "conflict": {
-                "twig/twig": "<1.12"
-            },
-            "require-dev": {
-                "cssmin/cssmin": "*",
-                "joliclic/javascript-packer": "*",
-                "kamicane/packager": "*",
-                "leafo/lessphp": "^0.3.7",
-                "leafo/scssphp": "*@dev",
-                "leafo/scssphp-compass": "*@dev",
-                "mrclay/minify": "*",
-                "patchwork/jsqueeze": "~1.0|~2.0",
-                "phpunit/phpunit": "~4.8",
-                "psr/log": "~1.0",
-                "ptachoire/cssembed": "*",
-                "symfony/phpunit-bridge": "~2.7",
-                "twig/twig": "~1.8|~2.0"
-            },
-            "suggest": {
-                "leafo/lessphp": "Assetic provides the integration with the lessphp LESS compiler",
-                "leafo/scssphp": "Assetic provides the integration with the scssphp SCSS compiler",
-                "leafo/scssphp-compass": "Assetic provides the integration with the SCSS compass plugin",
-                "patchwork/jsqueeze": "Assetic provides the integration with the JSqueeze JavaScript compressor",
-                "ptachoire/cssembed": "Assetic provides the integration with phpcssembed to embed data uris",
-                "twig/twig": "Assetic provides the integration with the Twig templating engine"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.4-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Assetic": "src/"
-                },
-                "files": [
-                    "src/functions.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Kris Wallsmith",
-                    "email": "kris.wallsmith@gmail.com",
-                    "homepage": "http://kriswallsmith.net/"
-                }
-            ],
-            "description": "Asset Management for PHP",
-            "homepage": "https://github.com/kriswallsmith/assetic",
-            "keywords": [
-                "assets",
-                "compression",
-                "minification"
-            ],
-            "time": "2015-10-15 01:33:42"
-        },
-        {
-            "name": "monolog/monolog",
-            "version": "1.17.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/Seldaek/monolog.git",
-                "reference": "bee7f0dc9c3e0b69a6039697533dca1e845c8c24"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/bee7f0dc9c3e0b69a6039697533dca1e845c8c24",
-                "reference": "bee7f0dc9c3e0b69a6039697533dca1e845c8c24",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.0",
-                "psr/log": "~1.0"
-            },
-            "provide": {
-                "psr/log-implementation": "1.0.0"
-            },
-            "require-dev": {
-                "aws/aws-sdk-php": "^2.4.9",
-                "doctrine/couchdb": "~1.0@dev",
-                "graylog2/gelf-php": "~1.0",
-                "jakub-onderka/php-parallel-lint": "0.9",
-                "php-console/php-console": "^3.1.3",
-                "phpunit/phpunit": "~4.5",
-                "phpunit/phpunit-mock-objects": "2.3.0",
-                "raven/raven": "^0.13",
-                "ruflin/elastica": ">=0.90 <3.0",
-                "swiftmailer/swiftmailer": "~5.3",
-                "videlalvaro/php-amqplib": "~2.4"
-            },
-            "suggest": {
-                "aws/aws-sdk-php": "Allow sending log messages to AWS services like DynamoDB",
-                "doctrine/couchdb": "Allow sending log messages to a CouchDB server",
-                "ext-amqp": "Allow sending log messages to an AMQP server (1.0+ required)",
-                "ext-mongo": "Allow sending log messages to a MongoDB server",
-                "graylog2/gelf-php": "Allow sending log messages to a GrayLog2 server",
-                "php-console/php-console": "Allow sending log messages to Google Chrome",
-                "raven/raven": "Allow sending log messages to a Sentry server",
-                "rollbar/rollbar": "Allow sending log messages to Rollbar",
-                "ruflin/elastica": "Allow sending log messages to an Elastic Search server",
-                "videlalvaro/php-amqplib": "Allow sending log messages to an AMQP server using php-amqplib"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.16.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Monolog\\": "src/Monolog"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Jordi Boggiano",
-                    "email": "j.boggiano@seld.be",
-                    "homepage": "http://seld.be"
-                }
-            ],
-            "description": "Sends your logs to files, sockets, inboxes, databases and various web services",
-            "homepage": "http://github.com/Seldaek/monolog",
-            "keywords": [
-                "log",
-                "logging",
-                "psr-3"
-            ],
-            "time": "2015-10-14 12:51:02"
-        },
-        {
             "name": "phootwork/collection",
-            "version": "v1.2.1",
+            "version": "v1.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phootwork/collection.git",
-                "reference": "1405663abfca63e349cbcbf6c08d58132b0d7ec9"
+                "reference": "14e9dee4b514c76972209e873852aa3bbf3fb552"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phootwork/collection/zipball/1405663abfca63e349cbcbf6c08d58132b0d7ec9",
-                "reference": "1405663abfca63e349cbcbf6c08d58132b0d7ec9",
+                "url": "https://api.github.com/repos/phootwork/collection/zipball/14e9dee4b514c76972209e873852aa3bbf3fb552",
+                "reference": "14e9dee4b514c76972209e873852aa3bbf3fb552",
                 "shasum": ""
             },
             "require": {
@@ -678,7 +387,8 @@
                 "php": ">=5.4"
             },
             "require-dev": {
-                "phpunit/phpunit": "~4"
+                "phpunit/phpunit": "~4",
+                "sami/sami": "~3"
             },
             "type": "library",
             "autoload": {
@@ -700,7 +410,7 @@
                 "set",
                 "stack"
             ],
-            "time": "2015-10-21 21:56:54"
+            "time": "2015-11-06 17:48:19"
         },
         {
             "name": "phootwork/file",
@@ -1346,58 +1056,6 @@
             "time": "2015-10-11 09:39:48"
         },
         {
-            "name": "symfony/http-foundation",
-            "version": "v2.7.6",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/symfony/http-foundation.git",
-                "reference": "7598eea151ae3d4134df1f9957364b17809eea75"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/symfony/http-foundation/zipball/7598eea151ae3d4134df1f9957364b17809eea75",
-                "reference": "7598eea151ae3d4134df1f9957364b17809eea75",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.9"
-            },
-            "require-dev": {
-                "symfony/expression-language": "~2.4"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.7-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Symfony\\Component\\HttpFoundation\\": ""
-                },
-                "classmap": [
-                    "Resources/stubs"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Fabien Potencier",
-                    "email": "fabien@symfony.com"
-                },
-                {
-                    "name": "Symfony Community",
-                    "homepage": "https://symfony.com/contributors"
-                }
-            ],
-            "description": "Symfony HttpFoundation Component",
-            "homepage": "https://symfony.com",
-            "time": "2015-10-23 14:47:27"
-        },
-        {
             "name": "symfony/options-resolver",
             "version": "v2.7.6",
             "source": {
@@ -1493,76 +1151,6 @@
             "description": "Symfony Process Component",
             "homepage": "https://symfony.com",
             "time": "2015-10-23 14:47:27"
-        },
-        {
-            "name": "symfony/routing",
-            "version": "v2.7.6",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/symfony/routing.git",
-                "reference": "f353e1f588679c3ec987624e6c617646bd01ba38"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/symfony/routing/zipball/f353e1f588679c3ec987624e6c617646bd01ba38",
-                "reference": "f353e1f588679c3ec987624e6c617646bd01ba38",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.3.9"
-            },
-            "conflict": {
-                "symfony/config": "<2.7"
-            },
-            "require-dev": {
-                "doctrine/annotations": "~1.0",
-                "doctrine/common": "~2.2",
-                "psr/log": "~1.0",
-                "symfony/config": "~2.7",
-                "symfony/expression-language": "~2.4",
-                "symfony/http-foundation": "~2.3",
-                "symfony/yaml": "~2.0,>=2.0.5"
-            },
-            "suggest": {
-                "doctrine/annotations": "For using the annotation loader",
-                "symfony/config": "For using the all-in-one router or any loader",
-                "symfony/expression-language": "For using expression matching",
-                "symfony/yaml": "For using the YAML loader"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.7-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Symfony\\Component\\Routing\\": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Fabien Potencier",
-                    "email": "fabien@symfony.com"
-                },
-                {
-                    "name": "Symfony Community",
-                    "homepage": "https://symfony.com/contributors"
-                }
-            ],
-            "description": "Symfony Routing Component",
-            "homepage": "https://symfony.com",
-            "keywords": [
-                "router",
-                "routing",
-                "uri",
-                "url"
-            ],
-            "time": "2015-10-27 15:38:06"
         },
         {
             "name": "symfony/translation",
@@ -1856,6 +1444,49 @@
                 "instantiate"
             ],
             "time": "2015-06-14 21:17:01"
+        },
+        {
+            "name": "keeko/composer-installer",
+            "version": "0.21",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/keeko/composer-installer.git",
+                "reference": "a98a7e3cdb595166a2442d2fc942d0d240aa751a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/keeko/composer-installer/zipball/a98a7e3cdb595166a2442d2fc942d0d240aa751a",
+                "reference": "a98a7e3cdb595166a2442d2fc942d0d240aa751a",
+                "shasum": ""
+            },
+            "require": {
+                "composer-plugin-api": "1.0.0",
+                "php": ">=5.4"
+            },
+            "require-dev": {
+                "composer/composer": "master-dev"
+            },
+            "type": "composer-plugin",
+            "extra": {
+                "class": "\\keeko\\composer\\KeekoComposerPlugin"
+            },
+            "autoload": {
+                "psr-4": {
+                    "keeko\\composer\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "gossi",
+                    "homepage": "http://gos.si"
+                }
+            ],
+            "description": "Keeko component installer",
+            "time": "2014-12-22 23:52:52"
         },
         {
             "name": "mikey179/vfsStream",
@@ -2757,8 +2388,7 @@
     "stability-flags": {
         "composer/composer": 20,
         "propel/propel": 15,
-        "gossi/php-code-generator": 20,
-        "keeko/core": 20
+        "gossi/php-code-generator": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
