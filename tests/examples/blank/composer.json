@@ -1,5 +1,5 @@
 {
-	"name": "keeko/user",
+	"name": "keeko/blank",
 	"description": "Test description",
 	"type": "keeko-module",
 	"license": "MIT",
@@ -10,7 +10,7 @@
 	],
 	"autoload": {
 		"psr-4": {
-			"keeko\\user\\": "src/"
+			"keeko\\blank\\": "src/"
 		}
 	},
 	"require": {
@@ -21,15 +21,5 @@
 		"composer/composer": "@dev",
 		"keeko/core": "dev-master",
 		"propel/propel": "@dev"
-	},
-	"extra": {
-		"keeko": {
-			"module": {
-				"title": "Keeko User Module",
-				"class": "keeko\\user\\UserModule",
-				"slug": "user",
-				"actions": []
-			}
-		}
 	}
 }

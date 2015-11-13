@@ -166,8 +166,9 @@ class ModelService extends AbstractService {
 	 */
 	public function getRootNamespace() {
 		if ($this->namespace === null) {
-			$ns = $this->getInput()->hasOption('namespace')
-				? $this->getInput()->getOption('namespace')
+			$input = $this->io->getInput();
+			$ns = $input->hasOption('namespace')
+				? $input->getOption('namespace')
 				: null;
 			if ($ns === null) {
 				$package = $this->service->getPackageService()->getPackage();

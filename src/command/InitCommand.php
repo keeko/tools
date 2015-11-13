@@ -229,9 +229,9 @@ class InitCommand extends AbstractGenerateCommand {
 // 			$input->setOption('slug', $slug);
 			
 			// ask for the default action
-			$defaultAction = $this->getPackageDefaultAction();
-			$defaultAction = $this->askQuestion(new Question('Default Action', $defaultAction));
-			$input->setOption('default-action', $defaultAction);
+// 			$defaultAction = $this->getPackageDefaultAction();
+// 			$defaultAction = $this->askQuestion(new Question('Default Action', $defaultAction));
+// 			$input->setOption('default-action', $defaultAction);
 		}
 	}
 

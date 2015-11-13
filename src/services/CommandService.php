@@ -26,7 +26,8 @@ class CommandService {
 		$this->config = new ToolsConfig();
 
 		$input = $this->io->getInput();
-		$workdir = $input->hasOption('workdir') ? $input->getOption('workdir') : getcwd();
+		$wd = $input->getOption('workdir');
+		$workdir = $wd !== null ? $wd : getcwd();
 		$this->project = new Project($workdir);
 		
 		$this->packageService = new PackageService();

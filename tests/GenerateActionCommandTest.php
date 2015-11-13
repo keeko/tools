@@ -3,8 +3,30 @@ namespace keeko\tools\tests;
 
 class GenerateActionCommandTest extends AbstractCommandTestCase {
 	
+	/**
+	 * @expectedException DomainException
+	 */
+	public function testPreCheck() {
+		$this->loadExample('blank');
+		$this->runGenerateAction([
+			'--model' => 'user',
+			'--schema' => __DIR__ . '/../core/database/schema.xml',
+			'name' => 'user-create'
+		]);
+	}
+	
+	/**
+	 * expectedException DomainException
+	 */
+	public function testNoCoreModule() {
+		$this->loadExample('module-blabla-init');
+		$this->runGenerateAction([
+			'--schema' => __DIR__ . '/../core/database/schema.xml'
+		]);
+	}
+	
 	public function testCreateActionByModel() {
-		$this->loadExample('module-init');
+		$this->loadExample('module-user-init');
 		
 		$package = $this->runGenerateAction([
 			'--model' => 'user',
@@ -27,7 +49,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 	}
 	
 	public function testCreateModelByParam() {
-		$this->loadExample('module-init');
+		$this->loadExample('module-user-init');
 	
 		$package = $this->runGenerateAction([
 			'--model' => 'user',
@@ -47,7 +69,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 	}
 	
 	public function testCreateModelByType() {
-		$this->loadExample('module-init');
+		$this->loadExample('module-user-init');
 	
 		$package = $this->runGenerateAction([
 			'--type' => 'create',
@@ -68,7 +90,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 	}
 	
 	public function testCreateCoreModel() {
-		$this->loadExample('module-init');
+		$this->loadExample('module-user-init');
 	
 		$package = $this->runGenerateAction([
 			'--schema' => __DIR__ . '/../core/database/schema.xml'
@@ -90,7 +112,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 	 * @expectedException RuntimeException
 	 */
 	public function testMissingTitle() {
-		$this->loadExample('module-init');
+		$this->loadExample('module-user-init');
 		$this->runGenerateAction([
 			'--model' => 'user',
 // 			'--title' => 'Create a user',
@@ -100,7 +122,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 	}
 	
 	public function testBlankAction() {
-		$this->loadExample('module-init');
+		$this->loadExample('module-user-init');
 		
 		$this->runGenerateAction([
 			'--title' => 'Resets the password',
@@ -111,5 +133,36 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 		
 		$this->assertTrue($this->root->hasChild('src/action/ResetPasswordAction.php'));
 		$this->assertEqualsFixture('ResetPasswordAction.php', $this->root->getChild('src/action/ResetPasswordAction.php')->url());
+	}
+	
+	public function testReflection() {
+		$this->loadExample('module-user-actions');
+		
+		$package = $this->runGenerateAction([
+			'--schema' => __DIR__ . '/../core/database/schema.xml'
+		]);
+		
+		$module = $package->getKeeko()->getModule();
+		$this->assertEquals(5, $module->getActionNames()->size());
+		$this->assertTrue($module->getActionNames()->contains('user-create'));
+		$this->assertTrue($this->root->hasChild('src/action/UserCreateAction.php'));
+		$this->assertTrue($this->root->hasChild('src/action/base/UserCreateActionTrait.php'));
+		
+		$action = $module->getAction('user-create');
+		$this->assertEquals('user-create', $action->getName());
+		$this->assertEquals('keeko\\user\\action\\UserCreateAction', $action->getClass());
+		$this->assertEquals(['admin'], $action->getAcl()->toArray());
+	}
+	
+	public function testTrixionary() {
+		$this->loadExample('module-trixionary-init');
+		
+		$package = $this->runGenerateAction([
+// 			'--schema' => __DIR__ . '/../core/database/schema.xml'
+		]);
+		
+		$module = $package->getKeeko()->getModule();
+		
+// 		echo $module->getActionNames()->size();
 	}
 }

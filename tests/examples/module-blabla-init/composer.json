@@ -1,0 +1,33 @@
+{
+	"name": "keeko/blabla",
+	"description": "Test description",
+	"type": "keeko-module",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Tester"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"keeko\\blabla\\": "src/"
+		}
+	},
+	"require": {
+		"php": ">=5.4",
+		"keeko/composer-installer": "*"
+	},
+	"require-dev": {
+		"composer/composer": "@dev",
+		"keeko/core": "dev-master",
+		"propel/propel": "@dev"
+	},
+	"extra": {
+		"keeko": {
+			"module": {
+				"title": "Keeko Blabla Module",
+				"class": "keeko\\blabla\\BlablaModule"
+			}
+		}
+	}
+}

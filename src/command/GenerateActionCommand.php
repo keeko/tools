@@ -179,7 +179,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 
 		// anyway, generate all
 		else {
-			foreach ($this->getModels() as $model) {
+			foreach ($this->modelService->getModels() as $model) {
 				$this->generateModel($model->getOriginCommonName());
 			}
 		}

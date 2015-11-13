@@ -1,0 +1,33 @@
+{
+	"name": "gossi/trixionary",
+	"description": "Test description",
+	"type": "keeko-module",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Tester"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"gossi\\trixionary\\": "src/"
+		}
+	},
+	"require": {
+		"php": ">=5.4",
+		"keeko/composer-installer": "*"
+	},
+	"require-dev": {
+		"composer/composer": "@dev",
+		"keeko/core": "dev-master",
+		"propel/propel": "@dev"
+	},
+	"extra": {
+		"keeko": {
+			"module": {
+				"title": "Trixionary API Module",
+				"class": "gossi\\trixionary\\TrixionaryModule"
+			}
+		}
+	}
+}
