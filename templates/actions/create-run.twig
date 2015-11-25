@@ -8,6 +8,5 @@ if (!${{ model }}->validate()) {
 	throw new ValidationException(${{ model }}->getValidationFailures());
 } else {
 	${{ model }}->save();
-	$this->response->setData(${{ model }});
-	return $this->response->run($request);
+	return $this->response->run($request, ${{ model }});
 }

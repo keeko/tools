@@ -3,11 +3,12 @@ namespace keeko\tools\tests;
 
 use keeko\core\schema\PackageSchema;
 use keeko\tools\utils\NamespaceResolver;
+use keeko\tools\tests\command\AbstractCommandTestCase;
 
 class UtilsTest extends AbstractCommandTestCase {
 	
 	public function testNamespaceResolver() {
-		$this->loadExample('module-init');
+		$this->loadExample('module-user-init');
 
 		// get namespace
 		$package = PackageSchema::fromFile($this->root->getChild('composer.json')->url());

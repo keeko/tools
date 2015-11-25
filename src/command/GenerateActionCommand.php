@@ -16,6 +16,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
+use keeko\tools\generator\BlankActionGenerator;
 
 class GenerateActionCommand extends AbstractGenerateCommand {
 
@@ -60,14 +61,16 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 				InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
 				'The acl\s for this action (guest, user and/or admin)'
 			)
-			->addOption(
-				'schema',
-				's',
-				InputOption::VALUE_OPTIONAL,
-				'Path to the database schema (if ommited, database/schema.xml is used)',
-				null
-			)
+// 			->addOption(
+// 				'schema',
+// 				's',
+// 				InputOption::VALUE_OPTIONAL,
+// 				'Path to the database schema (if ommited, database/schema.xml is used)',
+// 				null
+// 			)
 		;
+		
+		$this->configureGenerateOptions();
 		
 		parent::configure();
 	}
@@ -370,7 +373,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		} else {
 			// create blank action methods
 			if (!$class->hasMethod('run')) {
-				$generator = GeneratorFactory::createBlankActionGenerator($this->service);
+				$generator = new BlankActionGenerator($this->service);
 				$class = $generator->generate($class);
 				$overwrite = true;
 			}

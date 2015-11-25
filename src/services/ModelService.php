@@ -60,7 +60,7 @@ class ModelService extends AbstractService {
 	}
 	
 	public function hasSchema() {
-		$vendorName = $this->service->getPackageService()->getVendorName();
+		$vendorName = $this->packageService->getPackage()->getVendor();
 		return $this->getSchema() !== null && ($this->isCoreSchema() ? $vendorName == 'keeko' : true);
 	}
 	
@@ -193,7 +193,7 @@ class ModelService extends AbstractService {
 			$schema = $this->getSchema();
 			if (strpos($schema, 'core') !== false) {
 				$package = $this->service->getPackageService()->getPackage();
-				$name = substr($package['name'], strpos($package['name'], '/') + 1);
+				$name = $package->getName();
 	
 				if ($this->hasModel($name)) {
 					$model = $name;

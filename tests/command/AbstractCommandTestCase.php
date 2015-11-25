@@ -1,5 +1,5 @@
 <?php
-namespace keeko\tools\tests;
+namespace keeko\tools\tests\command;
 
 use org\bovigo\vfs\vfsStream;
 use keeko\tools\KeekoTools;
@@ -21,11 +21,15 @@ class AbstractCommandTestCase extends \PHPUnit_Framework_TestCase {
 	}
 
 	protected function loadExample($fixture) {
-		vfsStream::copyFromFileSystem(__DIR__ . '/examples/' . $fixture, $this->root);
+		vfsStream::copyFromFileSystem(__DIR__ . '/../examples/' . $fixture, $this->root);
+	}
+	
+	protected function getCoreSchema() {
+		return __DIR__ . '/../../core/database/schema.xml';
 	}
 
 	protected function getFile($folder, $filename) {
-		$filename = __DIR__ . '/' . $folder .'/' . $filename;
+		$filename = __DIR__ . '/../' . $folder .'/' . $filename;
 		
 		if (file_exists($filename)) {
 			return file_get_contents($filename);
@@ -56,15 +60,19 @@ class AbstractCommandTestCase extends \PHPUnit_Framework_TestCase {
 		$this->assertEqualsFile($this->getFixtureFile($fixture), $actual);
 	}
 	
-	protected function runInit($input) {
+	protected function runInit($input = []) {
 		return $this->runCommand('init', $input);
 	}
 	
-	protected function runGenerateAction($input) {
+	protected function runGenerateAction($input = []) {
 		return $this->runCommand('generate:action', $input);
 	}
 	
-	private function runCommand($command, $input) {
+	protected function runGenerateResponse($input = []) {
+		return $this->runCommand('generate:response', $input);
+	}
+	
+	private function runCommand($command, $input = []) {
 		$app = new KeekoTools();
 		$cmd = $app->find($command);
 		

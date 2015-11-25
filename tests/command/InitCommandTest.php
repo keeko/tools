@@ -1,5 +1,5 @@
 <?php
-namespace keeko\tools\tests;
+namespace keeko\tools\tests\command;
 
 class InitCommandTest extends AbstractCommandTestCase {
 	
@@ -65,10 +65,10 @@ class InitCommandTest extends AbstractCommandTestCase {
 
 		// compare files
 		// source code
-		$this->assertEqualsExample('module-init/src/UserModule.php', $this->root->getChild('src/UserModule.php')->url());
+		$this->assertEqualsExample('module-user-init/src/UserModule.php', $this->root->getChild('src/UserModule.php')->url());
 
 		// composer.json
-		$this->assertEqualsExample('module-init/composer.json', $this->root->getChild('composer.json')->url());
+		$this->assertEqualsExample('module-user-init/composer.json', $this->root->getChild('composer.json')->url());
 	}
 
 	public function testNamespaceOption() {

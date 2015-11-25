@@ -1,5 +1,5 @@
 <?php
-namespace keeko\tools\tests;
+namespace keeko\tools\tests\command;
 
 class GenerateActionCommandTest extends AbstractCommandTestCase {
 	
@@ -10,7 +10,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 		$this->loadExample('blank');
 		$this->runGenerateAction([
 			'--model' => 'user',
-			'--schema' => __DIR__ . '/../core/database/schema.xml',
+			'--schema' => $this->getCoreSchema(),
 			'name' => 'user-create'
 		]);
 	}
@@ -21,7 +21,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 	public function testNoCoreModule() {
 		$this->loadExample('module-blabla-init');
 		$this->runGenerateAction([
-			'--schema' => __DIR__ . '/../core/database/schema.xml'
+			'--schema' => $this->getCoreSchema()
 		]);
 	}
 	
@@ -33,7 +33,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 			'--title' => 'Create a user',
 			'--acl' => 'guest, user, admin', // test acls as well
 			'--classname' => 'keeko\\user\\action\\CreateUserAction',
-			'--schema' => __DIR__ . '/../core/database/schema.xml',
+			'--schema' => $this->getCoreSchema(),
 			'name' => 'user-create'
 		]);
 		
@@ -53,7 +53,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 	
 		$package = $this->runGenerateAction([
 			'--model' => 'user',
-			'--schema' => __DIR__ . '/../core/database/schema.xml'
+			'--schema' => $this->getCoreSchema()
 		]);
 
 		$module = $package->getKeeko()->getModule();
@@ -74,7 +74,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 		$package = $this->runGenerateAction([
 			'--type' => 'create',
 			'--model' => 'user',
-			'--schema' => __DIR__ . '/../core/database/schema.xml'
+			'--schema' => $this->getCoreSchema()
 		]);
 	
 		$module = $package->getKeeko()->getModule();
@@ -93,7 +93,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 		$this->loadExample('module-user-init');
 	
 		$package = $this->runGenerateAction([
-			'--schema' => __DIR__ . '/../core/database/schema.xml'
+			'--schema' => $this->getCoreSchema()
 		]);
 	
 		$module = $package->getKeeko()->getModule();
@@ -116,7 +116,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 		$this->runGenerateAction([
 			'--model' => 'user',
 // 			'--title' => 'Create a user',
-			'--schema' => __DIR__ . '/../core/database/schema.xml',
+			'--schema' => $this->getCoreSchema(),
 			'name' => 'user-create'
 		]);
 	}
@@ -136,10 +136,10 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 	}
 	
 	public function testReflection() {
-		$this->loadExample('module-user-actions');
+		$this->loadExample('module-user-action');
 		
 		$package = $this->runGenerateAction([
-			'--schema' => __DIR__ . '/../core/database/schema.xml'
+			'--schema' => $this->getCoreSchema()
 		]);
 		
 		$module = $package->getKeeko()->getModule();
@@ -158,10 +158,12 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 		$this->loadExample('module-trixionary-init');
 		
 		$package = $this->runGenerateAction([
-// 			'--schema' => __DIR__ . '/../core/database/schema.xml'
+// 			'--schema' => $this->getCoreSchema()
 		]);
 		
 		$module = $package->getKeeko()->getModule();
+		
+		// TODO: will ignored actions/api endpoints created?
 		
 // 		echo $module->getActionNames()->size();
 	}

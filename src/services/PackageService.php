@@ -94,7 +94,7 @@ class PackageService extends AbstractService {
 	}
 
 	public function getActionType($name, $model) {
-		$input = $this->getInput();
+		$input = $this->io->getInput();
 		$type = $input->hasOption('type') ? $input->getOption('type') : null;
 		if ($type === null) {
 			if (($pos = strpos($name, '-')) !== false) {

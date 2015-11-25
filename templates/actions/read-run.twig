@@ -7,6 +7,5 @@ if (${{ model }} === null) {
 	throw new ResourceNotFoundException('{{ model }} not found.');
 }
 
-// set response and go
-$this->response->setData(${{ model }});
-return $this->response->run($request);
+// run response
+return $this->response->run($request, ${{ model }});

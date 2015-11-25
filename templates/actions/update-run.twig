@@ -15,6 +15,5 @@ ${{ model }} = HydrateUtils::hydrate($data, ${{ model }}, {{ fields|raw }});
 if (!${{ model }}->validate()) {
 	throw new ValidationException(${{ model }}->getValidationFailures());
 } else {
-	$this->response->setData(${{ model }});
-	return $this->response->run($request);
+	return $this->response->run($request, ${{ model }});
 }

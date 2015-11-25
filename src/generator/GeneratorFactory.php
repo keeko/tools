@@ -31,11 +31,28 @@ class GeneratorFactory {
 	}
 	
 	/**
+	 * Creates a generator for the given json respose
 	 * 
+	 * @param string $type
 	 * @param CommandService $service
-	 * @return BlankActionGenerator
 	 */
-	public static function createBlankActionGenerator(CommandService $service) {
-		return new BlankActionGenerator($service);
+	public static function createJsonResponseGenerator($type, CommandService $service) {
+		switch ($type) {
+			case 'list':
+				return new ListJsonResponseGenerator($service);
+		
+			case 'create':
+				return new CreateJsonResponseGenerator($service);
+		
+			case 'update':
+				return new UpdateJsonResponseGenerator($service);
+		
+			case 'read':
+				return new ReadJsonResponseGenerator($service);
+		
+			case 'delete':
+				return new DeleteJsonResponseGenerator($service);
+		}
 	}
+
 }
