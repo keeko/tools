@@ -113,14 +113,18 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 	 */
 	public function testMissingTitle() {
 		$this->loadExample('module-user-init');
-		$this->runGenerateAction([
+		$package = $this->runGenerateAction([
 			'--model' => 'user',
 // 			'--title' => 'Create a user',
 			'--schema' => $this->getCoreSchema(),
 			'name' => 'user-create'
 		]);
+		
+		$module = $package->getKeeko()->getModule();
+		$action = $module->getAction('user-create');
+		$this->assertEquals('Creates an user', $action->getTitle());
 	}
-	
+
 	public function testBlankAction() {
 		$this->loadExample('module-user-init');
 		
@@ -143,7 +147,7 @@ class GenerateActionCommandTest extends AbstractCommandTestCase {
 		]);
 		
 		$module = $package->getKeeko()->getModule();
-		$this->assertEquals(5, $module->getActionNames()->size());
+		$this->assertEquals(6, $module->getActionNames()->size());
 		$this->assertTrue($module->getActionNames()->contains('user-create'));
 		$this->assertTrue($this->root->hasChild('src/action/UserCreateAction.php'));
 		$this->assertTrue($this->root->hasChild('src/action/base/UserCreateActionTrait.php'));

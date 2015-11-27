@@ -26,15 +26,16 @@ trait UserCreateActionTrait {
 		$data = json_decode($request->getContent(), true);
 
 		// hydrate
-		$user = HydrateUtils::hydrate($data, new User(), ['id', 'login_name', 'password', 'given_name', 'family_name', 'display_name', 'email', 'birthday', 'sex', 'password_recover_code', 'password_recover_time']);
+		$user = HydrateUtils::hydrate($data, new User(), ['id', 'login_name', 'password' => function($v) {
+			return password_hash($v, PASSWORD_BCRYPT);
+		}, 'given_name', 'family_name', 'display_name', 'email', 'birthday', 'sex']);
 
 		// validate
 		if (!$user->validate()) {
 			throw new ValidationException($user->getValidationFailures());
 		} else {
 			$user->save();
-			$this->response->setData($user);
-			return $this->response->run($request);
+			return $this->response->run($request, $user);
 		}
 	}
 }

@@ -103,7 +103,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 		
 		// ask questions for a model
-		if ($generateModel && !($this->package->getVendorName() === 'keeko' && $this->isCoreSchema())) {
+		if ($generateModel && !($this->package->getVendor() === 'keeko' && $this->modelService->isCoreSchema())) {
 
 			$schema = str_replace(getcwd(), '', $this->getSchema());
 			$allQuestion = new ConfirmationQuestion(sprintf('For all models in the schema (%s)?', $schema));
@@ -214,16 +214,16 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		$input->setOption('type', $typeDump);
 	}
 
-	private function getActionTitle($model, $type) {
+	private function getActionTitle($modelName, $type) {
 		switch ($type) {
 			case 'list':
-				return 'List all ' . NameUtils::pluralize($model);
+				return 'List all ' . NameUtils::pluralize($modelName);
 
 			case 'create':
 			case 'read':
 			case 'update':
 			case 'delete':
-				return ucfirst($type) . 's ' . (in_array($model[0], ['a', 'e', 'i', 'o', 'u']) ? 'an' : 'a') . ' ' . $model;
+				return ucfirst($type) . 's ' . (in_array($modelName[0], ['a', 'e', 'i', 'o', 'u']) ? 'an' : 'a') . ' ' . $modelName;
 		}
 	}
 
@@ -256,6 +256,15 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		// guess classname if there is none set yet
 		if (Text::create($action->getClass())->isEmpty()) {
 			$action->setClass($this->guessClassname($actionName));
+		}
+		
+		// guess title if there is none set yet
+		if (Text::create($action->getTitle())->isEmpty() 
+				&& $this->modelService->isModelAction($action)
+				&& $this->modelService->isCrudAction($action)) {
+			$modelName = $this->modelService->getModelNameByAction($action);
+			$type = $this->modelService->getOperationByAction($action);
+			$action->setTitle($this->getActionTitle($modelName, $type));
 		}
 		
 		// set acl

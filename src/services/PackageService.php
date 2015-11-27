@@ -93,13 +93,13 @@ class PackageService extends AbstractService {
 		return null;
 	}
 
-	public function getActionType($name, $model) {
+	public function getActionType($actionName, $modelName) {
 		$input = $this->io->getInput();
 		$type = $input->hasOption('type') ? $input->getOption('type') : null;
 		if ($type === null) {
-			if (($pos = strpos($name, '-')) !== false) {
-				$type = substr($name, $pos + 1);
-			} else if ($model == $name) {
+			if (($pos = strpos($actionName, '-')) !== false) {
+				$type = substr($actionName, $pos + 1);
+			} else if ($modelName == $actionName) {
 				$type = 'read';
 			}
 		}

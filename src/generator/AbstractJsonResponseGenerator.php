@@ -12,6 +12,7 @@ class AbstractJsonResponseGenerator extends AbstractResponseGenerator {
 	
 	protected function addUseStatements(AbstractPhpStruct $struct) {
 		parent::addUseStatements($struct);
+		$struct->removeUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\JsonResponse');
 	}
 

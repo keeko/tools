@@ -33,9 +33,8 @@ trait UserReadActionTrait {
 			throw new ResourceNotFoundException('user not found.');
 		}
 
-		// set response and go
-		$this->response->setData($user);
-		return $this->response->run($request);
+		// run response
+		return $this->response->run($request, $user);
 	}
 
 	/**

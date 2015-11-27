@@ -27,30 +27,39 @@ abstract class AbstractResponseGenerator extends AbstractCodeGenerator {
 	 *
 	 * @param ActionSchema $action
 	 * @param string $format
-	 * @return PhpClass
+	 * @return AbstractPhpStruct
 	 */
 	protected function doGenerate(ActionSchema $action, $format) {
-		$class = PhpClass::create($action->getResponse($format))
+		$struct = $this->generateStruct($action, $format);
+	
+		$this->codegenService->addAuthors($struct, $this->packageService->getPackage());
+	
+		$this->addUseStatements($struct);
+		$this->addMethods($struct, $action);
+	
+		return $struct;
+	}
+	
+	/**
+	 * Generates the struct
+	 *
+	 * @param ActionSchema $action
+	 * @param string $format
+	 * @return AbstractPhpStruct
+	 */
+	protected function generateStruct(ActionSchema $action, $format) {
+		return PhpClass::create($action->getResponse($format))
 			->setParentClassName('AbstractResponse')
 			->setDescription('Automatically generated ' . ucwords($format) . 'Response for ' . $action->getTitle())
 			->setLongDescription($action->getDescription());
-	
-		$this->codegenService->addAuthors($class, $this->packageService->getPackage());
-	
-		$this->addUseStatements($class);
-		$this->addMethods($class, $action);
-	
-		return $class;
 	}
-	
-	
 	
 	protected function generateRunMethod($body = '') {
 		return PhpMethod::create('run')
 			->setDescription('Automatically generated run method')
 			->setType('Response')
 			->addParameter(PhpParameter::create('request')->setType('Request'))
-			->addParameter(PhpParameter::create('data')->setDefaultValue('null'))
+			->addParameter(PhpParameter::create('data')->setDefaultValue(null))
 			->setBody($body);
 	}
 

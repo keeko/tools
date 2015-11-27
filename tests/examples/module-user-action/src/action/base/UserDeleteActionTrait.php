@@ -36,9 +36,8 @@ trait UserDeleteActionTrait {
 		// delete
 		$user->delete();
 
-		// set response and go
-		$this->response->setData($user);
-		return $this->response->run($request);
+		// run response
+		return $this->response->run($request, $user);
 	}
 
 	/**

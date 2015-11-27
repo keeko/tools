@@ -35,7 +35,9 @@
 						"acl": [
 							"admin"
 						],
-						"response": []
+						"response": {
+							"json": "keeko\\user\\response\\UserCreateJsonResponse"
+						}
 					},
 					"user-read": {
 						"title": "Reads an user",
@@ -44,7 +46,9 @@
 						"acl": [
 							"admin"
 						],
-						"response": []
+						"response": {
+							"json": "keeko\\user\\response\\UserReadJsonResponse"
+						}
 					},
 					"user-list": {
 						"title": "List all users",
@@ -53,7 +57,9 @@
 						"acl": [
 							"admin"
 						],
-						"response": []
+						"response": {
+							"json": "keeko\\user\\response\\UserListJsonResponse"
+						}
 					},
 					"user-update": {
 						"title": "Updates an user",
@@ -62,7 +68,9 @@
 						"acl": [
 							"admin"
 						],
-						"response": []
+						"response": {
+							"json": "keeko\\user\\response\\UserUpdateJsonResponse"
+						}
 					},
 					"user-delete": {
 						"title": "Deletes an user",
@@ -71,7 +79,21 @@
 						"acl": [
 							"admin"
 						],
-						"response": []
+						"response": {
+							"json": "keeko\\user\\response\\UserDeleteJsonResponse"
+						}
+					},
+					"password-recover": {
+						"title": "Recover Password",
+						"description": "",
+						"class": "keeko\\user\\action\\PasswordRecoverAction",
+						"acl": [
+							"guest",
+							"user"
+						],
+						"response": {
+							"json": "keeko\\user\\response\\PasswordRecoverJsonResponse"
+						}
 					}
 				}
 			}

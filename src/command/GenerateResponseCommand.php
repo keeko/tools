@@ -2,26 +2,24 @@
 namespace keeko\tools\command;
 
 use gossi\codegen\model\PhpClass;
-use gossi\codegen\model\PhpMethod;
-use gossi\codegen\model\PhpParameter;
+use keeko\tools\generator\BlankHtmlResponseGenerator;
+use keeko\tools\generator\BlankJsonResponseGenerator;
+use keeko\tools\generator\GeneratorFactory;
+use keeko\tools\generator\ModelResponseTraitGenerator;
+use keeko\tools\generator\TwigHtmlResponseGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
-use keeko\tools\utils\NameUtils;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use keeko\tools\generator\GeneratorFactory;
-use keeko\tools\generator\BlankJsonResponseGenerator;
-use keeko\tools\generator\TwigHtmlResponseGenerator;
-use keeko\tools\generator\BlankHtmlResponseGenerator;
 
 class GenerateResponseCommand extends AbstractGenerateCommand {
 
 	use QuestionHelperTrait;
 	
-	protected $abstracts = [];
+	protected $traits = [];
 	
 	protected function configure() {
 		$this
@@ -126,31 +124,27 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		$this->packageService->savePackage();
 	}
 	
-	private function generateResponse($name) {
+	private function generateResponse($actionName) {
 		$module = $this->packageService->getModule();
 		
-		if (!$module->hasAction($name)) {
-			throw new \RuntimeException(sprintf('action (%s) not found', $name));
+		if (!$module->hasAction($actionName)) {
+			throw new \RuntimeException(sprintf('action (%s) not found', $actionName));
 		}
 		
 		$input = $this->io->getInput();
-// 		$package = $this->getPackage();
-		$database = $this->modelService->getDatabase();
-		$action = $module->getAction($name);
-		$model = $this->modelService->getModelNameByAction($action);
+		$action = $module->getAction($actionName);
+		$modelName = $this->modelService->getModelNameByAction($action);
 		$format = $input->getOption('format');
 		$template = $input->getOption('template');
 
 		if (!$action->hasResponse($format)) {
 			$action->setResponse($format, str_replace(['Action', 'action'], [ucwords($format) . 'Response', 'response'], $action->getClass()));
 		}
-		
-// 		$this->updateAction($name, $action);
 
 		// find generator
-		$type = $this->packageService->getActionType($name, $model);
-		$tableName = $database->getTablePrefix() . $model;
-		$isModel = $type && $this->modelService->hasSchema() && $database->hasTable($tableName); 
+		$generator = null;
+		$type = $this->packageService->getActionType($actionName, $modelName);
+		$isModel = $type && $this->modelService->isModelAction($action); 
 
 		// model given and format is json
 		if ($isModel && $format === 'json') {
@@ -168,144 +162,30 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		}
 		
 		// blank html as default
-		else {
+		else if ($format == 'html') {
 			$generator = new BlankHtmlResponseGenerator($this->service);
 		}
 		
-		$class = $generator->generate($action);
-		
-
-// 		// create class
-// 		$class = new PhpClass($action->getResponse($format));
-// 		$class->addUseStatement('keeko\core\action\AbstractResponse');
-// 		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
-// 		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
-// 		$class->setParentClassName('AbstractResponse');
-// 		$class->setDescription(isset($action['title']) ? ucwords($format) . 'Response for ' . $action['title'] : '');
-// 		$class->setLongDescription(isset($action['description']) ? $action['description'] : '');
-// 		$this->addAuthors($class, $package);
-		
-// 		// set up tempaltes
-// 		$loader = new \Twig_Loader_Filesystem($this->templateRoot . '/response/' . $format . '/');
-// 		$twig = new \Twig_Environment($loader);
-// 		$type = $this->getActionType($name, $model);
-// 		$tableName = $database->getTablePrefix() . $model;
-		
-// 		// model given
-// 		if ($type && $this->hasSchema() && $database->hasTable($tableName)) {
-// 			$modelName = $database->getTable($tableName)->getPhpName();
-
-// 			// add model to use statements
-// 			$namespace = $database->getNamespace();
-// 			$nsModelName = $namespace . '\\' . $modelName;
-// 			$class->addUseStatement($nsModelName);
+		// run generation, if generator was chosen
+		if ($generator !== null) {
+			/* @var $class PhpClass */
+			$class = $generator->generate($action);
 			
-// 			if ($format === 'json') {
-// 				$class->addUseStatement('Symfony\\Component\\HttpFoundation\\JsonResponse');
-// 			}
-			
-// 			// create abstract response
-// 			$abstract = $this->generateAbstractResponse($model, $modelName, $type, $format, $responses[$format]);
-			
-// 			// set the abstract
-// 			$class->removeUseStatement('keeko\core\action\AbstractResponse');
-// 			$class->setParentClassName($abstract->getName());
+			// generate json trait
+			if ($isModel && $format === 'json') {
+				$generator = new ModelResponseTraitGenerator($this->service);
+				$trait = $generator->generate($action);
+				$class->addTrait($trait);
+				
+				if (!in_array($trait->getName(), $this->traits)) {
+					$this->codegenService->dumpStruct($trait, true);
+					$this->traits[] = $trait->getName();
+				}
+			}
 
-// 			// json only at the moment
-// 			if ($format === 'json') {
-// 				switch ($type) {
-// 					case 'create':
-// 						$body = $twig->render('create-run.twig', ['model' => $model]);
-// 						break;
-
-// 					case 'read':
-// 					case 'update':
-// 					case 'delete':
-// 						$body = $twig->render('dump-model.twig', ['model' => $model]);
-// 						break;
-
-// 					case 'list':
-// 						$body = $twig->render('list-run.twig', [
-// 							'model' => $model,
-// 							'models' => NameUtils::pluralize($model)
-// 						]);
-// 						break;
-// 				}
-// 			} else {
-// 				$body = $twig->render('blank-run.twig');
-// 			}
-// 		}
-		
-// 		// no model given - render given template
-// 		else {
-// 			if ($template == 'twig') {
-// 				$file = str_replace(['-create', '-edit'], '-form', $name);
-// 				$body = $twig->render('twig-run.twig', ['name' => $file]);
-// 			} else {
-// 				$body = $twig->render('blank-run.twig');
-// 			}
-// 		}
-
-// 		// add run method
-// 		$run = new PhpMethod('run');
-// 		$run->setDescription('Automatically generated method, will be overridden');
-// 		$run->setType('Response');
-// 		$run->addParameter(PhpParameter::create('request')->setType('Request'));
-// 		$run->setBody($body);
-// 		$class->setMethod($run);
-
-		// write to file
-		$this->codegenService->dumpStruct($class, true);
-	}
-	
-	protected function generateAbstractResponse($model, $modelName, $type, $format, $actionName) {
-		$database = $this->getDatabase();
-		
-		$abstractName = str_replace([ucfirst($format), ucfirst($type)], '', $actionName);
-		$abstractName = str_replace('response\\', 'response\\Abstract', $abstractName);
-		
-		if (isset($this->abstracts[$abstractName])) {
-			return $this->abstracts[$abstractName];
+			// write to file
+			$this->codegenService->dumpStruct($class, $input->getOption('force'));
 		}
-		
-		$loader = new \Twig_Loader_Filesystem($this->templateRoot . '/response/');
-		$twig = new \Twig_Environment($loader);
-		
-		// add model to use statements
-		$namespace = $database->getNamespace();
-		$nsModelName = $namespace . '\\' . $modelName;
-		
-		$abstract = new PhpClass($abstractName);
-		$abstract->setAbstract(true);
-		$abstract->setDescription('Abstract Response for ' . $model . ', containing filter functionality.');
-		$abstract->setLongDescription('This class is generated automatically, your changes may be overwritten - take care.');
-		$abstract->addUseStatement($nsModelName);
-		$abstract->addUseStatement('keeko\core\action\AbstractResponse');
-		$abstract->addUseStatement('keeko\\core\\utils\\FilterUtils');
-		$abstract->addUseStatement('Propel\\Runtime\\Map\\TableMap');
-		$abstract->setParentClassName('AbstractResponse');
-		$abstract->setMethod(PhpMethod::create('filter')
-			->setDescription('Automatically generated method, will be overridden')
-			->addParameter(PhpParameter::create($model)->setType('array'))
-			->setVisibility('protected')
-			->setBody($twig->render('filter.twig', [
-				'model' => $model,
-				'filter' => $this->arrayToCode($this->getFilter($model, 'read'))
-			]))
-		);
-		$abstract->setMethod(PhpMethod::create($model . 'ToArray')
-			->setDescription('Automatically generated method, will be overridden')
-			->addParameter(PhpParameter::create($model)->setType($modelName))
-			->setVisibility('protected')
-			->setBody($twig->render('modelToArray.twig', ['model' => $model]))
-		);
-		$this->addAuthors($abstract, $this->getPackage());
-		
-		// write to file
-		$this->dumpStruct($abstract, true);
-		
-		$this->abstracts[$abstractName] = $abstract;
-		
-		return $abstract;
 	}
+
 }

@@ -34,9 +34,9 @@ class ModelService extends AbstractService {
 			$workDir = $this->service->getProject()->getRootPath();
 			$schema = null;
 			$schemas = [
-					$input->hasOption('schema') ? $input->getOption('schema') : '',
-					$workDir . '/database/schema.xml',
-					$workDir . '/core/database/schema.xml'
+				$input->hasOption('schema') ? $input->getOption('schema') : '',
+				$workDir . '/database/schema.xml',
+				$workDir . '/core/database/schema.xml'
 			];
 			foreach ($schemas as $path) {
 				if (file_exists($path)) {
@@ -182,25 +182,25 @@ class ModelService extends AbstractService {
 	}
 
 	/**
-	 * Retrieves the model name for the given package
+	 * Retrieves the model name for the given package in two steps:
+	 * 
+	 * 1. Check if it is passed as cli parameter
+	 * 2. Retrieve it from the package name
 	 *
 	 * @return String
 	 */
 	public function getModelName() {
 		$input = $this->io->getInput();
-		$model = $input->hasOption('model') ? $input->getOption('model') : null;
-		if ($model === null) {
-			$schema = $this->getSchema();
-			if (strpos($schema, 'core') !== false) {
-				$package = $this->service->getPackageService()->getPackage();
-				$name = $package->getName();
-	
-				if ($this->hasModel($name)) {
-					$model = $name;
-				}
+		$modelName = $input->hasOption('model') ? $input->getOption('model') : null;
+		if ($modelName === null && $this->isCoreSchema()) {
+			$package = $this->service->getPackageService()->getPackage();
+			$packageName = $package->getName();
+
+			if ($this->hasModel($packageName)) {
+				$modelName = $packageName;
 			}
 		}
-		return $model;
+		return $modelName;
 	}
 	
 	/**
@@ -210,12 +210,12 @@ class ModelService extends AbstractService {
 	 * @return String modelName
 	 */
 	public function getModelNameByAction(ActionSchema $action) {
-		$name = $action->getName();
-		$model = $this->getModelName();
-		if ($model === null && ($pos = strpos($name, '-')) !== false) {
-			$model = substr($name, 0, $pos);
+		$actionName = $action->getName();
+		$modelName = null;
+		if (($pos = strpos($actionName, '-')) !== false) {
+			$modelName = substr($actionName, 0, $pos);
 		}
-		return $model;
+		return $modelName;
 	}
 
 	/**
@@ -231,5 +231,49 @@ class ModelService extends AbstractService {
 		$modelObjectName = $model->getPhpName();
 
 		return $database->getNamespace() . '\\' . $modelObjectName;
+	}
+	
+	/**
+	 * Returns the operation (verb) of the action (if existent)
+	 * 
+	 * @param ActionSchema $action
+	 * @return string|null
+	 */
+	public function getOperationByAction(ActionSchema $action) {
+		$actionName = $action->getName();
+		$operation = null;
+		if (($pos = strpos($actionName, '-')) !== false) {
+			$operation = substr($actionName, $pos + 1);
+		}
+		return $operation;
+	}
+	
+	/**
+	 * Returns wether the given action refers to a model.
+	 * 
+	 * Examples:
+	 * 
+	 * Action: user-create => model: user
+	 * Action: recover-password => no model
+	 * 
+	 * @param ActionSchema $action
+	 * @return boolean
+	 */
+	public function isModelAction(ActionSchema $action) {
+		$modelName = $this->getModelNameByAction($action);
+		return $this->hasModel($modelName);
+	}
+	
+	/**
+	 * Returns whether this is a crud operation action
+	 * (create, read, update, delete, list)
+	 * 
+	 * @param ActionSchema $action
+	 * @return boolean
+	 */
+	public function isCrudAction(ActionSchema $action) {
+		$operation = $this->getOperationByAction($action);
+		
+		return in_array($operation, ['create', 'read', 'update', 'delete', 'list']);
 	}
 }

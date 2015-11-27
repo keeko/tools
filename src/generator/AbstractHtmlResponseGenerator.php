@@ -7,7 +7,7 @@ use keeko\core\schema\ActionSchema;
 class AbstractHtmlResponseGenerator extends AbstractResponseGenerator {
 	
 	protected function getTemplateFolder() {
-		return 'response/json';
+		return 'response/html';
 	}
 	
 	/**
@@ -17,6 +17,6 @@ class AbstractHtmlResponseGenerator extends AbstractResponseGenerator {
 	 * @return PhpClass
 	 */
 	public function generate(ActionSchema $action) {
-		return $this->doGenerate($action, 'json');
+		return $this->doGenerate($action, 'html');
 	}
 }

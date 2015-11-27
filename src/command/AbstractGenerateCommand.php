@@ -58,26 +58,9 @@ abstract class AbstractGenerateCommand extends Command {
 
 
 	protected function configure() {
-// 		$this
-// 			->addOption(
-// 				'schema',
-// 				's',
-// 				InputOption::VALUE_OPTIONAL,
-// 				'Path to the database schema (if ommited, database/schema.xml is used)',
-// 				null
-// 			)
-// 			->addOption(
-// 				'force',
-// 				'f',
-// 				InputOption::VALUE_OPTIONAL,
-// 				'Forces to owerwrite',
-// 				false
-// 			)
-// 		;
-		
 		$this->configureGlobalOptions();
 	}
-	
+
 	protected function configureGenerateOptions() {
 		$this
 			->addOption(
@@ -86,6 +69,13 @@ abstract class AbstractGenerateCommand extends Command {
 				InputOption::VALUE_OPTIONAL,
 				'Path to the database schema (if ommited, database/schema.xml is used)',
 				null
+			)
+			->addOption(
+				'force',
+				'f',
+				InputOption::VALUE_OPTIONAL,
+				'Forces to owerwrite',
+				false
 			)
 		;
 	}

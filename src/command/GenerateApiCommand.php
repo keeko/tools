@@ -3,15 +3,9 @@ namespace keeko\tools\command;
 
 use keeko\tools\command\AbstractGenerateCommand;
 use keeko\tools\utils\NameUtils;
+use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Command\Command;
-use Propel\Generator\Model\Table;
-use Propel\Generator\Model\Database;
-use phootwork\json\Json;
-use phootwork\json\JsonException;
-use keeko\tools\exceptions\JsonEmptyException;
-use Symfony\Component\Filesystem\Filesystem;
 
 class GenerateApiCommand extends AbstractGenerateCommand {
 
