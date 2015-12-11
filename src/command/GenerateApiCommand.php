@@ -37,6 +37,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
+		$this->preCheck();
 		$api = new File($this->project->getApiFileName());
 		if (!$this->project->hasApiFile()) {
 			$api->write('{}');

@@ -8,10 +8,8 @@ class GenerateApiCommandTest extends AbstractCommandTestCase {
 	 */
 	public function testPreCheck() {
 		$this->loadExample('blank');
-		$this->runGenerateAction([
-			'--model' => 'user',
-			'--schema' => $this->getCoreSchema(),
-			'name' => 'user-create'
+		$this->runGenerateApi([
+			'--schema' => $this->getCoreSchema()
 		]);
 	}
 	
