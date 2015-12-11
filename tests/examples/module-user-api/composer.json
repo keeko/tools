@@ -1,0 +1,102 @@
+{
+	"name": "keeko/user",
+	"description": "Test description",
+	"type": "keeko-module",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Tester"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"keeko\\user\\": "src/"
+		}
+	},
+	"require": {
+		"php": ">=5.4",
+		"keeko/composer-installer": "*"
+	},
+	"require-dev": {
+		"composer/composer": "@dev",
+		"keeko/core": "dev-master",
+		"propel/propel": "@dev"
+	},
+	"extra": {
+		"keeko": {
+			"module": {
+				"title": "Keeko User Module",
+				"class": "keeko\\user\\UserModule",
+				"actions": {
+					"user-create": {
+						"title": "Creates an user",
+						"description": "",
+						"class": "keeko\\user\\action\\UserCreateAction",
+						"acl": [
+							"admin"
+						],
+						"response": {
+							"json": "keeko\\user\\response\\UserCreateJsonResponse"
+						}
+					},
+					"user-read": {
+						"title": "Reads an user",
+						"description": "",
+						"class": "keeko\\user\\action\\UserReadAction",
+						"acl": [
+							"admin"
+						],
+						"response": {
+							"json": "keeko\\user\\response\\UserReadJsonResponse"
+						}
+					},
+					"user-list": {
+						"title": "List all users",
+						"description": "",
+						"class": "keeko\\user\\action\\UserListAction",
+						"acl": [
+							"admin"
+						],
+						"response": {
+							"json": "keeko\\user\\response\\UserListJsonResponse"
+						}
+					},
+					"user-update": {
+						"title": "Updates an user",
+						"description": "",
+						"class": "keeko\\user\\action\\UserUpdateAction",
+						"acl": [
+							"admin"
+						],
+						"response": {
+							"json": "keeko\\user\\response\\UserUpdateJsonResponse"
+						}
+					},
+					"user-delete": {
+						"title": "Deletes an user",
+						"description": "",
+						"class": "keeko\\user\\action\\UserDeleteAction",
+						"acl": [
+							"admin"
+						],
+						"response": {
+							"json": "keeko\\user\\response\\UserDeleteJsonResponse"
+						}
+					},
+					"password-recover": {
+						"title": "Recover Password",
+						"description": "",
+						"class": "keeko\\user\\action\\PasswordRecoverAction",
+						"acl": [
+							"guest",
+							"user"
+						],
+						"response": {
+							"json": "keeko\\user\\response\\PasswordRecoverJsonResponse"
+						}
+					}
+				}
+			}
+		}
+	}
+}

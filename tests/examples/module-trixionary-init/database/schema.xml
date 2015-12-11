@@ -111,10 +111,10 @@
 			required="true" />
 		<column name="depends_id" type="INTEGER" primaryKey="true"
 			required="true" />
-		<foreign-key foreignTable="skill" onDelete="cascade">
+		<foreign-key foreignTable="skill" onDelete="cascade" name="fk_skill_dependency_depends">
 			<reference local="depends_id" foreign="id" />
 		</foreign-key>
-		<foreign-key foreignTable="skill" onDelete="cascade">
+		<foreign-key foreignTable="skill" onDelete="cascade" name="fk_skill_dependency_skill">
 			<reference local="skill_id" foreign="id" />
 		</foreign-key>
 	</table>
@@ -124,10 +124,10 @@
 			required="true" />
 		<column name="part_id" type="INTEGER" primaryKey="true"
 			required="true" />
-		<foreign-key foreignTable="skill" onDelete="cascade">
+		<foreign-key foreignTable="skill" onDelete="cascade" name="fk_skill_part_part">
 			<reference local="part_id" foreign="id" />
 		</foreign-key>
-		<foreign-key foreignTable="skill" onDelete="cascade">
+		<foreign-key foreignTable="skill" onDelete="cascade" name="fk_skill_part_composite">
 			<reference local="composite_id" foreign="id" />
 		</foreign-key>
 	</table>
@@ -247,11 +247,11 @@
 		<column name="id" type="INTEGER" primaryKey="true" required="true"/>
 		<column name="parent_id" type="INTEGER" primaryKey="true" required="true"/>
 		
-		<foreign-key foreignTable="structure_node">
+		<foreign-key foreignTable="structure_node" name="fk_structure_node_parent_child">
 			<reference local="id" foreign="id"/>
 		</foreign-key>
 		
-		<foreign-key foreignTable="structure_node" onDelete="cascade">
+		<foreign-key foreignTable="structure_node" onDelete="cascade" name="fk_structure_node_parent_parent">
 			<reference local="parent_id" foreign="id"/>
 		</foreign-key>
 	</table>

@@ -72,6 +72,10 @@ class AbstractCommandTestCase extends \PHPUnit_Framework_TestCase {
 		return $this->runCommand('generate:response', $input);
 	}
 	
+	protected function runGenerateApi($input = []) {
+		return $this->runCommand('generate:api', $input);
+	}
+	
 	private function runCommand($command, $input = []) {
 		$app = new KeekoTools();
 		$cmd = $app->find($command);

@@ -9,7 +9,6 @@
 	<buildpathentry kind="src" path="vendor/ircmaxell/password-compat/lib"/>
 	<buildpathentry kind="src" path="vendor/symfony/translation"/>
 	<buildpathentry kind="src" path="vendor/seld/jsonlint/src/Seld/JsonLint"/>
-	<buildpathentry kind="src" path="vendor/symfony/http-foundation/Resources/stubs"/>
 	<buildpathentry kind="src" path="src"/>
 	<buildpathentry kind="src" path="vendor/symfony/event-dispatcher"/>
 	<buildpathentry kind="src" path="vendor/phpspec/prophecy/src"/>
@@ -22,9 +21,11 @@
 	<buildpathentry kind="src" path="vendor/kriswallsmith/assetic/src"/>
 	<buildpathentry kind="src" path="vendor/sebastian/recursion-context/src"/>
 	<buildpathentry kind="src" path="vendor/composer/composer/src/Composer"/>
+	<buildpathentry excluding="Resources/stubs/" kind="src" path="vendor/symfony/polyfill-php54"/>
 	<buildpathentry kind="src" path="vendor/doctrine/instantiator/src/Doctrine/Instantiator"/>
-	<buildpathentry excluding="Resources/stubs/" kind="src" path="vendor/symfony/http-foundation"/>
+	<buildpathentry kind="src" path="vendor/symfony/http-foundation"/>
 	<buildpathentry kind="src" path="templates"/>
+	<buildpathentry kind="src" path="vendor/symfony/polyfill-php54/Resources/stubs"/>
 	<buildpathentry kind="src" path="vendor/symfony/routing"/>
 	<buildpathentry kind="src" path="vendor/composer/spdx-licenses/src"/>
 	<buildpathentry kind="src" path="vendor/mikey179/vfsStream/src/main/php"/>
@@ -58,4 +59,6 @@
 	<buildpathentry kind="src" path="vendor/phpunit/php-code-coverage/src"/>
 	<buildpathentry excluding="composer/|semver/|spdx-licenses/" kind="src" path="vendor/composer"/>
 	<buildpathentry kind="src" path="vendor/symfony/config"/>
+	<buildpathentry kind="src" path="vendor/symfony/polyfill-mbstring"/>
+	<buildpathentry kind="src" path="vendor/gossi/swagger/src"/>
 </buildpath>

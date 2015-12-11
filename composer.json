@@ -8,19 +8,19 @@
 	],
 	"license" : "MIT",
 	"require" : {
-		"php" : ">=5.4",
+		"php" : ">=5.5",
 		"composer/composer" : "@dev",
-		"propel/propel" : "2.0.0-alpha4",
+		"propel/propel" : "2.0.0-alpha5",
 		"twig/twig" : "~1",
-		"symfony/console" : "~2",
-		"symfony/event-dispatcher" : "~2",
-		"symfony/finder" : "~2",
-		"symfony/filesystem" : "~2",
-		"symfony/process" : "~2",
+		"symfony/console" : "~3",
+		"symfony/event-dispatcher" : "~3",
+		"symfony/finder" : "~3",
+		"symfony/process" : "~3",
 		"gossi/php-code-generator" : "dev-master",
 		"phootwork/json" : "~1",
 		"phootwork/file" : "~0",
-		"keeko/core" : "dev-master"
+		"keeko/core" : "dev-master",
+		"gossi/swagger" : "dev-master"
 	},
 	"autoload" : {
 		"psr-4" : {

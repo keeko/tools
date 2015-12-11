@@ -1,293 +1,167 @@
 <?php
 namespace keeko\tools\command;
 
+use gossi\swagger\collections\Paths;
+use gossi\swagger\Swagger;
 use keeko\tools\command\AbstractGenerateCommand;
 use keeko\tools\utils\NameUtils;
+use phootwork\file\File;
+use phootwork\json\Json;
 use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use gossi\swagger\collections\Definitions;
 
 class GenerateApiCommand extends AbstractGenerateCommand {
 
-	
 	protected function configure() {
 		$this
 			->setName('generate:api')
 			->setDescription('Generates the api for the module')
 		;
-
+		
+		$this->configureGenerateOptions();
+			
 		parent::configure();
+	}
+	
+	/**
+	 * Checks whether api can be generated at all by reading composer.json and verify
+	 * all required information are available
+	 */
+	private function preCheck() {
+		$module = $this->packageService->getModule();
+		if ($module === null) {
+			throw new \DomainException('No module definition found in composer.json - please run `keeko init`.');
+		}
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
-		$module = $this->getModule();
-		$api = $this->service->getJsonService()->read($this->getApiFile());
-		$api['swagger'] = '2.0';
-		$api['basePath'] = '/' . $module['slug'];
-		$api['paths'] = $this->generatePaths($api);
-		$api['definitions'] = $this->generateDefinitions($api);
-		
-		$this->service->getJsonService()->read($this->getApiFile(), $api);
-	}
-	
-	protected function generatePaths($api) {
-		$paths = isset($api['paths']) ? $api['paths'] : [];
-		foreach ($this->getActions() as $name => $action) {
-			$action['name'] = $name;
-			$paths = $this->generateOperation($paths, $action);
-		}
-		return $paths;
-	}
-	
-	protected function generateDefinitions($api) {
-		$definitions = isset($api['definitions']) ? $api['definitions'] : [];
-		
-		// meta
-		$definitions['Meta'] = $this->generateMeta($definitions);
-		
-		// models
-		$modelName = $this->getModelName();
-		if ($modelName !== null) {
-			$definitions = $this->generateDefinition($definitions, $modelName);
-		} else {
-			foreach ($this->getModels() as $modelName) {
-				$definitions = $this->generateDefinition($definitions, $modelName->getName());
-			}
-		}
-		
-		return $definitions;
-	}
-	
-	protected function generateMeta($definitions) {
-		$meta = isset($definitions['Meta']) ? $definitions['Meta'] : [];
-		$props = isset($meta['properties']) ? $meta['properties'] : [];
-		$props = $this->generateProp($props, 'total');
-		$props = $this->generateProp($props, 'first');
-		$props = $this->generateProp($props, 'next');
-		$props = $this->generateProp($props, 'previous');
-		$props = $this->generateProp($props, 'last');
-		
-		$meta['properties'] = $props;
-		return $meta;
-	}
-	
-	protected function generateProp($props, $name) {
-		$prop = isset($props[$name]) ? $props[$name] : [];
-		$prop['type'] = 'integer';
-		$props[$name] = $prop;
-		
-		return $props;
-	}
-
-	protected function generateDefinition($definitions, $modelName) {
-		$this->logger->notice('Generating Definition for: ' . $modelName);
-		$model = $this->getModel($modelName);
-		$modelObjectName = $model->getPhpName();
-		$modelPluralName = NameUtils::pluralize($model->getOriginCommonName());
-		
-		// paged model
-		$pagedModel = 'Paged' . NameUtils::pluralize($modelObjectName);
-		$definitions[$pagedModel] = [
-			'properties' => [
-				$modelPluralName => [
-					'type' => 'array',
-					'items' => [
-						'$ref' => '#/definitions/' . $modelObjectName
-					]
-				],
-				'meta' => [
-					'$ref' => '#/definitions/Meta'
-				]
-			] 
-		];
-		
-		// writable model
-		$definitions['Writable' . $modelObjectName] = [
-			'properties' => $this->generateModelProperties($model, true)
-		];
-		
-		// readable model
-		$definitions[$modelObjectName] = [
-			'properties' => $this->generateModelProperties($model)
-		];
-		
-		return $definitions;
-	}
-	
-	protected function generateModelProperties(Table $propel, $write = false) {
-		$props = [];
-		$modelName = $propel->getOriginCommonName();
-		$filter = $this->getFilter($modelName, $write ? 'write' : 'read');
-		if ($write) {
-			$filter = array_merge($filter, $this->getComputedFields($propel));
-		}
-		foreach ($propel->getColumns() as $col) {
-			$prop = $col->getName();
-			
-			if (!in_array($prop, $filter)) {
-				$props[$prop] = [
-					'type' => $col->getPhpType()
-				];
-			}
+		$api = new File($this->project->getApiFileName());
+		if (!$this->project->hasApiFile()) {
+			$api->write('{}');
 		}
 
-		return $props;
+		$swagger = Swagger::fromFile($this->project->getApiFileName());
+		$swagger->setVersion('2.0');
+		$this->generatePaths($swagger);
+		$this->generateDefinitions($swagger);
+		
+		$api->write(Json::encode($swagger->toArray(), Json::PRETTY_PRINT | Json::UNESCAPED_SLASHES));
 	}
 	
-	protected function generateOperation($paths, $action) {
-		$this->logger->notice('Generating Operation for: ' . $action['name']);
+	protected function generatePaths(Swagger $swagger) {
+		$paths = $swagger->getPaths();
 		
-		$database = $this->getDatabase();
-		$modelName = $this->getModelNameFromNameAction($action['name']);
-		$tableName = $database->getTablePrefix() . $modelName;
-		
+		foreach ($this->packageService->getModule()->getActionNames() as $name) {
+			$this->generateOperation($paths, $name);
+		}
+	}
+	
+	protected function generateOperation(Paths $paths, $actionName) {
+		$this->logger->notice('Generating Operation for: ' . $actionName);
+	
+		$database = $this->modelService->getDatabase();
+		$action = $this->packageService->getAction($actionName);
+		$modelName = $this->modelService->getModelNameByAction($action);
+		$tableName = $this->modelService->getTableName($modelName);
+	
 		if (!$database->hasTable($tableName)) {
 			return $paths;
 		}
-		
-		$modelObject = $database->getTable($tableName)->getPhpName();
-		$modelPlural = NameUtils::pluralize($modelName);
-		
-		$type = $this->getActionType($action['name'], $modelName);
-		
+	
+		$type = $this->packageService->getActionType($actionName, $modelName);
+		$modelObjectName = $database->getTable($tableName)->getPhpName();
+		$modelPluralName = NameUtils::pluralize($modelName);
+	
 		// find path branch
 		switch ($type) {
 			case 'list':
 			case 'create':
-				$endpoint = '/' . $modelPlural;
+				$endpoint = '/' . $modelPluralName;
 				break;
-
+	
 			case 'read':
 			case 'update':
 			case 'delete':
-				$endpoint = '/' . $modelPlural . '/{id}';
+				$endpoint = '/' . $modelPluralName . '/{id}';
 				break;
-
+	
 			default:
 				throw new \RuntimeException('type (%s) not found, can\'t continue.');
 				break;
 		}
-
-		$path = isset($paths[$endpoint]) ? $paths[$endpoint] : [];
+	
+	
+		$path = $paths->get($endpoint);
 		$method = $this->getMethod($type);
-		$operation = isset($path[$method]) ? $path[$method] : [];
-
-		$operation['description'] = $action['title'];
-		$operation['operationId'] = $action['name'];
-		$operation['produces'] = ['application/json'];
-		$params = isset($operation['parameters']) ? $operation['parameters'] : [];
-		$responses = isset($operation['responses']) ? $operation['responses'] : [];
-		
+		$operation = $path->getOperation($method);
+		$operation->setDescription($action->getTitle());
+		$operation->setOperationId($action->getName());
+		$operation->getProduces()->add('application/json');
+	
+		$params = $operation->getParameters();
+		$responses = $operation->getResponses();
+	
 		switch ($type) {
 			case 'list':
-				$ok = isset($responses['200']) ? $responses['200'] : [];
-				$ok['description'] = sprintf('Array of %s', $modelPlural);
-				$ok['schema'] = ['$ref' => '#/definitions/' . 'Paged' . NameUtils::pluralize($modelObject)];
-				
-				$responses['200'] = $ok;
+				$ok = $responses->get('200');
+				$ok->setDescription(sprintf('Array of %s', $modelPluralName));
+				$ok->getSchema()->setRef('#/definitions/' . 'Paged' . NameUtils::pluralize($modelObjectName));
 				break;
-				
+	
 			case 'create':
 				// params
-				list($paramIndex, $param) = $this->findParam($params, 'body');
-				
-				$param['name'] = 'body';
-				$param['in'] = 'body';
-				$param['description'] = sprintf('The new %s', $modelName);
-				$param['required'] = true;
-				$param['schema'] = ['$ref' => '#/definitions/Writable' . $modelObject];
-				
-				$params = $this->updateArray($params, $paramIndex, $param);
-				
+				$body = $params->getByName('body');
+				$body->setName('body');
+				$body->setIn('body');
+				$body->setDescription(sprintf('The new %s', $modelName));
+				$body->setRequired(true);
+				$body->getSchema()->setRef('#/definitions/Writable' . $modelObjectName);
+	
 				// response
-				$ok = isset($responses['201']) ? $responses['201'] : [];
-				$ok['description'] = sprintf('%s created', $modelName);
-				
-				$responses['201'] = $ok;
+				$ok = $responses->get('201');
+				$ok->setDescription(sprintf('%s created', $modelName));
 				break;
-				
+	
 			case 'read':
 				// response
-				$ok = isset($responses['200']) ? $responses['200'] : [];
-				$ok['description'] = sprintf('gets the %s', $modelName);
-				$ok['schema'] = ['$ref' => '#/definitions/' . $modelObject];
-				
-				$responses['200'] = $ok;
+				$ok = $responses->get('200');
+				$ok->setDescription(sprintf('gets the %s', $modelName));
+				$ok->getSchema()->setRef('#/definitions/' . $modelObjectName);
 				break;
-				
+	
 			case 'update':
 				// response
-				$ok = isset($responses['200']) ? $responses['200'] : [];
-				$ok['description'] = sprintf('%s updated', $modelName);
-				$ok['schema'] = ['$ref' => '#/definitions/' . $modelObject];
-				
-				$responses['200'] = $ok;
+				$ok = $responses->get('200');
+				$ok->setDescription(sprintf('%s updated', $modelName));
+				$ok->getSchema()->setRef('#/definitions/' . $modelObjectName);
 				break;
-				
+	
 			case 'delete':
 				// response
-				$ok = isset($responses['204']) ? $responses['204'] : [];
-				$ok['description'] = sprintf('%s deleted', $modelName);
-				
-				$responses['204'] = $ok;
+				$ok = $responses->get('204');
+				$ok->setDescription(sprintf('%s deleted', $modelName));
 				break;
 		}
-		
+	
 		if ($type == 'read' || $type == 'update' || $type == 'delete') {
 			// params
-			list($paramIndex, $param) = $this->findParam($params, 'id');
-			
-			$param['name'] = 'id';
-			$param['in'] = 'path';
-			$param['description'] = sprintf('The %s id', $modelName);
-			$param['required'] = true;
-			$param['type'] = 'integer';
-			
-			$params = $this->updateArray($params, $paramIndex, $param);
-
-			// response
-			$invalid = isset($responses['400']) ? $responses['400'] : [];
-			$invalid['description'] = 'Invalid ID supplied';
-			$responses['400'] = $invalid;
-			
-			$notfound = isset($responses['404']) ? $responses['404'] : [];
-			$notfound['description'] = sprintf('No %s found', $modelName);
-			$responses['404'] = $notfound;
-		}
-		
-		// response - @TODO Error model
-		
-
-		if (count($params) > 0) {
-			$operation['parameters'] = $params;
-		} else {
-			unset($operation['parameters']);
-		}
-		
-		if (count($responses) > 0) {
-			$operation['responses'] = $responses;
-		} else {
-			unset($operation['responses']);
-		}
-
-		$path[$method] = $operation;
-		$paths[$endpoint] = $path;
-
-		return $paths;
-	}
+			$id = $params->getByName('id');
+			$id->setIn('path');
+			$id->setDescription(sprintf('The %s id', $modelName));
+			$id->setRequired(true);
+			$id->setType('integer');
 	
-	private function getModelNameFromNameAction($name) {
-		return substr($name, 0, strpos($name, '-'));
-	}
-
-	private function updateArray($array, $index, $value) {
-		if ($index === null) {
-			$array[] = $value;
-		} else {
-			$array[$index] = $value;
+			// response
+			$invalid = $responses->get('400');
+			$invalid->setDescription('Invalid ID supplied');
+				
+			$notfound = $responses->get('404');
+			$notfound->setDescription(sprintf('No %s found', $modelName));
 		}
-		
-		return $array;
+	
+		// response - @TODO Error model
 	}
 	
 	private function getMethod($type) {
@@ -298,34 +172,78 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 			'update' => 'PUT',
 			'delete' => 'DELETE'
 		];
-		
+	
 		return $methods[$type];
 	}
-	
-	private function findOperation($operations, $method) {
-		foreach ($operations as $index => $operation) {
-			if (isset($operation['method']) && strtoupper($operation['method']) === strtoupper($method)) {
-				return [$index, $operation];
+
+	protected function generateDefinitions(Swagger $swagger) {
+		$definitions = $swagger->getDefinitions();
+		
+		// meta
+		$this->generateMeta($definitions);
+
+		// models
+		$modelName = $this->modelService->getModelName();
+		if ($modelName !== null) {
+			$definitions = $this->generateDefinition($definitions, $modelName);
+		} else {
+			foreach ($this->modelService->getModels() as $model) {
+				$definitions = $this->generateDefinition($definitions, $model->getName());
 			}
 		}
-		return [null, []];
 	}
 	
-	private function findParam($params, $name) {
-		foreach ($params as $index => $param) {
-			if (isset($param['name']) && $param['name'] === $name) {
-				return [$index, $param];
-			}
+	protected function generateMeta(Definitions $definitions) {
+		$meta = $definitions->get('Meta');
+		$props = $meta->getProperties();
+		$names = ['total', 'first', 'next', 'previous', 'last'];
+		
+		foreach ($names as $name) {
+			$props->get($name)->setType('integer');
 		}
-		return [null, []];
+	}
+
+	protected function generateDefinition(Definitions $definitions, $modelName) {
+		$this->logger->notice('Generating Definition for: ' . $modelName);
+		$model = $this->modelService->getModel($modelName);
+		$modelObjectName = $model->getPhpName();
+		$modelPluralName = NameUtils::pluralize($model->getOriginCommonName());
+		
+		// paged model
+		$pagedModel = 'Paged' . NameUtils::pluralize($modelObjectName);
+		$paged = $definitions->get($pagedModel)->getProperties();
+		$paged->get($modelPluralName)
+			->setType('array')
+			->getItems()->setRef('#/definitions/' . $modelObjectName);
+		$paged->get('meta')->setRef('#/definitions/Meta');
+		
+		// writable model
+		$writable = $definitions->get('Writable' . $modelObjectName)->getProperties();
+		$this->generateModelProperties($writable, $model, true);
+
+		// readable model
+		$readable = $definitions->get($modelObjectName)->getProperties();
+		$this->generateModelProperties($readable, $model, true);
 	}
 	
-	private function findResponse($responses, $code) {
-		foreach ($responses as $index => $response) {
-			if (isset($response['code']) && $response['code'] == $code) {
-				return [$index, $response];
+	protected function generateModelProperties(Definitions $props, Table $model, $write = false) {
+		$modelName = $model->getOriginCommonName();
+		$filter = $write 
+			? $this->codegenService->getCodegen()->getWriteFilter($modelName)
+			: $this->codegenService->getCodegen()->getReadFilter($modelName);
+		
+		if ($write) {
+			$filter = array_merge($filter, $this->codegenService->getComputedFields($model));
+		}
+		foreach ($model->getColumns() as $col) {
+			$prop = $col->getName();
+			
+			if (!in_array($prop, $filter)) {
+				$props->get($prop)->setType($col->getPhpType());
 			}
 		}
-		return [null, []];
+
+		return $props;
 	}
+
 }

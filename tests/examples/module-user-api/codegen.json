@@ -1,0 +1,22 @@
+{
+	"models": {
+	    "user" : {
+			"write" : {
+				"conversion" : {
+					"password" : "password_hash($v, PASSWORD_BCRYPT)"
+				},
+				"filter" : [
+					"password_recover_code",
+					"password_recover_time"
+				]
+			},
+			"read" : {
+				"filter" : [
+					"password",
+					"password_recover_code",
+					"password_recover_time"
+				]
+			}
+		}
+	}
+}
