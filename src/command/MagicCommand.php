@@ -13,20 +13,22 @@ class MagicCommand extends AbstractGenerateCommand {
 			->setName('magic')
 			->setDescription('Magically does everything')
 		;
-	
+		
+		$this->configureGenerateOptions();
+
 		parent::configure();
 	}
 	
 	public function execute(InputInterface $input, OutputInterface $output) {
 		// pre check
-		$package = $this->getPackage();
-		if (!isset($package['type']) && !isset($package['name'])) {
+		$package = $this->package;
+		if (empty($package->getType()) && empty($package->getName())) {
 			throw new \DomainException('No type and name found in composer.json - please run `keeko init`.');
 		}
 		
-		if ($package['type'] === 'keeko-module') {
-			$module = $this->getKeekoModule();
-			if (count($module) === 0) {
+		if ($package->getType() === 'keeko-module') {
+			$module = $this->packageService->getModule();
+			if ($module === null) {
 				throw new \DomainException('No module definition found in composer.json - please run `keeko init`.');
 			}
 		}
@@ -40,14 +42,14 @@ class MagicCommand extends AbstractGenerateCommand {
 			$args['--schema'] = $schema;
 		}
 		
-		if (($composer = $input->getOption('composer')) !== null) {
-			$args['--composer'] = $composer;
-		}
+// 		if (($composer = $input->getOption('composer')) !== null) {
+// 			$args['--composer'] = $composer;
+// 		}
 		
 		$input = new ArrayInput($args);
 		$input->setInteractive(false);
 		
-		if ($package['type'] === 'keeko-module') {
+		if ($package->getType() === 'keeko-module') {
 			$this->runCommand('generate:action', $input, $output);
 			$this->runCommand('generate:response', $input, $output);
 			$this->runCommand('generate:api', $input, $output);

@@ -1,7 +1,7 @@
 <?php
 namespace keeko\test;
 
-use keeko\core\application\AbstractApplication;
+use keeko\core\package\AbstractApplication;
 use Symfony\Component\HttpFoundation\Request;
 
 /**

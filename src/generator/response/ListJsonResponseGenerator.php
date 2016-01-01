@@ -1,9 +1,10 @@
 <?php
-namespace keeko\tools\generator;
+namespace keeko\tools\generator\response;
 
-use keeko\core\schema\ActionSchema;
-use keeko\tools\utils\NameUtils;
 use gossi\codegen\model\PhpClass;
+use keeko\core\schema\ActionSchema;
+use keeko\tools\generator\AbstractJsonResponseGenerator;
+use keeko\tools\utils\NameUtils;
 
 class ListJsonResponseGenerator extends AbstractJsonResponseGenerator {
 

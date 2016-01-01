@@ -1,13 +1,14 @@
 <?php
-namespace keeko\user;
+namespace keeko\blabla;
 
-use keeko\core\module\AbstractModule;
+use keeko\core\package\AbstractModule;
 
 /**
- * Keeko User Module
+ * Keeko Blabla Module
  * 
  * @license MIT
  * @author Tester
+ * @author gossi <github@gos.si>
  */
 class BlablaModule extends AbstractModule {
 
@@ -22,6 +23,8 @@ class BlablaModule extends AbstractModule {
 	}
 
 	/**
+	 * @param mixed $from
+	 * @param mixed $to
 	 * @param mixed $from
 	 * @param mixed $to
 	 */

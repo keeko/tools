@@ -2,26 +2,31 @@
 namespace keeko\tools\command;
 
 use gossi\codegen\model\PhpClass;
-use keeko\tools\generator\BlankHtmlResponseGenerator;
-use keeko\tools\generator\BlankJsonResponseGenerator;
 use keeko\tools\generator\GeneratorFactory;
-use keeko\tools\generator\ModelResponseTraitGenerator;
-use keeko\tools\generator\TwigHtmlResponseGenerator;
+use keeko\tools\generator\response\base\ModelResponseTraitGenerator;
+use keeko\tools\generator\response\BlankHtmlResponseGenerator;
+use keeko\tools\generator\response\BlankJsonResponseGenerator;
+use keeko\tools\generator\response\TwigHtmlResponseGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
+use phootwork\collection\Set;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
+use phootwork\file\File;
+use keeko\tools\generator\response\DumpJsonResponseGenerator;
 
 class GenerateResponseCommand extends AbstractGenerateCommand {
 
 	use QuestionHelperTrait;
 	
-	protected $traits = [];
+	protected $traits;
 	
 	protected function configure() {
+		$this->traits = new Set();
+		
 		$this
 			->setName('generate:response')
 			->setDescription('Generates code for a response')
@@ -70,21 +75,21 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		$specificAction = false;
 		
 		if ($name === null) {
-			$formatQuestion = new ConfirmationQuestion('Do you want to generate a response for a specific action?');
-			$specificAction = $this->askConfirmation($formatQuestion);
+			$specificQuestion = new ConfirmationQuestion('Do you want to generate a response for a specific action?');
+			$specificAction = $this->askConfirmation($specificQuestion);
 		}
 		
 		// ask which action
 		if ($specificAction) {
 			$names = [];
-			$actions = $this->getKeekoActions();
-			foreach (array_keys($actions) as $name) {
+			$module = $this->packageService->getModule();
+			foreach ($module->getActionNames() as $name) {
 				$names[] = $name;
 			}
 			
-			$formatQuestion = new Question('Which action');
-			$formatQuestion->setAutocompleterValues($names);
-			$name = $this->askQuestion($formatQuestion);
+			$actionQuestion = new Question('Which action');
+			$actionQuestion->setAutocompleterValues($names);
+			$name = $this->askQuestion($actionQuestion);
 			$input->setArgument('name', $name);
 		} 
 		
@@ -96,10 +101,18 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		$input->setOption('format', $format);
 		
 		// ask which template
-		$templateQuestion = new Question('Which template', 'blank');
-		$templateQuestion->setAutocompleterValues(['blank', 'twig']);
+		$templates = [
+			'html' => ['twig', 'blank'],
+			'json' => ['dump', 'blank']
+		];
+		
+		$suggestions = isset($templates[$format]) ? $templates[$format] : [];
+		$default = count($suggestions) ? $suggestions[0] : '';
+		$templateQuestion = new Question('Which template', $default);
+		$templateQuestion->setAutocompleterValues($suggestions);
 		$template = $this->askQuestion($templateQuestion);
 		$input->setOption('template', $template);
+		
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
@@ -125,6 +138,7 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 	}
 	
 	private function generateResponse($actionName) {
+		$this->logger->info('Generate Response: ' . $actionName);
 		$module = $this->packageService->getModule();
 		
 		if (!$module->hasAction($actionName)) {
@@ -142,6 +156,7 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		}
 
 		// find generator
+		$overwrite = false;
 		$generator = null;
 		$type = $this->packageService->getActionType($actionName, $modelName);
 		$isModel = $type && $this->modelService->isModelAction($action); 
@@ -149,6 +164,11 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		// model given and format is json
 		if ($isModel && $format === 'json') {
 			$generator = GeneratorFactory::createJsonResponseGenerator($type, $this->service);
+		}
+		
+		// json + dump
+		else if ($format === 'json' && $template == 'dump') {
+			$generator = new DumpJsonResponseGenerator($this->service);
 		}
 		
 		// blank json
@@ -175,16 +195,25 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 			if ($isModel && $format === 'json') {
 				$generator = new ModelResponseTraitGenerator($this->service);
 				$trait = $generator->generate($action);
-				$class->addTrait($trait);
 				
-				if (!in_array($trait->getName(), $this->traits)) {
+				if (!$class->hasTrait($trait)) {
+					$class->addTrait($trait);
+					$overwrite = true;
+				}
+				
+				if (!$this->traits->contains($trait->getName())) {
 					$this->codegenService->dumpStruct($trait, true);
-					$this->traits[] = $trait->getName();
+					$this->traits->add($trait->getName());
 				}
 			}
 
 			// write to file
-			$this->codegenService->dumpStruct($class, $input->getOption('force'));
+			$file = new File($this->codegenService->getFilename($class));
+			if (!$file->exists()) {
+				$overwrite = true;
+			}
+			$overwrite = $overwrite || $input->getOption('force');
+			$this->codegenService->dumpStruct($class, $overwrite);
 		}
 	}
 

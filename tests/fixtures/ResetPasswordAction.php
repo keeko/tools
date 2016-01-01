@@ -1,7 +1,7 @@
 <?php
 namespace keeko\user\action;
 
-use keeko\core\action\AbstractAction;
+use keeko\core\package\AbstractAction;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 

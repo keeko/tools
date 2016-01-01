@@ -1,12 +1,13 @@
 <?php
-namespace keeko\tools\generator;
+namespace keeko\tools\generator\action\base;
 
 use gossi\codegen\model\PhpTrait;
 use keeko\core\schema\ActionSchema;
+use keeko\tools\generator\AbstractActionTraitGenerator;
 use keeko\tools\utils\NameUtils;
 
-class DeleteActionTraitGenerator extends AbstractActionTraitGenerator {
-
+class ListActionTraitGenerator extends AbstractActionTraitGenerator {
+		
 	/* (non-PHPdoc)
 	 * @see \keeko\tools\generator\AbstractTraitGenerator::addMethods()
 	 */
@@ -15,15 +16,14 @@ class DeleteActionTraitGenerator extends AbstractActionTraitGenerator {
 		$modelVariableName = NameUtils::toCamelCase($modelName);
 		$modelObjectName = NameUtils::toStudlyCase($modelName);
 		$fullModelObjectName = $this->modelService->getFullModelObjectName($action);
-
-		// method: setDefaultParams(OptionsResolverInterface $resolver)
-		$this->addSetDefaultParamsMethod($trait, $this->twig->render('delete-setDefaultParams.twig'));
-
+		
+		// method: configureParams(OptionsResolver $resolver)
+		$this->addConfigureParamsMethod($trait, $this->twig->render('list-configureParams.twig'));
+		
 		// method: run(Request $request)
 		$trait->addUseStatement($fullModelObjectName);
 		$trait->addUseStatement($fullModelObjectName . 'Query');
-		$trait->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');
-		$trait->setMethod($this->generateRunMethod($this->twig->render('delete-run.twig', [
+		$trait->setMethod($this->generateRunMethod($this->twig->render('list-run.twig', [
 			'model' => $modelVariableName,
 			'class' => $modelObjectName
 		])));

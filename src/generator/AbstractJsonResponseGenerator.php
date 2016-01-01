@@ -10,10 +10,16 @@ class AbstractJsonResponseGenerator extends AbstractResponseGenerator {
 		return 'response/json';
 	}
 	
-	protected function addUseStatements(AbstractPhpStruct $struct) {
-		parent::addUseStatements($struct);
+	protected function ensureUseStatements(AbstractPhpStruct $struct) {
+		parent::ensureUseStatements($struct);
 		$struct->removeUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\JsonResponse');
+	}
+	
+	protected function generateRunMethod($body = '') {
+		$method = parent::generateRunMethod($body);
+		$method->setType('JsonResponse');
+		return $method;
 	}
 
 	/**

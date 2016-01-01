@@ -73,9 +73,8 @@ abstract class AbstractGenerateCommand extends Command {
 			->addOption(
 				'force',
 				'f',
-				InputOption::VALUE_OPTIONAL,
-				'Forces to owerwrite',
-				false
+				InputOption::VALUE_NONE,
+				'Forces to owerwrite'
 			)
 		;
 	}

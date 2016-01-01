@@ -36,7 +36,8 @@ class ModelService extends AbstractService {
 			$schemas = [
 				$input->hasOption('schema') ? $input->getOption('schema') : '',
 				$workDir . '/database/schema.xml',
-				$workDir . '/core/database/schema.xml'
+				$workDir . '/core/database/schema.xml',
+				$workDir . '/vendor/keeko/core/database/schema.xml'
 			];
 			foreach ($schemas as $path) {
 				if (file_exists($path)) {

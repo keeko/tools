@@ -386,9 +386,7 @@ class InitCommand extends AbstractGenerateCommand {
 			$docblock->appendTag(new LicenseTag($this->package->getLicense()));
 			$this->codegenService->addAuthors($class, $this->package);
 		} else {
-			require_once $filename;
-
-			$class = PhpClass::fromReflection(new \ReflectionClass($fqcn));
+			$class = PhpClass::fromFile($filename);
 		}
 		
 		return $class;
@@ -397,7 +395,7 @@ class InitCommand extends AbstractGenerateCommand {
 	private function handleAppClass(PhpClass $class) {
 		// set parent
 		$class->setParentClassName('AbstractApplication');
-		$class->addUseStatement('keeko\\core\\application\\AbstractApplication');
+		$class->addUseStatement('keeko\\core\\package\\AbstractApplication');
 
 		// method: run(Request $request, $path)
 		if (!$class->hasMethod('run')) {
@@ -412,7 +410,7 @@ class InitCommand extends AbstractGenerateCommand {
 	private function handleModuleClass(PhpClass $class) {
 		// set parent
 		$class->setParentClassName('AbstractModule');
-		$class->addUseStatement('keeko\\core\\module\\AbstractModule');
+		$class->addUseStatement('keeko\\core\\package\\AbstractModule');
 		
 		// method: install()
 		if (!$class->hasMethod('install')) {

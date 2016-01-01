@@ -1,5 +1,5 @@
 <?php
-namespace keeko\tools\generator;
+namespace keeko\tools\generator\action;
 
 use keeko\tools\generator\AbstractActionGenerator;
 use gossi\codegen\model\PhpClass;
@@ -13,10 +13,10 @@ class BlankActionGenerator extends AbstractActionGenerator {
 	 */
 	public function generate(PhpClass $class) {
 		// add use statements
-		$this->addUseStatements($class);
+		$this->ensureUseStatements($class);
 		
-		// method: setDefaultParams(OptionsResolverInterface $resolver)
-// 		$this->addSetDefaultParamsMethod($class, '');
+		// method: configureParams(OptionsResolver $resolver)
+// 		$this->addConfigureParamsMethod($class, '');
 
 		// method: run(Request $request)
 		$class->setMethod($this->generateRunMethod($this->twig->render('blank-run.twig')));

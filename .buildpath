@@ -11,9 +11,11 @@
 	<buildpathentry kind="src" path="vendor/seld/jsonlint/src/Seld/JsonLint"/>
 	<buildpathentry kind="src" path="src"/>
 	<buildpathentry kind="src" path="vendor/symfony/event-dispatcher"/>
+	<buildpathentry kind="src" path="vendor/webmozart/path-util/src"/>
 	<buildpathentry kind="src" path="vendor/phpspec/prophecy/src"/>
 	<buildpathentry kind="src" path="vendor/symfony/yaml"/>
 	<buildpathentry kind="con" path="org.eclipse.php.core.LANGUAGE"/>
+	<buildpathentry kind="src" path="vendor/keeko/core/src"/>
 	<buildpathentry kind="src" path="vendor/phpdocumentor/reflection-docblock/src"/>
 	<buildpathentry kind="src" path="vendor/sebastian/exporter/src"/>
 	<buildpathentry kind="src" path="vendor/phpunit/php-text-template/src"/>
@@ -35,9 +37,9 @@
 	<buildpathentry excluding="Symfony/Component/Console/Tests/" kind="src" path="vendor/symfony/console"/>
 	<buildpathentry kind="src" path="vendor/phootwork/collection/src"/>
 	<buildpathentry kind="src" path="vendor/monolog/monolog/src/Monolog"/>
+	<buildpathentry kind="src" path="vendor/webmozart/assert/src"/>
 	<buildpathentry kind="src" path="vendor/composer/semver/src"/>
 	<buildpathentry kind="src" path="vendor/phootwork/file/src"/>
-	<buildpathentry kind="src" path="core/src"/>
 	<buildpathentry kind="src" path="vendor/sebastian/version/src"/>
 	<buildpathentry kind="src" path="tests"/>
 	<buildpathentry kind="src" path="vendor/gossi/docblock/src"/>
@@ -57,8 +59,10 @@
 	<buildpathentry kind="src" path="vendor/phootwork/tokenizer/src"/>
 	<buildpathentry kind="src" path="vendor/phootwork/lang/src"/>
 	<buildpathentry kind="src" path="vendor/phpunit/php-code-coverage/src"/>
+	<buildpathentry kind="src" path="vendor/puli/composer-plugin/src"/>
 	<buildpathentry excluding="composer/|semver/|spdx-licenses/" kind="src" path="vendor/composer"/>
 	<buildpathentry kind="src" path="vendor/symfony/config"/>
+	<buildpathentry kind="src" path="vendor/nikic/php-parser/lib"/>
 	<buildpathentry kind="src" path="vendor/symfony/polyfill-mbstring"/>
 	<buildpathentry kind="src" path="vendor/gossi/swagger/src"/>
 </buildpath>

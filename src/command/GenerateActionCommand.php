@@ -16,7 +16,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use keeko\tools\generator\BlankActionGenerator;
+use keeko\tools\generator\action\BlankActionGenerator;
+use keeko\tools\generator\action\NoopActionGenerator;
 
 class GenerateActionCommand extends AbstractGenerateCommand {
 
@@ -339,24 +340,23 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		$traitName = $class->getName() . 'Trait';
 		$overwrite = false;
 		
-		// load from reflection, when class exists
+		// load from file, when class exists
 		if (file_exists($filename)) {
 			// load trait
 			$trait = new PhpTrait($traitNs . '\\' . $traitName);
 			$traitFile = new File($this->codegenService->getFilename($trait));
 
 			if ($traitFile->exists()) {
-				require_once($traitFile->getPathname());
+				$trait = PhpTrait::fromFile($traitFile->getPathname());
 			}
 		
 			// load class
-			require_once($filename);
-			$class = PhpClass::fromReflection(new \ReflectionClass($action->getClass()));
+			$class = PhpClass::fromFile($filename);
 		}
 		
 		// anyway seed class information
 		else {
-			$class->addUseStatement('keeko\\core\\action\\AbstractAction');
+			$overwrite = true;
 			$class->setParentClassName('AbstractAction');
 			$class->setDescription($action->getTitle());
 			$class->setLongDescription($action->getDescription());
@@ -364,11 +364,9 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 		
 		// create base trait
-		if ($input->getOption('model') !== null) {
-			if (($type = $input->getOption('type')) === null) {
-				$text = Text::create($action->getName());
-				$type = $text->substring($text->indexOf('-') + 1)->toString();
-			}
+		$modelName = $input->getOption('model');
+		if ($modelName !== null) {
+			$type = $this->packageService->getActionType($action->getName(), $modelName);
 			$generator = GeneratorFactory::createActionTraitGenerator($type, $this->service);
 			$trait = $generator->generate($traitNs . '\\' . $traitName, $action);
 
@@ -379,14 +377,18 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 				$class->addTrait($trait);
 				$overwrite = true;
 			}
-		} else {
-			// create blank action methods
-			if (!$class->hasMethod('run')) {
-				$generator = new BlankActionGenerator($this->service);
-				$class = $generator->generate($class);
-				$overwrite = true;
-			}
 		}
+		
+		// create class generator
+		if ($modelName === null && !$class->hasMethod('run')) {
+			$overwrite = true;
+			$generator = new BlankActionGenerator($this->service);
+		} else {
+			$generator = new NoopActionGenerator($this->service);
+		}
+
+		$class = $generator->generate($class);
+		$overwrite = $overwrite || $input->getOption('force');
 
 		$this->codegenService->dumpStruct($class, $overwrite);
 	}

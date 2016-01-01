@@ -1,6 +1,7 @@
 <?php
 namespace keeko\user\action\base;
 
+use keeko\core\package\AbstractAction;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use keeko\core\model\User;

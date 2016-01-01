@@ -1,7 +1,7 @@
 <?php
 namespace gossi\trixionary;
 
-use keeko\core\module\AbstractModule;
+use keeko\core\package\AbstractModule;
 
 /**
  * Trixionary API Module
@@ -22,6 +22,8 @@ class TrixionaryModule extends AbstractModule {
 	}
 
 	/**
+	 * @param mixed $from
+	 * @param mixed $to
 	 * @param mixed $from
 	 * @param mixed $to
 	 */

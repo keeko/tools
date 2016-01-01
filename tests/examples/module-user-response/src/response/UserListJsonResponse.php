@@ -1,7 +1,7 @@
 <?php
 namespace keeko\user\response;
 
-use keeko\core\action\AbstractResponse;
+use keeko\core\package\AbstractResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
@@ -19,7 +19,7 @@ class UserListJsonResponse extends AbstractResponse {
 	 * 
 	 * @param Request $request
 	 * @param mixed $data
-	 * @return Response
+	 * @return JsonResponse
 	 */
 	public function run(Request $request, $data = null) {
 		$out = [];

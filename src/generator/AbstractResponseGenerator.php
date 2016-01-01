@@ -34,7 +34,7 @@ abstract class AbstractResponseGenerator extends AbstractCodeGenerator {
 	
 		$this->codegenService->addAuthors($struct, $this->packageService->getPackage());
 	
-		$this->addUseStatements($struct);
+		$this->ensureUseStatements($struct);
 		$this->addMethods($struct, $action);
 	
 		return $struct;
@@ -63,8 +63,8 @@ abstract class AbstractResponseGenerator extends AbstractCodeGenerator {
 			->setBody($body);
 	}
 
-	protected function addUseStatements(AbstractPhpStruct $struct) {
-		$struct->addUseStatement('keeko\\core\\action\\AbstractResponse');
+	protected function ensureUseStatements(AbstractPhpStruct $struct) {
+		$struct->addUseStatement('keeko\\core\\package\\AbstractResponse');
 		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
 		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 	}

@@ -3,7 +3,7 @@ namespace keeko\user\action\base;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use keeko\core\model\User;
 use keeko\core\model\UserQuery;
 
@@ -15,6 +15,16 @@ use keeko\core\model\UserQuery;
  * @author Tester
  */
 trait UserListActionTrait {
+
+	/**
+	 * @param OptionsResolver $resolver
+	 */
+	public function configureParams(OptionsResolver $resolver) {
+		$resolver->setDefaults([
+			'page' => 1,
+			'per_page' => 50,
+		]);
+	}
 
 	/**
 	 * Automatically generated run method
@@ -30,15 +40,5 @@ trait UserListActionTrait {
 
 		// run response
 		return $this->response->run($request, $user);
-	}
-
-	/**
-	 * @param OptionsResolverInterface $resolver
-	 */
-	public function setDefaultParams(OptionsResolverInterface $resolver) {
-		$resolver->setDefaults([
-			'page' => 1,
-			'per_page' => 50,
-		]);
 	}
 }

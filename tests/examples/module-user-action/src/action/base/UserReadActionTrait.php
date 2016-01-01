@@ -3,7 +3,7 @@ namespace keeko\user\action\base;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use keeko\core\model\User;
 use keeko\core\model\UserQuery;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
@@ -16,6 +16,13 @@ use Symfony\Component\Routing\Exception\ResourceNotFoundException;
  * @author Tester
  */
 trait UserReadActionTrait {
+
+	/**
+	 * @param OptionsResolver $resolver
+	 */
+	public function configureParams(OptionsResolver $resolver) {
+		$resolver->setRequired(['id']);
+	}
 
 	/**
 	 * Automatically generated run method
@@ -35,12 +42,5 @@ trait UserReadActionTrait {
 
 		// run response
 		return $this->response->run($request, $user);
-	}
-
-	/**
-	 * @param OptionsResolverInterface $resolver
-	 */
-	public function setDefaultParams(OptionsResolverInterface $resolver) {
-		$resolver->setRequired(['id']);
 	}
 }

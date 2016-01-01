@@ -1,12 +1,13 @@
 <?php
-namespace keeko\tools\generator;
+namespace keeko\tools\generator\response\base;
 
 use gossi\codegen\model\AbstractPhpStruct;
-use gossi\codegen\model\PhpTrait;
-use keeko\core\schema\ActionSchema;
-use keeko\tools\utils\NameUtils;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
+use gossi\codegen\model\PhpTrait;
+use keeko\core\schema\ActionSchema;
+use keeko\tools\generator\AbstractResponseGenerator;
+use keeko\tools\utils\NameUtils;
 
 class ModelResponseTraitGenerator extends AbstractResponseGenerator {
 
@@ -44,7 +45,7 @@ class ModelResponseTraitGenerator extends AbstractResponseGenerator {
 			->addUseStatement($nsModelName);
 	}
 	
-	protected function addUseStatements(AbstractPhpStruct $struct) {
+	protected function ensureUseStatements(AbstractPhpStruct $struct) {
 		$struct->addUseStatement('keeko\\core\\utils\\FilterUtils');
 		$struct->addUseStatement('Propel\\Runtime\\Map\\TableMap');
 	}

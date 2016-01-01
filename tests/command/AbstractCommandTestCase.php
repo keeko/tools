@@ -25,7 +25,7 @@ class AbstractCommandTestCase extends \PHPUnit_Framework_TestCase {
 	}
 	
 	protected function getCoreSchema() {
-		return __DIR__ . '/../../core/database/schema.xml';
+		return __DIR__ . '/../../vendor/keeko/core/database/schema.xml';
 	}
 
 	protected function getFile($folder, $filename) {

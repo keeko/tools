@@ -1,4 +1,5 @@
-core
+.puli/
 vendor/
 coverage/
-vfs:
+public/
+puli.json

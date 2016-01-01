@@ -19,7 +19,7 @@ class AbstractActionTraitGenerator extends AbstractActionGenerator {
 			->setDescription('Base methods for ' . $action->getClass())
 			->setLongDescription('This code is automatically created. Modifications will probably be overwritten.');
 	
-		$this->addUseStatements($trait);
+		$this->ensureUseStatements($trait);
 		$this->addMethods($trait, $action);
 
 		return $trait;

@@ -20,15 +20,16 @@ class AbstractActionGenerator extends AbstractCodeGenerator {
 			->setBody($body);
 	}
 
-	protected function addSetDefaultParamsMethod(AbstractPhpStruct $struct, $body = '') {
-		$struct->addUseStatement('Symfony\\Component\\OptionsResolver\\OptionsResolverInterface');
-		$struct->setMethod(PhpMethod::create('setDefaultParams')
-			->addParameter(PhpParameter::create('resolver')->setType('OptionsResolverInterface'))
+	protected function addConfigureParamsMethod(AbstractPhpStruct $struct, $body = '') {
+		$struct->addUseStatement('Symfony\\Component\\OptionsResolver\\OptionsResolver');
+		$struct->setMethod(PhpMethod::create('configureParams')
+			->addParameter(PhpParameter::create('resolver')->setType('OptionsResolver'))
 			->setBody($body)
 		);
 	}
 	
-	protected function addUseStatements(AbstractPhpStruct $struct) {
+	protected function ensureUseStatements(AbstractPhpStruct $struct) {
+		$struct->addUseStatement('keeko\\core\\package\\AbstractAction');
 		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
 		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 	}

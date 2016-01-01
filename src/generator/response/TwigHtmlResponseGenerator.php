@@ -1,8 +1,9 @@
 <?php
-namespace keeko\tools\generator;
+namespace keeko\tools\generator\response;
 
 use gossi\codegen\model\PhpClass;
 use keeko\core\schema\ActionSchema;
+use keeko\tools\generator\AbstractHtmlResponseGenerator;
 
 class TwigHtmlResponseGenerator extends AbstractHtmlResponseGenerator {
 
