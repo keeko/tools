@@ -8,7 +8,6 @@ use keeko\core\package\AbstractModule;
  * 
  * @license MIT
  * @author Tester
- * @author gossi <github@gos.si>
  */
 class BlablaModule extends AbstractModule {
 
@@ -23,8 +22,6 @@ class BlablaModule extends AbstractModule {
 	}
 
 	/**
-	 * @param mixed $from
-	 * @param mixed $to
 	 * @param mixed $from
 	 * @param mixed $to
 	 */

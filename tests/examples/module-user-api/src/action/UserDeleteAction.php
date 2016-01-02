@@ -1,15 +1,14 @@
 <?php
 namespace keeko\user\action;
 
-use keeko\core\package\AbstractAction;
 use keeko\user\action\base\UserDeleteActionTrait;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use keeko\core\package\AbstractAction;
 
 /**
  * Deletes an user
  * 
  * @author Tester
+ * @author gossi
  */
 class UserDeleteAction extends AbstractAction {
 

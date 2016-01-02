@@ -8,6 +8,7 @@ use gossi\docblock\tags\LicenseTag;
 use keeko\core\schema\AuthorSchema;
 use keeko\core\schema\ModuleSchema;
 use keeko\tools\helpers\QuestionHelperTrait;
+use keeko\tools\utils\NamespaceResolver;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -77,17 +78,11 @@ class InitCommand extends AbstractGenerateCommand {
 				null
 			)
 // 			->addOption(
-// 				'slug',
+// 				'default-action',
 // 				'',
 // 				InputOption::VALUE_OPTIONAL,
-// 				'The slug (if this package is a keeko-module, anyway it\'s ignored)'
+// 				'The module\'s default action'
 // 			)
-			->addOption(
-				'default-action',
-				'',
-				InputOption::VALUE_OPTIONAL,
-				'The module\'s default action'
-			)
 			->addOption(
 				'force',
 				'f',
@@ -116,8 +111,10 @@ class InitCommand extends AbstractGenerateCommand {
 			'This command will guide you through creating your Keeko composer package.',
 			'',
 		]);
-		
-		if (!$name = $input->getOption('name')) {
+
+		$name = $this->getPackageName();
+		$askName = $name === null;
+		if ($name === null) {
 			$git = $this->getGitConfig();
 			$cwd = realpath(".");
 			$name = basename($cwd);
@@ -141,10 +138,12 @@ class InitCommand extends AbstractGenerateCommand {
 		}
 		
 		// asking for the name
-		$name = $this->askQuestion(new Question('Package name (<vendor>/<name>)', $name));
-		$this->validateName($name);
-		$input->setOption('name', $name);
-		
+		if ($askName || $force) {
+			$name = $this->askQuestion(new Question('Package name (<vendor>/<name>)', $name));
+			$this->validateName($name);
+			$input->setOption('name', $name);
+		}
+
 		// asking for a description
 		$desc = $this->getPackageDescription();
 		if ($desc === null || $force) {
@@ -169,7 +168,6 @@ class InitCommand extends AbstractGenerateCommand {
 		
 		// asking for the package type
 		$type = $this->getPackageType();
-		
 		if ($type === null || $force) {
 			$types = ['module', 'app'];
 			$question = new Question('Package type (module|app)', $type);
@@ -193,18 +191,19 @@ class InitCommand extends AbstractGenerateCommand {
 			$input->setOption('license', $license);
 		}
 		
-		// namespace
-		if (!$this->hasAutoload()) {
-			$namespace = $input->getOption('namespace');
-			if ($namespace === null) {
-				$namespace = str_replace('/', '\\', $name);
-			}
-			$namespace = $this->askQuestion(new Question('Namespace for src/', $namespace));
-			$input->setOption('namespace', $namespace);
-		}
+		// asking for namespace
+		var_dump($this->hasAutoload());
+// 		if (!$this->hasAutoload() || $force) {
+// 			$namespace = $input->getOption('namespace');
+// 			if ($namespace === null) {
+// 				$namespace = str_replace('/', '\\', $name);
+// 			}
+// 			$namespace = $this->askQuestion(new Question('Namespace for src/', $namespace));
+// 			$input->setOption('namespace', $namespace);
+// 		}
 
 		//
-		// KEEKO
+		// KEEKO values
 		$output->writeln([
 			'',
 			'Information for Keeko ' . ucfirst($type),
@@ -212,37 +211,37 @@ class InitCommand extends AbstractGenerateCommand {
 		]);
 
 		// ask for the title
-		$title = $this->getPackageTitle($type);
-		$title = $this->askQuestion(new Question('Title', $title));
-		$input->setOption('title', $title);
+		$title = $this->getPackageTitle();
+		if ($title === null || $force) {
+			$title = $this->askQuestion(new Question('Title', $title));
+			$input->setOption('title', $title);
+		}
 
 		// ask for the class
-		$classname = $this->getPackageClass($type);
-		$classname = $this->askQuestion(new Question('Class', $classname));
-		$input->setOption('classname', $classname);
+		$classname = $this->getPackageClass();
+		if ($classname === null || $force) {
+			$classname = $this->askQuestion(new Question('Class', $classname));
+			$input->setOption('classname', $classname);
+		}
 
-		// -- module
-		if ($type === 'module') {
-// 			// ask for the slug
-// 			$slug = $this->getPackageSlug();
-// 			$slug = $this->askQuestion(new Question('Slug', $slug));
-// 			$input->setOption('slug', $slug);
-			
+// 		// -- module
+// 		if ($type === 'module') {
 			// ask for the default action
 // 			$defaultAction = $this->getPackageDefaultAction();
 // 			$defaultAction = $this->askQuestion(new Question('Default Action', $defaultAction));
 // 			$input->setOption('default-action', $defaultAction);
-		}
+// 		}
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
-		$this->generatePackage($input);
-		$this->generateCode($input);
+		$this->generatePackage();
+		$this->generateCode();
 	}
 	
-	private function generatePackage(InputInterface $input) {
+	private function generatePackage() {
+		$input = $this->io->getInput();
 		$force = $input->getOption('force');
-		
+
 		// name
 		$localName = $this->package->getFullName();
 		if (empty($localName) && $input->getOption('name') === null) {
@@ -273,7 +272,7 @@ class InitCommand extends AbstractGenerateCommand {
 		
 		// author
 		if (($author = $input->getOption('author')) !== null
-		&& ($this->package->getAuthors()->isEmpty() || $force)) {
+				&& ($this->package->getAuthors()->isEmpty() || $force)) {
 			list($name, $email) = sscanf($author, '%s <%s>');
 		
 			$author = new AuthorSchema();
@@ -286,7 +285,7 @@ class InitCommand extends AbstractGenerateCommand {
 				
 			$this->package->getAuthors()->add($author);
 		}
-		
+
 		// autoload
 		if (!$this->hasAutoload()) {
 			$namespace = $input->getOption('namespace');
@@ -302,6 +301,9 @@ class InitCommand extends AbstractGenerateCommand {
 		$this->manageDependencies();
 		
 		// KEEKO
+		if ($type === null) {
+			$type = $this->getPackageType();
+		}
 		
 		// title
 		$keeko = $this->packageService->getKeeko()->getKeekoPackage($type);
@@ -314,22 +316,13 @@ class InitCommand extends AbstractGenerateCommand {
 			$keeko->setClass($classname);
 		}
 		
-		// additions for keeko-module
-		if ($keeko instanceof ModuleSchema) {
-			// slug
-// 			if (($slug = $this->getPackageSlug()) !== null) {
-// 				// validate slug
-// 				if (strpos($slug, '.') === false && strpos($slug, '/') !== false) {
-// 					throw new \Exception('Slug not valid. Must contain a dot(.) and no slash.');
-// 				}
-// 				$keeko->setSlug($slug);
-// 			}
-
-			// default-action
-// 			if (($defaultAction = $this->getPackageDefaultAction()) !== null) {
-// 				$keeko->setDefaultAction($defaultAction);
-// 			}
-		}
+// 		// additions for keeko-module
+// 		if ($keeko instanceof ModuleSchema) {
+// 			// default-action
+// // 			if (($defaultAction = $this->getPackageDefaultAction()) !== null) {
+// // 				$keeko->setDefaultAction($defaultAction);
+// // 			}
+// 		}
 		
 		$this->packageService->savePackage($this->package);
 	}
@@ -348,13 +341,14 @@ class InitCommand extends AbstractGenerateCommand {
 
 		// add require dev statements
 		$requireDev = $this->package->getRequireDev();
-		$requireDev->set('composer/composer', '@dev');
 		$requireDev->set('keeko/core', 'dev-master');
+		$requireDev->set('composer/composer', '@dev');
 		$requireDev->set('propel/propel', '@dev');
+		$requireDev->set('puli/composer-plugin', '@beta');
 	}
 
-	private function generateCode(InputInterface $input) {
-		$class = $this->generateClass($input);
+	private function generateCode() {
+		$class = $this->generateClass();
 		$type = $this->getPackageType();
 
 		switch ($type) {
@@ -370,7 +364,8 @@ class InitCommand extends AbstractGenerateCommand {
 		$this->codegenService->dumpStruct($class, true);
 	}
 
-	private function generateClass(InputInterface $input) {
+	private function generateClass() {
+		$input = $this->io->getInput();
 		$type = $this->getPackageType();
 		$package = $this->package->getKeeko()->getKeekoPackage($type);
 		$fqcn = str_replace('\\', '/', $package->getClass());
@@ -480,7 +475,7 @@ class InitCommand extends AbstractGenerateCommand {
 		$input = $this->io->getInput();
 		$type = $this->getPackageType();
 		$keeko = $this->getPackageKeeko($type);
-		$pkgTitle = $keeko->getTitle();
+		$pkgTitle = $keeko === null ? null : $keeko->getTitle();
 		$title = $input->getOption('title');
 		$title = $title === null && !empty($pkgTitle) ? $pkgTitle : $title;
 		
@@ -496,7 +491,7 @@ class InitCommand extends AbstractGenerateCommand {
 		$input = $this->io->getInput();
 		$type = $this->getPackageType();
 		$keeko = $this->getPackageKeeko($type);
-		$pkgClass = $keeko->getClass();
+		$pkgClass = $keeko === null ? null : $keeko->getClass();
 		$classname = $input->getOption('classname');
 		$classname = $classname === null && !empty($pkgClass) ? $pkgClass : $classname;
 	
@@ -528,6 +523,13 @@ class InitCommand extends AbstractGenerateCommand {
 			: $type;
 	}
 	
+	private function getPackageName() {
+		$input = $this->io->getInput();
+		$name = $input->getOption('name');
+		$pkgName = $this->package->getFullName();
+		return $name === null && !empty($pkgName) ? $pkgName : $name;
+	}
+	
 	private function getPackageDescription() {
 		$input = $this->io->getInput();
 		$desc = $input->getOption('description');
@@ -543,9 +545,7 @@ class InitCommand extends AbstractGenerateCommand {
 	}
 	
 	private function hasAutoload() {
-		$psr4 = $this->package->getAutoload()->getPsr4();
-
-		return $psr4->getNamespace('src');
+		return NamespaceResolver::getNamespace('src', $this->package);
 	}
 	
 	private function validateName($name) {

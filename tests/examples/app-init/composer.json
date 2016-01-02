@@ -18,9 +18,10 @@
 		"keeko/composer-installer": "*"
 	},
 	"require-dev": {
-		"composer/composer": "@dev",
 		"keeko/core": "dev-master",
-		"propel/propel": "@dev"
+		"composer/composer": "@dev",
+		"propel/propel": "@dev",
+		"puli/composer-plugin": "@beta"
 	},
 	"extra": {
 		"keeko": {

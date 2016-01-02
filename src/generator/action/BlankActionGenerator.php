@@ -18,7 +18,9 @@ class BlankActionGenerator extends AbstractActionGenerator {
 		// method: configureParams(OptionsResolver $resolver)
 // 		$this->addConfigureParamsMethod($class, '');
 
-		// method: run(Request $request)
+		// method: run(Request $request) : Response
+		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
+		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 		$class->setMethod($this->generateRunMethod($this->twig->render('blank-run.twig')));
 
 		return $class;

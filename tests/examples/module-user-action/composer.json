@@ -20,7 +20,8 @@
 	"require-dev": {
 		"composer/composer": "@dev",
 		"keeko/core": "dev-master",
-		"propel/propel": "@dev"
+		"propel/propel": "@dev",
+		"puli/composer-plugin": "@beta"
 	},
 	"extra": {
 		"keeko": {

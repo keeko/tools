@@ -21,7 +21,6 @@ class ReadActionTraitGenerator extends AbstractActionTraitGenerator {
 		$this->addConfigureParamsMethod($trait, $this->twig->render('read-configureParams.twig'));
 	
 		// method: run(Request $request)
-		$trait->addUseStatement($fullModelObjectName);
 		$trait->addUseStatement($fullModelObjectName . 'Query');
 		$trait->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');
 		$trait->setMethod($this->generateRunMethod($this->twig->render('read-run.twig', [

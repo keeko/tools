@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "6ab61641446e246f4c2829a2c39b7fa2",
-    "content-hash": "e83e1e68e403dc31562ff2a5fdd17003",
+    "hash": "b9753d1c8f98e8fbb6afe2cf73d7fd59",
+    "content-hash": "7283f54330ae7fc82d1c1a6f64d26115",
     "packages": [
         {
             "name": "composer/composer",
@@ -13,12 +13,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/composer.git",
-                "reference": "f31799b739265e7cb1797b395050ffcd57671335"
+                "reference": "72cd6afdfce16f36a9fd786bc1b2f32b851e764f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/f31799b739265e7cb1797b395050ffcd57671335",
-                "reference": "f31799b739265e7cb1797b395050ffcd57671335",
+                "url": "https://api.github.com/repos/composer/composer/zipball/72cd6afdfce16f36a9fd786bc1b2f32b851e764f",
+                "reference": "72cd6afdfce16f36a9fd786bc1b2f32b851e764f",
                 "shasum": ""
             },
             "require": {
@@ -79,7 +79,7 @@
                 "dependency",
                 "package"
             ],
-            "time": "2015-12-27 13:58:20"
+            "time": "2015-12-28 17:35:19"
         },
         {
             "name": "composer/semver",
@@ -246,16 +246,16 @@
         },
         {
             "name": "gossi/php-code-generator",
-            "version": "dev-master",
+            "version": "v0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/gossi/php-code-generator.git",
-                "reference": "2bf5e3ff54e8819ef8ff2c2b19eead5418a94ef8"
+                "reference": "7421efbc252e2e5d47e982a41ceefce99f10fe29"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gossi/php-code-generator/zipball/2bf5e3ff54e8819ef8ff2c2b19eead5418a94ef8",
-                "reference": "2bf5e3ff54e8819ef8ff2c2b19eead5418a94ef8",
+                "url": "https://api.github.com/repos/gossi/php-code-generator/zipball/7421efbc252e2e5d47e982a41ceefce99f10fe29",
+                "reference": "7421efbc252e2e5d47e982a41ceefce99f10fe29",
                 "shasum": ""
             },
             "require": {
@@ -298,11 +298,11 @@
             "keywords": [
                 "code generation"
             ],
-            "time": "2015-12-27 17:49:49"
+            "time": "2016-01-01 18:17:18"
         },
         {
             "name": "gossi/swagger",
-            "version": "dev-master",
+            "version": "v0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/gossi/swagger.git",
@@ -3150,12 +3150,10 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
+        "keeko/core": 20,
         "composer/composer": 20,
         "propel/propel": 15,
-        "keeko/core": 20,
-        "puli/composer-plugin": 10,
-        "gossi/php-code-generator": 20,
-        "gossi/swagger": 20
+        "puli/composer-plugin": 10
     },
     "prefer-stable": false,
     "prefer-lowest": false,

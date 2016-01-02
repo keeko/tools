@@ -21,7 +21,6 @@ class UpdateActionTraitGenerator extends AbstractActionTraitGenerator {
 		$this->addConfigureParamsMethod($trait, $this->twig->render('update-configureParams.twig'));
 	
 		// method: run(Request $request)
-		$trait->addUseStatement($fullModelObjectName);
 		$trait->addUseStatement($fullModelObjectName . 'Query');
 		$trait->addUseStatement('keeko\\core\\exceptions\\ValidationException');
 		$trait->addUseStatement('keeko\\core\\utils\\HydrateUtils');

@@ -1,16 +1,15 @@
 <?php
 namespace keeko\tools;
 
-use Symfony\Component\Console\Application;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 use keeko\tools\command\GenerateActionCommand;
+use keeko\tools\command\GenerateApiCommand;
 use keeko\tools\command\GenerateResponseCommand;
+use keeko\tools\command\InitCommand;
 use keeko\tools\command\MagicCommand;
+use Symfony\Component\Console\Application;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
-use keeko\tools\command\GenerateApiCommand;
-use keeko\tools\command\InitCommand;
-
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class KeekoTools extends Application {
 

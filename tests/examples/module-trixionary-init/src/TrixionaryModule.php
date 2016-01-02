@@ -24,8 +24,6 @@ class TrixionaryModule extends AbstractModule {
 	/**
 	 * @param mixed $from
 	 * @param mixed $to
-	 * @param mixed $from
-	 * @param mixed $to
 	 */
 	public function update($from, $to) {
 	}

@@ -122,11 +122,9 @@ class PackageService extends AbstractService {
 		if ($package === null) {
 			$package = $this->getPackage();
 		}
+		
 		$filename = $this->service->getProject()->getComposerFileName();
 		$this->service->getJsonService()->write($filename, $package->toArray());
-		
-// 		print_r($package->toArray());
-	
 		$this->io->writeln(sprintf('Package <info>%s</info> written at <info>%s</info>', $package->getFullName(), $filename));
 	}
 }

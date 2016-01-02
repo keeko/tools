@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
  * Automatically generated JsonResponse for Deletes an user
  * 
  * @author Tester
+ * @author gossi
  */
 class UserDeleteJsonResponse extends AbstractResponse {
 

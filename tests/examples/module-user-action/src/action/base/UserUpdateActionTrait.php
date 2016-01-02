@@ -4,7 +4,6 @@ namespace keeko\user\action\base;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use keeko\core\model\User;
 use keeko\core\model\UserQuery;
 use keeko\core\exceptions\ValidationException;
 use keeko\core\utils\HydrateUtils;
@@ -16,6 +15,7 @@ use Symfony\Component\Routing\Exception\ResourceNotFoundException;
  * This code is automatically created. Modifications will probably be overwritten.
  * 
  * @author Tester
+ * @author gossi
  */
 trait UserUpdateActionTrait {
 

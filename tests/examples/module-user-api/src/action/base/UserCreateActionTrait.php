@@ -1,7 +1,6 @@
 <?php
 namespace keeko\user\action\base;
 
-use keeko\core\package\AbstractAction;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use keeko\core\model\User;
@@ -14,6 +13,7 @@ use keeko\core\utils\HydrateUtils;
  * This code is automatically created. Modifications will probably be overwritten.
  * 
  * @author Tester
+ * @author gossi
  */
 trait UserCreateActionTrait {
 

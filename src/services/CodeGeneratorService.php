@@ -67,21 +67,17 @@ class CodeGeneratorService extends AbstractService {
 		
 		foreach ($package->getAuthors() as $author) {
 			/* @var $author AuthorSchema */
-			
 			$tag = AuthorTag::create()->setName($author->getName());
 			$mail = $author->getEmail();
-			$homepage = $author->getHomepage();
-			
+
 			if (!empty($mail)) {
 				$tag->setEmail($mail);
-			} else if (!empty($homepage)) {
-				$tag->setEmail($homepage);
 			}
-			
+
 			$docblock->appendTag($tag);
 		}
 	}
-	
+
 	/**
 	 * Returns code for hydrating a propel model
 	 *

@@ -1,16 +1,15 @@
 <?php
 namespace keeko\tools\command;
 
+use gossi\swagger\collections\Definitions;
 use gossi\swagger\collections\Paths;
 use gossi\swagger\Swagger;
 use keeko\tools\command\AbstractGenerateCommand;
 use keeko\tools\utils\NameUtils;
 use phootwork\file\File;
-use phootwork\json\Json;
 use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use gossi\swagger\collections\Definitions;
 
 class GenerateApiCommand extends AbstractGenerateCommand {
 
@@ -39,16 +38,27 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$this->preCheck();
 		$api = new File($this->project->getApiFileName());
-		if (!$this->project->hasApiFile()) {
-			$api->write('{}');
+		
+		// if generation is forced, generate new API from scratch
+		if ($input->getOption('force')) {
+			$swagger = new Swagger();
+		}
+		
+		// ... anyway reuse existing one
+		else {
+			if (!$api->exists()) {
+				$api->write('{}');
+			}
+			
+			$swagger = Swagger::fromFile($this->project->getApiFileName());
 		}
 
-		$swagger = Swagger::fromFile($this->project->getApiFileName());
 		$swagger->setVersion('2.0');
 		$this->generatePaths($swagger);
 		$this->generateDefinitions($swagger);
 		
-		$api->write(Json::encode($swagger->toArray(), Json::PRETTY_PRINT | Json::UNESCAPED_SLASHES));
+		$this->jsonService->write($api->getPathname(), $swagger->toArray());
+		$this->io->writeln(sprintf('API for <info>%s</info> written at <info>%s</info>', $this->package->getFullName(), $api->getPathname()));
 	}
 	
 	protected function generatePaths(Swagger $swagger) {
@@ -224,7 +234,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 
 		// readable model
 		$readable = $definitions->get($modelObjectName)->getProperties();
-		$this->generateModelProperties($readable, $model, true);
+		$this->generateModelProperties($readable, $model, false);
 	}
 	
 	protected function generateModelProperties(Definitions $props, Table $model, $write = false) {
@@ -236,6 +246,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		if ($write) {
 			$filter = array_merge($filter, $this->codegenService->getComputedFields($model));
 		}
+		
 		foreach ($model->getColumns() as $col) {
 			$prop = $col->getName();
 			

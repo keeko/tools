@@ -37,14 +37,20 @@ class MagicCommand extends AbstractGenerateCommand {
 		$output->writeln(sprintf('<fg=magenta>%s</fg=magenta>', $this->getRandomHex()));
 		$output->writeln('<fg=cyan>And then a miracle appears ...</fg=cyan>');
 		
-		$args = [];
+		// --force
+		$args = [
+			'--force' => $input->getOption('force')
+		];
+		
+		// --schema
 		if (($schema = $input->getOption('schema')) !== null) {
 			$args['--schema'] = $schema;
 		}
 		
-// 		if (($composer = $input->getOption('composer')) !== null) {
-// 			$args['--composer'] = $composer;
-// 		}
+		// --workdir
+		if (($workdir = $input->getOption('workdir')) !== null) {
+			$args['--workdir'] = $workdir;
+		}
 		
 		$input = new ArrayInput($args);
 		$input->setInteractive(false);

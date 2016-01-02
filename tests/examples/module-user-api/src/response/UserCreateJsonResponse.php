@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
  * Automatically generated JsonResponse for Creates an user
  * 
  * @author Tester
+ * @author gossi
  */
 class UserCreateJsonResponse extends AbstractResponse {
 

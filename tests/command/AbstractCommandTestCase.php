@@ -16,12 +16,10 @@ class AbstractCommandTestCase extends \PHPUnit_Framework_TestCase {
 	public function setUp() {
 		$this->root = vfsStream::setup('root');
 		$this->root->chmod(0777);
-// 		$this->root->addChild(new vfsStreamDirectory('example'));
-// 		$this->root->getChild('example')->chmod(0777);
 	}
 
-	protected function loadExample($fixture) {
-		vfsStream::copyFromFileSystem(__DIR__ . '/../examples/' . $fixture, $this->root);
+	protected function loadExample($example) {
+		vfsStream::copyFromFileSystem(__DIR__ . '/../examples/' . $example, $this->root);
 	}
 	
 	protected function getCoreSchema() {
@@ -30,7 +28,7 @@ class AbstractCommandTestCase extends \PHPUnit_Framework_TestCase {
 
 	protected function getFile($folder, $filename) {
 		$filename = __DIR__ . '/../' . $folder .'/' . $filename;
-		
+
 		if (file_exists($filename)) {
 			return file_get_contents($filename);
 		}
@@ -76,7 +74,7 @@ class AbstractCommandTestCase extends \PHPUnit_Framework_TestCase {
 		return $this->runCommand('generate:api', $input);
 	}
 	
-	private function runCommand($command, $input = []) {
+	protected function runCommand($command, $input = []) {
 		$app = new KeekoTools();
 		$cmd = $app->find($command);
 		

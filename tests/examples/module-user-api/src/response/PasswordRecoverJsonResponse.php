@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
  * Automatically generated JsonResponse for Recover Password
  * 
  * @author Tester
+ * @author gossi
  */
 class PasswordRecoverJsonResponse extends AbstractResponse {
 

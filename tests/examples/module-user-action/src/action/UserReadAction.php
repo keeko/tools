@@ -1,13 +1,14 @@
 <?php
 namespace keeko\user\action;
 
-use keeko\core\action\AbstractAction;
 use keeko\user\action\base\UserReadActionTrait;
+use keeko\core\package\AbstractAction;
 
 /**
  * Reads an user
  * 
  * @author Tester
+ * @author gossi
  */
 class UserReadAction extends AbstractAction {
 

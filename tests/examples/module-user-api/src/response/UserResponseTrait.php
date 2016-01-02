@@ -9,6 +9,7 @@ use Propel\Runtime\Map\TableMap;
  * Automatically generated common response methods for user
  * 
  * @author Tester
+ * @author gossi
  */
 trait UserResponseTrait {
 

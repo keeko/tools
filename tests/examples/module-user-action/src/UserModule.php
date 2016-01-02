@@ -1,7 +1,7 @@
 <?php
 namespace keeko\user;
 
-use keeko\core\module\AbstractModule;
+use keeko\core\package\AbstractModule;
 
 /**
  * Keeko User Module

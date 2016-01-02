@@ -19,8 +19,6 @@ class ResetPasswordAction extends AbstractAction {
 	 * @return Response
 	 */
 	public function run(Request $request) {
-		// uncomment the following to pass data to your response
-		// $this->response->setData($data);
 		return $this->response->run($request);
 	}
 }

@@ -21,7 +21,6 @@ class DeleteActionTraitGenerator extends AbstractActionTraitGenerator {
 		$this->addConfigureParamsMethod($trait, $this->twig->render('delete-configureParams.twig'));
 
 		// method: run(Request $request)
-		$trait->addUseStatement($fullModelObjectName);
 		$trait->addUseStatement($fullModelObjectName . 'Query');
 		$trait->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');
 		$trait->setMethod($this->generateRunMethod($this->twig->render('delete-run.twig', [

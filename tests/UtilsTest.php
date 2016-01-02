@@ -10,6 +10,11 @@ class UtilsTest extends AbstractCommandTestCase {
 	public function testNamespaceResolver() {
 		$this->loadExample('module-user-init');
 
+		// get namespace and path from empty package
+		$package = new PackageSchema();
+		$this->assertNull(NamespaceResolver::getNamespace('src', $package));
+		$this->assertNull(NamespaceResolver::getSourcePath('keeko\\user', $package));
+		
 		// get namespace
 		$package = PackageSchema::fromFile($this->root->getChild('composer.json')->url());
 		

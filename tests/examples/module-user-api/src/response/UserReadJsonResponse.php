@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
  * Automatically generated JsonResponse for Reads an user
  * 
  * @author Tester
+ * @author gossi
  */
 class UserReadJsonResponse extends AbstractResponse {
 

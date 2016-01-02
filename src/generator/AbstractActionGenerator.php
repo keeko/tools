@@ -30,8 +30,6 @@ class AbstractActionGenerator extends AbstractCodeGenerator {
 	
 	protected function ensureUseStatements(AbstractPhpStruct $struct) {
 		$struct->addUseStatement('keeko\\core\\package\\AbstractAction');
-		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
-		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 	}
 
 }

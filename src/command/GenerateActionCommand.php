@@ -4,6 +4,8 @@ namespace keeko\tools\command;
 use gossi\codegen\model\PhpClass;
 use gossi\codegen\model\PhpTrait;
 use keeko\core\schema\ActionSchema;
+use keeko\tools\generator\action\BlankActionGenerator;
+use keeko\tools\generator\action\NoopActionGenerator;
 use keeko\tools\generator\GeneratorFactory;
 use keeko\tools\helpers\QuestionHelperTrait;
 use keeko\tools\utils\NamespaceResolver;
@@ -16,8 +18,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use keeko\tools\generator\action\BlankActionGenerator;
-use keeko\tools\generator\action\NoopActionGenerator;
 
 class GenerateActionCommand extends AbstractGenerateCommand {
 

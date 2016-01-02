@@ -37,7 +37,11 @@ class NamespaceResolver {
 				$suffix = $ns->lastSegment() . (!empty($suffix) ? '/' : '') . $suffix;
 				$ns = $ns->upToSegment($ns->segmentCount() - 1);
 			}
-		} while ($relativeSourcePath == null && $ns->segmentCount() >= 1);
+		} while (!$ns->isEmpty() xor $relativeSourcePath !== null);
+		
+		if ($relativeSourcePath === null) {
+			return null;
+		}
 		
 		$path = new Path($relativeSourcePath);
 		$path->removeTrailingSeparator();
@@ -63,7 +67,7 @@ class NamespaceResolver {
 		$namespace = null;
 		$path = new Path($path);
 		$path->removeTrailingSeparator();
-		
+
 		do {
 			$pathname = $path->getPathname()->toString();
 			
@@ -82,11 +86,16 @@ class NamespaceResolver {
 			}
 			
 			// keep track of suffix
+			// shrink down path by one segment
 			if ($namespace === null) {
 				$suffix = $path->lastSegment() . (!empty($suffix) ? '\\' : '') . $suffix;
 				$path = $path->upToSegment($path->segmentCount() - 1);
 			}
-		} while ($namespace === null && $path->segmentCount() >= 1);
+		} while (!$path->isEmpty() xor $namespace !== null);
+		
+		if ($namespace === null) {
+			return null;
+		}
 		
 		$namespace = new Text($namespace . $suffix);
 		if ($namespace->endsWith('\\')) {

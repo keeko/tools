@@ -43,8 +43,7 @@ class InitCommandTest extends AbstractCommandTestCase {
 			'--description' => 'Test description',
 			'--author' => 'Tester',
 			'--license' => 'MIT',
-			'--title' => 'Keeko User Module',
-// 			'--slug' => 'user'
+			'--title' => 'Keeko User Module'
 		]);
 		
 		$this->assertTrue($this->root->hasChild('src/UserModule.php'));
@@ -86,5 +85,14 @@ class InitCommandTest extends AbstractCommandTestCase {
 		$keeko = $package->getKeeko();
 		$app = $keeko->getApp();
 		$this->assertEquals('gossi\\test\\TestApplication', $app->getClass());
+	}
+
+	public function testSecondRun() {
+		$this->loadExample('module-blabla-init');
+		$package = $this->runInit();
+		$requireDev = $package->getRequireDev();
+		
+		$this->assertTrue($requireDev->has('puli/composer-plugin'));
+		$this->assertEquals('@beta', $requireDev->get('puli/composer-plugin'));
 	}
 }

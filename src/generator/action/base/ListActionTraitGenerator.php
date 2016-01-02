@@ -21,7 +21,6 @@ class ListActionTraitGenerator extends AbstractActionTraitGenerator {
 		$this->addConfigureParamsMethod($trait, $this->twig->render('list-configureParams.twig'));
 		
 		// method: run(Request $request)
-		$trait->addUseStatement($fullModelObjectName);
 		$trait->addUseStatement($fullModelObjectName . 'Query');
 		$trait->setMethod($this->generateRunMethod($this->twig->render('list-run.twig', [
 			'model' => $modelVariableName,

@@ -18,8 +18,8 @@
 		"keeko/composer-installer": "*"
 	},
 	"require-dev": {
-		"composer/composer": "@dev",
 		"keeko/core": "dev-master",
+		"composer/composer": "@dev",
 		"propel/propel": "@dev"
 	},
 	"extra": {
