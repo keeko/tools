@@ -30,7 +30,10 @@ class CodeGeneratorService extends AbstractService {
 	 */
 	public function getCodegen() {
 		if ($this->codegen === null) {
-			$this->codegen = CodegenSchema::fromFile($this->getCodegenFile());
+			$file = new File($this->getCodegenFile());
+			$this->codegen = $file->exists() 
+				? CodegenSchema::fromFile($this->getCodegenFile())
+				: new CodegenSchema();
 		}
 		
 		return $this->codegen;
