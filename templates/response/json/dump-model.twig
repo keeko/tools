@@ -1,1 +1,5 @@
-return new JsonResponse($this->{{ model }}ToArray($data));
+$serializer = {{ class }}::getSerializer();
+$resource = new Resource($data, $serializer);
+$document = new Document($resource);
+
+return new JsonResponse($document->toArray(), 200);

@@ -1,0 +1,8 @@
+$id = $this->getParam('id');
+$fkId = $this->getParam('{{ fk_id }}');
+${{ model }} = {{ class }}Query::create()->findOneById($id);
+${{ model }}->set{{ foreign_class }}Id($fkId);
+${{ model }}->save();
+
+// run response
+return $this->response->run($request, ${{ model }});

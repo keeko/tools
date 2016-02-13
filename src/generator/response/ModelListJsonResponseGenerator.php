@@ -4,18 +4,19 @@ namespace keeko\tools\generator\response;
 use gossi\codegen\model\PhpClass;
 use keeko\core\schema\ActionSchema;
 use keeko\tools\generator\AbstractJsonResponseGenerator;
-use keeko\tools\utils\NameUtils;
 
-class ListJsonResponseGenerator extends AbstractJsonResponseGenerator {
+class ModelListJsonResponseGenerator extends AbstractJsonResponseGenerator {
 
 	protected function addMethods(PhpClass $class, ActionSchema $action) {
 		$modelName = $this->modelService->getModelNameByAction($action);
-		$modelVariableName = NameUtils::toCamelCase($modelName);
+		$model = $this->modelService->getModel($modelName);
 
 		// method: run(Request $request, $data = null)
+		$class->addUseStatement('Tobscure\\JsonApi\\Document');
+		$class->addUseStatement('Tobscure\\JsonApi\\Collection');
+		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName());
 		$class->setMethod($this->generateRunMethod($this->twig->render('list-run.twig', [
-			'model' => $modelVariableName,
-			'models' => NameUtils::pluralize($modelName)
+			'class' => $model->getPhpName()
 		])));
 	}
 }

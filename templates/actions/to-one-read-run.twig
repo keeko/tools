@@ -1,0 +1,5 @@
+$id = $this->getParam('id');
+${{ model }} = {{ class }}Query::create()->findOneById($id);
+
+// run response
+return $this->response->run($request, ${{ model }});

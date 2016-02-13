@@ -1,0 +1,25 @@
+$body = $request->getContent();
+if (!isset($body['data'])) {
+	throw new InvalidParameterException();
+}
+$data = $body['data'];
+
+$id = $this->getParam('id');
+${{ model }} = {{ class }}Query::create()->findOneById($id);
+
+if (${{ model }} === null) {
+	throw new ResourceNotFoundException('{{ model }} with id ' . $id . ' does not exist');
+} 
+
+foreach ($data as $entry) {
+	if (!isset($entry['id'])) {
+		throw new InvalidParameterException();
+	}
+	${{ foreign_model }} = {{ foreign_class }}Query::create()->findOneById($entry['id']);
+	${{ model }}->remove{{ foreign_class }}(${{ foreign_model }});
+	${{ model }}->save();	
+}
+
+
+// run response
+return $this->response->run($request, ${{ model }});

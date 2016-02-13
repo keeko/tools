@@ -2,4 +2,6 @@
 vendor/
 coverage/
 public/
+.buildpath
+composer.lock
 puli.json

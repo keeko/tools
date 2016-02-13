@@ -1,19 +1,15 @@
-$out = [];
-
-// build model
-$out['{{ models }}'] = [];
-foreach ($data as ${{ model }}) {
-	$out['{{ models }}'][] = $this->{{ model }}ToArray(${{ model }});
-}
+$serializer = {{ class }}::getSerializer();
+$resource = new Collection($data, $serializer);
+$document = new Document($resource);
 
 // meta
-$out['meta'] = [
+$document->setMeta([
 	'total' => $data->getNbResults(),
 	'first' => $data->getFirstPage(),
 	'next' => $data->getNextPage(),
 	'previous' => $data->getPreviousPage(),
 	'last' => $data->getLastPage()
-];
+]);
 
 // return response
-return new JsonResponse($out);
+return new JsonResponse($document->toArray());

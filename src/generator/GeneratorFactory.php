@@ -1,16 +1,16 @@
 <?php
 namespace keeko\tools\generator;
 
-use keeko\tools\generator\action\base\CreateActionTraitGenerator;
-use keeko\tools\generator\action\base\DeleteActionTraitGenerator;
-use keeko\tools\generator\action\base\ListActionTraitGenerator;
-use keeko\tools\generator\action\base\ReadActionTraitGenerator;
-use keeko\tools\generator\action\base\UpdateActionTraitGenerator;
-use keeko\tools\generator\response\CreateJsonResponseGenerator;
-use keeko\tools\generator\response\DeleteJsonResponseGenerator;
-use keeko\tools\generator\response\ListJsonResponseGenerator;
-use keeko\tools\generator\response\ReadJsonResponseGenerator;
-use keeko\tools\generator\response\UpdateJsonResponseGenerator;
+use keeko\tools\generator\action\base\ModelCreateActionTraitGenerator;
+use keeko\tools\generator\action\base\ModelDeleteActionTraitGenerator;
+use keeko\tools\generator\action\base\ModelListActionTraitGenerator;
+use keeko\tools\generator\action\base\ModelReadActionTraitGenerator;
+use keeko\tools\generator\action\base\ModelUpdateActionTraitGenerator;
+use keeko\tools\generator\response\ModelCreateJsonResponseGenerator;
+use keeko\tools\generator\response\ModelDeleteJsonResponseGenerator;
+use keeko\tools\generator\response\ModelListJsonResponseGenerator;
+use keeko\tools\generator\response\ModelReadJsonResponseGenerator;
+use keeko\tools\generator\response\ModelUpdateJsonResponseGenerator;
 use keeko\tools\services\CommandService;
 
 class GeneratorFactory {
@@ -24,19 +24,19 @@ class GeneratorFactory {
 	public static function createActionTraitGenerator($type, CommandService $service) {
 		switch ($type) {
 			case 'list':
-				return new ListActionTraitGenerator($service);
+				return new ModelListActionTraitGenerator($service);
 				
 			case 'create':
-				return new CreateActionTraitGenerator($service);
+				return new ModelCreateActionTraitGenerator($service);
 				
 			case 'update':
-				return new UpdateActionTraitGenerator($service);
+				return new ModelUpdateActionTraitGenerator($service);
 				
 			case 'read':
-				return new ReadActionTraitGenerator($service);
+				return new ModelReadActionTraitGenerator($service);
 				
 			case 'delete':
-				return new DeleteActionTraitGenerator($service);
+				return new ModelDeleteActionTraitGenerator($service);
 		}
 	}
 	
@@ -49,19 +49,19 @@ class GeneratorFactory {
 	public static function createJsonResponseGenerator($type, CommandService $service) {
 		switch ($type) {
 			case 'list':
-				return new ListJsonResponseGenerator($service);
-		
+				return new ModelListJsonResponseGenerator($service);
+
 			case 'create':
-				return new CreateJsonResponseGenerator($service);
+				return new ModelCreateJsonResponseGenerator($service);
 		
 			case 'update':
-				return new UpdateJsonResponseGenerator($service);
+				return new ModelUpdateJsonResponseGenerator($service);
 		
 			case 'read':
-				return new ReadJsonResponseGenerator($service);
+				return new ModelReadJsonResponseGenerator($service);
 		
 			case 'delete':
-				return new DeleteJsonResponseGenerator($service);
+				return new ModelDeleteJsonResponseGenerator($service);
 		}
 	}
 

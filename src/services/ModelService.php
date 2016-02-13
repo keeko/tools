@@ -8,6 +8,7 @@ use Propel\Generator\Util\QuickBuilder;
 use phootwork\lang\Text;
 use keeko\core\schema\ActionSchema;
 use keeko\tools\utils\NamespaceResolver;
+use keeko\core\schema\PackageSchema;
 
 class ModelService extends AbstractService {
 
@@ -148,6 +149,36 @@ class ModelService extends AbstractService {
 		$table = $db->getTable($tableName);
 	
 		return $table;
+	}
+	
+	/**
+	 * Returns the model names for a given package
+	 * 
+	 * @param PackageSchema $package a package to search models for, if omitted global package is used
+	 * @return array array with string of model names
+	 */
+	public function getPackageModelNames(PackageSchema $package = null) {
+		if ($package === null) {
+			$package = $this->packageService->getPackage();
+		}
+		
+		$models = [];
+		// if this is a core-module, find the related model
+		if ($package->getVendor() == 'keeko' && $this->isCoreSchema()) {
+			$model = $package->getName();
+			if ($this->hasModel($model)) {
+				$models []= $model;
+			}
+		}
+		
+		// anyway, generate all
+		else {
+			foreach ($this->getModels() as $model) {
+				$models []= $model->getOriginCommonName();
+			}
+		}
+		
+		return $models;
 	}
 	
 	/**

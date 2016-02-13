@@ -22,7 +22,21 @@ class NameUtils {
 	public static function toCamelCase($input) {
 		return lcfirst(self::toStudlyCase($input));
 	}
+	
+	public static function dasherize($input) {
+		return trim(strtolower(preg_replace_callback('/([A-Z _])/', function($matches) {
+			$suffix = '';
+			if (preg_match('/[A-Z]/', $matches[0])) {
+				$suffix = $matches[0];
+			}
+			return '-' . $suffix;
+		}, $input)), '-');
+	}
 
+	public static function toSnakeCase($input) {
+		return str_replace('-', '_', self::dasherize($input));
+	}
+	
 	/**
 	 * Returns the plural form of the input
 	 * 

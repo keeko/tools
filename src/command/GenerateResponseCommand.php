@@ -192,20 +192,20 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 			$class = $generator->generate($action);
 			
 			// generate json trait
-			if ($isModel && $format === 'json') {
-				$generator = new ModelResponseTraitGenerator($this->service);
-				$trait = $generator->generate($action);
+// 			if ($isModel && $format === 'json') {
+// 				$generator = new ModelResponseTraitGenerator($this->service);
+// 				$trait = $generator->generate($action);
 				
-				if (!$class->hasTrait($trait)) {
-					$class->addTrait($trait);
-					$overwrite = true;
-				}
+// 				if (!$class->hasTrait($trait)) {
+// 					$class->addTrait($trait);
+// 					$overwrite = true;
+// 				}
 				
-				if (!$this->traits->contains($trait->getName())) {
-					$this->codegenService->dumpStruct($trait, true);
-					$this->traits->add($trait->getName());
-				}
-			}
+// 				if (!$this->traits->contains($trait->getName())) {
+// 					$this->codegenService->dumpStruct($trait, true);
+// 					$this->traits->add($trait->getName());
+// 				}
+// 			}
 
 			// write to file
 			$file = new File($this->codegenService->getFilename($class));

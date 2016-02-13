@@ -5,6 +5,7 @@ use keeko\tools\generator\AbstractCodeGenerator;
 use gossi\codegen\model\AbstractPhpStruct;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
+use gossi\codegen\model\PhpClass;
 
 class AbstractActionGenerator extends AbstractCodeGenerator {
 
@@ -30,6 +31,11 @@ class AbstractActionGenerator extends AbstractCodeGenerator {
 	
 	protected function ensureUseStatements(AbstractPhpStruct $struct) {
 		$struct->addUseStatement('keeko\\core\\package\\AbstractAction');
+	}
+	
+	protected function ensureBasicSetup(PhpClass $class) {
+		$this->ensureUseStatements($class);
+		$class->setParentClassName('AbstractAction');
 	}
 
 }
