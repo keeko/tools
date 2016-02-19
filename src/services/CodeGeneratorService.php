@@ -118,6 +118,32 @@ class CodeGeneratorService extends AbstractService {
 		return sprintf('[%s]', $fields);
 	}
 	
+	/**
+	 * Returns the fields for a model
+	 * 
+	 * @param string $modelName
+	 * @return array
+	 */
+	public function getReadFields($modelName) {
+		$codegen = $this->getCodegen();
+		$model = $this->modelService->getModel($modelName);
+// 		$computed = $this->getComputedFields($model);
+		$filter = $codegen->getReadFilter($modelName);
+// 		$filter = array_merge($filter, $computed);
+		
+		$fields = [];
+		$cols = $model->getColumns();
+		foreach ($cols as $col) {
+			$prop = $col->getName();
+		
+			if (!in_array($prop, $filter)) {
+				$fields[] = $prop;
+			}
+		}
+		
+		return $fields;
+	}
+	
 // 	/**
 // 	 * Returns conversions for model columns
 // 	 *
@@ -183,6 +209,19 @@ class CodeGeneratorService extends AbstractService {
 		}
 	
 		return sprintf('[%s]', $fields);
+	}
+	
+	public function mapToCode(array $array) {
+		$fields = '';
+		foreach ($array as $k => $item) {
+			$fields .= sprintf("\t'%s' => %s,\n", $k, $this->arrayToCode($item));
+		}
+
+		if (strlen($fields) > 0) {
+			$fields = substr($fields, 0, -2);
+		}
+		
+		return sprintf("[\n%s\n]", $fields);
 	}
 
 	public function getFilename(AbstractPhpStruct $struct) {

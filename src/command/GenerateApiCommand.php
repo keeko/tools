@@ -23,6 +23,7 @@ use Propel\Generator\Model\ForeignKey;
 use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use gossi\swagger\Tag;
 
 class GenerateApiCommand extends AbstractGenerateCommand {
 
@@ -74,7 +75,12 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 			$swagger = Swagger::fromFile($this->project->getApiFileName());
 		}
 
+		$module = $this->package->getKeeko()->getModule();
 		$swagger->setVersion('2.0');
+		$swagger->getInfo()->setTitle($module->getTitle() . ' API');
+		$swagger->getTags()->clear();
+		$swagger->getTags()->add(new Tag(['name' => $module->getSlug()]));
+		
 		$this->generatePaths($swagger);
 		$this->generateDefinitions($swagger);
 		
@@ -116,7 +122,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		
 		foreach ($models as $modelName) {
 			$model = $this->modelService->getModel($modelName);
-			$relationships = $this->getRelationships($model);
+			$relationships = $this->modelService->getRelationships($model);
 			
 			// to-one relationships
 			foreach ($relationships['one'] as $one) {
@@ -131,38 +137,40 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 				$this->generateToManyRelationshipAction($model, $fk->getForeignTable(), $cfk->getMiddleTable());
 			}
 		}
+		
+		$this->packageService->savePackage();
 	}
 	
-	protected function getRelationships(Table $model) {
-		// to-one relationships
-		$one = [];
-		$fks = $model->getForeignKeys();
-		foreach ($fks as $fk) {
-			$one[] = [
-				'fk' => $fk
-			];
-		}
+// 	protected function getRelationships(Table $model) {
+// 		// to-one relationships
+// 		$one = [];
+// 		$fks = $model->getForeignKeys();
+// 		foreach ($fks as $fk) {
+// 			$one[] = [
+// 				'fk' => $fk
+// 			];
+// 		}
 		
-		// to-many relationships
-		$many = [];
-		$cfks = $model->getCrossFks();
-		foreach ($cfks as $cfk) {
-			foreach ($cfk->getMiddleTable()->getForeignKeys() as $fk) {
-				if ($fk->getForeignTable() != $model) {
-					$many[] = [
-						'fk' => $fk,
-						'cfk' => $cfk
-					];
-					break;
-				}
-			}
-		}
+// 		// to-many relationships
+// 		$many = [];
+// 		$cfks = $model->getCrossFks();
+// 		foreach ($cfks as $cfk) {
+// 			foreach ($cfk->getMiddleTable()->getForeignKeys() as $fk) {
+// 				if ($fk->getForeignTable() != $model) {
+// 					$many[] = [
+// 						'fk' => $fk,
+// 						'cfk' => $cfk
+// 					];
+// 					break;
+// 				}
+// 			}
+// 		}
 		
-		return [
-			'one' => $one,
-			'many' => $many
-		];
-	}
+// 		return [
+// 			'one' => $one,
+// 			'many' => $many
+// 		];
+// 	}
 
 	protected function generateToOneRelationshipAction(Table $model, Table $foreign, ForeignKey $fk) {
 		$module = $this->package->getKeeko()->getModule();
@@ -385,6 +393,8 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$operation = $path->getOperation($method);
 		$operation->setDescription($action->getTitle());
 		$operation->setOperationId($action->getName());
+		$operation->getTags()->clear();
+		$operation->getTags()->add(new Tag($this->package->getKeeko()->getModule()->getSlug()));
 		
 		$params = $operation->getParameters();
 		$responses = $operation->getResponses();
@@ -443,6 +453,8 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$operation = $path->getOperation($method);
 		$operation->setDescription($action->getTitle());
 		$operation->setOperationId($action->getName());
+		$operation->getTags()->clear();
+		$operation->getTags()->add(new Tag($this->package->getKeeko()->getModule()->getSlug()));
 	
 		$params = $operation->getParameters();
 		$responses = $operation->getResponses();
@@ -510,13 +522,13 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 	
 	private function getMethod($type) {
 		$methods = [
-			'list' => 'GET',
-			'create' => 'POST',
-			'read' => 'GET',
-			'update' => 'PATCH',
-			'delete' => 'DELETE',
-			'add' => 'POST',
-			'remove' => 'DELETE'
+			'list' => 'get',
+			'create' => 'post',
+			'read' => 'get',
+			'update' => 'patch',
+			'delete' => 'delete',
+			'add' => 'post',
+			'remove' => 'delete'
 		];
 	
 		return $methods[$type];
@@ -621,12 +633,17 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		
 		// no id, already in identifier
 		$filter[] = 'id';
+		$types = ['int' => 'integer'];
 		
 		foreach ($model->getColumns() as $col) {
 			$prop = $col->getName();
 			
 			if (!in_array($prop, $filter)) {
-				$props->get($prop)->setType($col->getPhpType());
+				$type = $col->getPhpType();
+				if (isset($types[$type])) {
+					$type = $types[$type];
+				}
+				$props->get($prop)->setType($type);
 			}
 		}
 
@@ -638,7 +655,7 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 	}
 	
 	protected function generateModelRelationships(Definitions $props, Table $model, $write = false) {
-		$relationships = $this->getRelationships($model);
+		$relationships = $this->modelService->getRelationships($model);
 		
 		// to-one
 		foreach ($relationships['one'] as $one) {

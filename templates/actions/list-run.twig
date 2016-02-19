@@ -1,7 +1,24 @@
-// read
-$page = $this->getParam('page');
-$perPage = $this->getParam('per_page');
-${{ model }} = {{ class }}Query::create()->paginate($page, $perPage);
+// create query
+$params = new Parameters($request->query->all());
+$page = $params->getPage('number');
+$pageSize = $this->getParam('page_size');
+$query = {{ class }}Query::create();
+
+// sorting
+$sort = $params->getSort({{ class }}::getSerializer()->getSortFields());
+foreach ($sort as $field => $order) {
+	$method = 'orderBy' . NameUtils::toStudlyCase($field);
+	$query->$method($order);
+}
+
+// filtering
+$filter = $this->getParam('filter');
+if (!empty($filter)) {
+	$this->applyFilter($query);
+}
+
+// paginate
+${{ model }} = $query->paginate($page, $pageSize);
 
 // run response
 return $this->response->run($request, ${{ model }});

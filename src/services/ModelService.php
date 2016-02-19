@@ -308,4 +308,81 @@ class ModelService extends AbstractService {
 		
 		return in_array($operation, ['create', 'read', 'update', 'delete', 'list']);
 	}
+	
+	/**
+	 * Returns all model relationships.
+	 * 
+	 * 
+	 * The returned array looks like:
+	 * [
+	 * 		'one' => [
+	 * 			[
+	 * 				'type' => 'one',
+	 * 				'fk' => $fk
+	 * 			],
+	 * 			[
+	 * 				'type' => 'one',
+	 * 				'fk' => $fk2
+	 * 			],
+	 * 			...
+	 * 		],
+	 * 		'many' => [
+	 * 			[
+	 * 				'type' => 'many',
+	 * 				'fk' => $fk3,
+	 * 				'cfk' => $cfk
+	 * 			],
+	 * 			[
+	 * 				'type' => 'many',
+	 * 				'fk' => $fk4,
+	 * 				'cfk' => $cfk2
+	 * 			],
+	 * 			...
+	 * 		],
+	 * 		'all' => [...] // both of above
+	 * ]
+	 * 
+	 * 
+	 * @param Table $model
+	 * @return array
+	 */
+	public function getRelationships(Table $model) {
+		$all = [];
+		
+		// to-one relationships
+		$one = [];
+		$fks = $model->getForeignKeys();
+		foreach ($fks as $fk) {
+			$item = [
+				'type' => 'one',
+				'fk' => $fk
+			];
+			$one[] = $item;
+			$all[] = $item;
+		}
+	
+		// to-many relationships
+		$many = [];
+		$cfks = $model->getCrossFks();
+		foreach ($cfks as $cfk) {
+			foreach ($cfk->getMiddleTable()->getForeignKeys() as $fk) {
+				if ($fk->getForeignTable() != $model) {
+					$item = [
+						'type' => 'many',
+						'fk' => $fk,
+						'cfk' => $cfk
+					];
+					$many[] = $item;
+					$all[] = $item;
+					break;
+				}
+			}
+		}
+	
+		return [
+			'one' => $one,
+			'many' => $many,
+			'all' => $all
+		];
+	}
 }

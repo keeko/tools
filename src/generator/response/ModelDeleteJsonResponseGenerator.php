@@ -3,9 +3,9 @@ namespace keeko\tools\generator\response;
 
 use gossi\codegen\model\PhpClass;
 use keeko\core\schema\ActionSchema;
-use keeko\tools\generator\AbstractJsonResponseGenerator;
+use keeko\tools\generator\AbstractModelJsonResponseGenerator;
 
-class ModelDeleteJsonResponseGenerator extends AbstractJsonResponseGenerator {
+class ModelDeleteJsonResponseGenerator extends AbstractModelJsonResponseGenerator {
 
 	protected function addMethods(PhpClass $class, ActionSchema $action) {
 		
