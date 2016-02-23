@@ -1,10 +1,10 @@
 <?php
 namespace keeko\tools\generator;
 
-use gossi\codegen\model\PhpTrait;
-use keeko\core\schema\ActionSchema;
-use keeko\tools\generator\AbstractActionGenerator;
 use gossi\codegen\model\AbstractPhpStruct;
+use gossi\codegen\model\PhpTrait;
+use keeko\framework\schema\ActionSchema;
+use keeko\tools\generator\AbstractActionGenerator;
 
 class AbstractActionTraitGenerator extends AbstractActionGenerator {
 	
@@ -31,7 +31,7 @@ class AbstractActionTraitGenerator extends AbstractActionGenerator {
 	
 	protected function ensureUseStatements(AbstractPhpStruct $struct) {
 		parent::ensureUseStatements($struct);
-		$struct->removeUseStatement('keeko\\core\\package\\AbstractAction');
+		$struct->removeUseStatement('keeko\\framework\\foundation\\AbstractAction');
 		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
 		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 	}

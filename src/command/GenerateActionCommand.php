@@ -2,16 +2,27 @@
 namespace keeko\tools\command;
 
 use gossi\codegen\model\PhpClass;
+use gossi\codegen\model\PhpMethod;
+use gossi\codegen\model\PhpProperty;
 use gossi\codegen\model\PhpTrait;
-use keeko\core\schema\ActionSchema;
+use keeko\framework\schema\ActionSchema;
+use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\action\BlankActionGenerator;
 use keeko\tools\generator\action\NoopActionGenerator;
+use keeko\tools\generator\action\ToManyRelationshipAddActionGenerator;
+use keeko\tools\generator\action\ToManyRelationshipReadActionGenerator;
+use keeko\tools\generator\action\ToManyRelationshipRemoveActionGenerator;
+use keeko\tools\generator\action\ToManyRelationshipUpdateActionGenerator;
+use keeko\tools\generator\action\ToOneRelationshipReadActionGenerator;
+use keeko\tools\generator\action\ToOneRelationshipUpdateActionGenerator;
 use keeko\tools\generator\GeneratorFactory;
+use keeko\tools\generator\SerializerGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
 use keeko\tools\utils\NamespaceResolver;
-use keeko\tools\utils\NameUtils;
 use phootwork\file\File;
 use phootwork\lang\Text;
+use Propel\Generator\Model\ForeignKey;
+use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -22,6 +33,8 @@ use Symfony\Component\Console\Question\Question;
 class GenerateActionCommand extends AbstractGenerateCommand {
 
 	use QuestionHelperTrait;
+	
+	private $twig;
 
 	protected function configure() {
 		$this
@@ -76,6 +89,13 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		parent::configure();
 	}
 
+	protected function initialize(InputInterface $input, OutputInterface $output) {
+		parent::initialize($input, $output);
+
+		$loader = new \Twig_Loader_Filesystem($this->service->getConfig()->getTemplateRoot() . '/actions');
+		$this->twig = new \Twig_Environment($loader);
+	}
+
 	/**
 	 * Checks whether actions can be generated at all by reading composer.json and verify
 	 * all required information are available
@@ -104,9 +124,9 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 		
 		// ask questions for a model
-		if ($generateModel && !($this->package->getVendor() === 'keeko' && $this->modelService->isCoreSchema())) {
+		if ($generateModel /*&& !($this->package->getVendor() === 'keeko' && $this->modelService->isCoreSchema())*/) {
 
-			$schema = str_replace(getcwd(), '', $this->getSchema());
+			$schema = str_replace(getcwd(), '', $this->modelService->getSchema());
 			$allQuestion = new ConfirmationQuestion(sprintf('For all models in the schema (%s)?', $schema));
 			$allModels = $this->askConfirmation($allQuestion);
 
@@ -171,20 +191,22 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 		
 		// if this is a core-module, find the related model
-		else if ($this->package->getVendor() == 'keeko' && $this->modelService->isCoreSchema()) {
-			$model = $this->package->getName();
-			if ($this->modelService->hasModel($model)) {
-				$input->setOption('model', $model);
-				$this->generateModel($model);
-			} else {
-				$this->logger->error('Tried to find model on my own, wasn\'t lucky - please provide model with the --model option');
-			}
-		}
+// 		else /*if ($this->package->getVendor() == 'keeko' && $this->modelService->isCoreSchema()) */ {
+// 			$model = $this->package->getName();
+// 			if ($this->modelService->hasModel($model)) {
+// 				$input->setOption('model', $model);
+// 				$this->generateModel($model);
+// 			} else {
+// 				$this->logger->error('Tried to find model on my own, wasn\'t lucky - please provide model with the --model option');
+// 			}
+// 		}
 
 		// anyway, generate all
 		else {
 			foreach ($this->modelService->getModels() as $model) {
-				$this->generateModel($model->getOriginCommonName());
+				$modelName = $model->getOriginCommonName();
+				$input->setOption('model', $modelName);
+				$this->generateModel($modelName);
 			}
 		}
 		
@@ -194,6 +216,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	private function generateModel($modelName) {
 		$this->logger->info('Generate Action from Model: ' . $modelName);
 		$input = $this->io->getInput();
+		$model = $this->modelService->getModel($modelName);
 		$typeDump = $input->getOption('type');
 		if ($typeDump !== null) {
 			$types = [$typeDump];
@@ -205,6 +228,12 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			$input->setOption('acl', ['admin']);
 			$input->setOption('type', $type);
 			$actionName = $modelName . '-' . $type;
+			
+			if ($model->isReadOnly() && in_array($type, ['create', 'update', 'delete'])) {
+				$this->logger->info(sprintf('Skip generate Action (%s), because Model (%s) is read-only', $actionName, $modelName));
+				continue;
+			}
+			
 			$action = $this->getAction($actionName);
 			if (Text::create($action->getTitle())->isEmpty()) {
 				$action->setTitle($this->getActionTitle($modelName, $type));
@@ -212,19 +241,41 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			$this->generateAction($actionName);
 		}
 		
+		// prepare model for API usage
+		$this->prepareModelForApi($model);
+		
+		// generate relationship actions
+		if (!$model->isReadOnly()) {
+			$relationships = $this->modelService->getRelationships($model);
+				
+			// to-one relationships
+			foreach ($relationships['one'] as $one) {
+				$fk = $one['fk'];
+				$this->generateToOneRelationshipAction($model, $fk->getForeignTable(), $fk);
+			}
+			
+			// to-many relationships
+			foreach ($relationships['many'] as $many) {
+				$fk = $many['fk'];
+				$cfk = $many['cfk'];
+				$this->generateToManyRelationshipAction($model, $fk->getForeignTable(), $cfk->getMiddleTable());
+			}
+		}
+		
 		$input->setOption('type', $typeDump);
 	}
 
 	private function getActionTitle($modelName, $type) {
+		$name = NameUtils::dasherize($modelName);
 		switch ($type) {
 			case 'list':
-				return 'List all ' . NameUtils::pluralize($modelName);
+				return 'List all ' . NameUtils::pluralize($name);
 
 			case 'create':
 			case 'read':
 			case 'update':
 			case 'delete':
-				return ucfirst($type) . 's ' . (in_array($modelName[0], ['a', 'e', 'i', 'o', 'u']) ? 'an' : 'a') . ' ' . $modelName;
+				return ucfirst($type) . 's ' . (in_array($name[0], ['a', 'e', 'i', 'o', 'u']) ? 'an' : 'a') . ' ' . $name;
 		}
 	}
 
@@ -391,6 +442,118 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		$overwrite = $overwrite || $input->getOption('force');
 
 		$this->codegenService->dumpStruct($class, $overwrite);
+	}
+	
+	private function prepareModelForApi(Table $model) {
+		$class = new PhpClass(str_replace('\\\\', '\\', $model->getNamespace() . '\\' . $model->getPhpName()));
+		$file = new File($this->codegenService->getFilename($class));
+			
+		if ($file->exists()) {
+			// generate serializer
+			$generator = new SerializerGenerator($this->service);
+			$serializer = $generator->generate($model);
+			$this->codegenService->dumpStruct($serializer, true);
+			
+			// add serializer + APIModelInterface
+			$class = PhpClass::fromFile($this->codegenService->getFilename($class));
+			if (!$class->hasInterface('ApiModelInterface')) {
+				$class
+					->addUseStatement($serializer->getQualifiedName())
+					->addUseStatement('keeko\\framework\\model\\ApiModelInterface')
+					->addInterface('ApiModelInterface')
+					->setProperty(PhpProperty::create('serializer')
+						->setStatic(true)
+						->setVisibility('private')
+					)
+					->setMethod(PhpMethod::create('getSerializer')
+						->setStatic(true)
+						->setBody($this->twig->render('get-serializer.twig', [
+							'class' => $class->getName()
+						]))
+					)
+				;
+		
+				$this->codegenService->dumpStruct($class, true);
+			}
+		}
+	}
+	
+	private function generateToOneRelationshipAction(Table $model, Table $foreign, ForeignKey $fk) {
+		$module = $this->package->getKeeko()->getModule();
+		$fkModelName = $foreign->getPhpName();
+		$actionNamePrefix = sprintf('%s-to-%s-relationship', $model->getOriginCommonName(), $foreign->getOriginCommonName());
+	
+		$generators = [
+			'read' => new ToOneRelationshipReadActionGenerator($this->service),
+			'update' => new ToOneRelationshipUpdateActionGenerator($this->service)
+		];
+		$titles = [
+			'read' => 'Reads the relationship of {model} to {foreign}',
+			'update' => 'Updates the relationship of {model} to {foreign}'
+		];
+	
+		foreach (array_keys($generators) as $type) {
+			// generate fqcn
+			$className = sprintf('%s%s%sAction', $model->getPhpName(), $fkModelName, ucfirst($type));
+			$fqcn = $this->modelService->getRootNamespace() . '\\action\\' . $className;
+	
+			// generate action
+			$action = new ActionSchema($actionNamePrefix . '-' . $type);
+			$action->addAcl('admin');
+			$action->setClass($fqcn);
+			$action->setTitle(str_replace(
+				['{model}', '{foreign}'],
+				[$model->getOriginCommonName(), $foreign->getoriginCommonName()],
+				$titles[$type])
+			);
+			$module->addAction($action);
+	
+			// generate class
+			$generator = $generators[$type];
+			$class = $generator->generate(new PhpClass($fqcn), $model, $foreign, $fk);
+			$this->codegenService->dumpStruct($class, true);
+		}
+	}
+	
+	private function generateToManyRelationshipAction(Table $model, Table $foreign, Table $middle) {
+		$module = $this->package->getKeeko()->getModule();
+		$fkModelName = $foreign->getPhpName();
+		$actionNamePrefix = sprintf('%s-to-%s-relationship', $model->getOriginCommonName(), $foreign->getOriginCommonName());
+		
+		$generators = [
+			'read' => new ToManyRelationshipReadActionGenerator($this->service),
+			'update' => new ToManyRelationshipUpdateActionGenerator($this->service),
+			'add' => new ToManyRelationshipAddActionGenerator($this->service),
+			'remove' => new ToManyRelationshipRemoveActionGenerator($this->service)
+		];
+		$titles = [
+			'read' => 'Reads the relationship of {model} to {foreign}',
+			'update' => 'Updates the relationship of {model} to {foreign}',
+			'add' => 'Adds {foreign} as relationship to {model}',
+			'remove' => 'Removes {foreign} as relationship of {model}'
+		];
+	
+		foreach (array_keys($generators) as $type) {
+			// generate fqcn
+			$className = sprintf('%s%s%sAction', $model->getPhpName(), $fkModelName, ucfirst($type));
+			$fqcn = $this->modelService->getRootNamespace() . '\\action\\' . $className;
+	
+			// generate action
+			$action = new ActionSchema($actionNamePrefix . '-' . $type);
+			$action->addAcl('admin');
+			$action->setClass($fqcn);
+			$action->setTitle(str_replace(
+				['{model}', '{foreign}'],
+				[$model->getOriginCommonName(), $foreign->getoriginCommonName()],
+				$titles[$type])
+			);
+			$module->addAction($action);
+	
+			// generate class
+			$generator = $generators[$type];
+			$class = $generator->generate(new PhpClass($fqcn), $model, $foreign, $middle);
+			$this->codegenService->dumpStruct($class, true);
+		}
 	}
 
 }

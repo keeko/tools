@@ -1,32 +1,12 @@
 {
 	"name" : "keeko/tools",
 	"description" : "Keeko command line tools",
+	"license" : "MIT",
 	"authors" : [{
 			"name" : "gossi",
 			"homepage" : "http://gos.si"
 		}
 	],
-	"license" : "MIT",
-	"require" : {
-		"php" : ">=5.4",
-		"keeko/core" : "dev-master",
-		"composer/composer" : "@dev",
-		"propel/propel" : "2.0.0-alpha5",
-		"puli/composer-plugin" : "@beta",
-		"puli/repository" : "@beta",
-		"puli/twig-extension" : "@beta",
-		"puli/url-generator" : "@beta",
-		"puli/discovery" : "@beta",
-		"twig/twig" : "~1",
-		"symfony/console" : "~2|~3",
-		"symfony/event-dispatcher" : "~2|~3",
-		"symfony/finder" : "~2|~3",
-		"symfony/process" : "~2|~3",
-		"gossi/php-code-generator" : "~0",
-		"gossi/swagger" : "~0",
-		"phootwork/json" : "~1",
-		"phootwork/file" : "~0"
-	},
 	"autoload" : {
 		"psr-4" : {
 			"keeko\\tools\\" : "src"
@@ -37,9 +17,28 @@
 			"keeko\\tools\\tests\\" : "tests"
 		}
 	},
+	"require" : {
+		"php" : ">=5.4",
+		"keeko/framework" : "dev-master",
+		"composer/composer" : "@dev",
+		"propel/propel" : "2.0.0-alpha5",
+		"puli/composer-plugin" : "@beta",
+		"puli/repository" : "@beta",
+		"puli/twig-extension" : "@beta",
+		"puli/url-generator" : "@beta",
+		"puli/discovery" : "@beta",
+		"gossi/php-code-generator" : "~0",
+		"gossi/swagger" : "~0",
+		"phootwork/json" : "~1",
+		"phootwork/file" : "~0",
+		"symfony/console" : "~2|~3",
+		"symfony/event-dispatcher" : "~2|~3",
+		"symfony/finder" : "~2|~3",
+		"symfony/process" : "~2|~3",
+		"twig/twig" : "~1"
+	},
 	"require-dev" : {
 		"phpunit/phpunit" : "~4",
-		"mikey179/vfsStream" : "~1",
-		"keeko/composer-installer" : "0.21"
+		"mikey179/vfsStream" : "~1"
 	}
 }

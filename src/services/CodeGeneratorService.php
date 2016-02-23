@@ -1,16 +1,15 @@
 <?php
 namespace keeko\tools\services;
 
+use gossi\codegen\generator\CodeFileGenerator;
 use gossi\codegen\model\AbstractPhpStruct;
 use gossi\docblock\tags\AuthorTag;
-use Propel\Generator\Model\Table;
-use gossi\codegen\generator\CodeFileGenerator;
+use keeko\framework\schema\CodegenSchema;
+use keeko\framework\schema\PackageSchema;
 use keeko\tools\utils\NamespaceResolver;
-use keeko\core\schema\PackageSchema;
-use keeko\core\schema\AuthorSchema;
 use phootwork\file\File;
 use phootwork\file\Path;
-use keeko\core\schema\CodegenSchema;
+use Propel\Generator\Model\Table;
 
 class CodeGeneratorService extends AbstractService {
 	
@@ -89,33 +88,22 @@ class CodeGeneratorService extends AbstractService {
 	 */
 	public function getWriteFields($modelName) {
 		$codegen = $this->getCodegen();
-		$conversions = $codegen->getWriteConversion($modelName);
 		$filter = $codegen->getWriteFilter($modelName);
 		$model = $this->modelService->getModel($modelName);
 		$computed = $this->getComputedFields($model);
 		$filter = array_merge($filter, $computed);
 
-		$fields = '';
+		$fields = [];
 		$cols = $model->getColumns();
 		foreach ($cols as $col) {
 			$prop = $col->getName();
 	
 			if (!in_array($prop, $filter)) {
-				$fields .= sprintf("'%s'", $prop);
-	
-				if (isset($conversions[$prop])) {
-					$fields .= ' => function($v) {'."\n\t".'return ' . $conversions[$prop] . ';'."\n".'}';
-				}
-	
-				$fields .= ', ';
+				$fields[] = $prop;
 			}
 		}
 	
-		if (strlen($fields) > 0) {
-			$fields = substr($fields, 0, -2);
-		}
-	
-		return sprintf('[%s]', $fields);
+		return $fields;
 	}
 	
 	/**
@@ -211,19 +199,25 @@ class CodeGeneratorService extends AbstractService {
 		return sprintf('[%s]', $fields);
 	}
 	
-	public function mapToCode(array $array) {
-		$fields = '';
-		foreach ($array as $k => $item) {
-			$fields .= sprintf("\t'%s' => %s,\n", $k, $this->arrayToCode($item));
-		}
+// 	public function mapToCode(array $array) {
+// 		$fields = '';
+// 		foreach ($array as $k => $item) {
+// 			$fields .= sprintf("\t'%s' => %s,\n", $k, $this->arrayToCode($item));
+// 		}
 
-		if (strlen($fields) > 0) {
-			$fields = substr($fields, 0, -2);
-		}
+// 		if (strlen($fields) > 0) {
+// 			$fields = substr($fields, 0, -2);
+// 		}
 		
-		return sprintf("[\n%s\n]", $fields);
-	}
+// 		return sprintf("[\n%s\n]", $fields);
+// 	}
 
+	/**
+	 * Returns the filename for a given struct
+	 * 
+	 * @param AbstractPhpStruct $struct
+	 * @return string
+	 */
 	public function getFilename(AbstractPhpStruct $struct) {
 		$package = $this->packageService->getPackage();
 		$relativeSourcePath = NamespaceResolver::getSourcePath($struct->getNamespace(), $package);

@@ -12,7 +12,7 @@ if (${{ model }} === null) {
 }
 
 // remove all relationships before
-{{ fk_class }}Query::create()->filterBy{{ class }}(${{ model }})->deleteAll();
+{{ fk_class }}Query::create()->filterBy{{ class }}(${{ model }})->delete();
 
 // add them
 foreach ($data as $entry) {
@@ -23,7 +23,6 @@ foreach ($data as $entry) {
 	${{ model }}->add{{ foreign_class }}(${{ foreign_model }});
 	${{ model }}->save();	
 }
-
 
 // run response
 return $this->response->run($request, ${{ model }});

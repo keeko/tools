@@ -1,0 +1,6 @@
+return [
+{% for name, serializer in fields %}
+	'{{ name }}' => {{ serializer|raw }}{% if not loop.last %},{% endif %}
+
+{% endfor %}
+];

@@ -2,7 +2,7 @@
 namespace keeko\tools\generator\response;
 
 use gossi\codegen\model\PhpClass;
-use keeko\core\schema\ActionSchema;
+use keeko\framework\schema\ActionSchema;
 use keeko\tools\generator\AbstractHtmlResponseGenerator;
 
 class BlankHtmlResponseGenerator extends AbstractHtmlResponseGenerator {

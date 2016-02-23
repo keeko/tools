@@ -2,11 +2,11 @@
 namespace keeko\tools\generator;
 
 use gossi\codegen\model\AbstractPhpStruct;
+use gossi\codegen\model\PhpClass;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
+use keeko\framework\schema\ActionSchema;
 use keeko\tools\generator\AbstractCodeGenerator;
-use keeko\core\schema\ActionSchema;
-use gossi\codegen\model\PhpClass;
 
 abstract class AbstractResponseGenerator extends AbstractCodeGenerator {
 	
@@ -64,7 +64,7 @@ abstract class AbstractResponseGenerator extends AbstractCodeGenerator {
 	}
 
 	protected function ensureUseStatements(AbstractPhpStruct $struct) {
-		$struct->addUseStatement('keeko\\core\\package\\AbstractResponse');
+		$struct->addUseStatement('keeko\\framework\\foundation\\AbstractResponse');
 		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
 		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 	}

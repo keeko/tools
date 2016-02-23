@@ -1,13 +1,13 @@
 <?php
 namespace keeko\tools\tests\command;
 
-use org\bovigo\vfs\vfsStream;
+use keeko\framework\schema\PackageSchema;
 use keeko\tools\KeekoTools;
+use org\bovigo\vfs\vfsStream;
+use phootwork\lang\Text;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
-use keeko\core\schema\PackageSchema;
-use Symfony\Component\Console\Input\ArrayInput;
-use phootwork\lang\Text;
 
 class AbstractCommandTestCase extends \PHPUnit_Framework_TestCase {
 	

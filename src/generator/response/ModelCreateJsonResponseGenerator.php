@@ -2,7 +2,7 @@
 namespace keeko\tools\generator\response;
 
 use gossi\codegen\model\PhpClass;
-use keeko\core\schema\ActionSchema;
+use keeko\framework\schema\ActionSchema;
 use keeko\tools\generator\AbstractModelJsonResponseGenerator;
 
 class ModelCreateJsonResponseGenerator extends AbstractModelJsonResponseGenerator {
@@ -18,7 +18,6 @@ class ModelCreateJsonResponseGenerator extends AbstractModelJsonResponseGenerato
 // 		}
 		$class->addUseStatement('Tobscure\\JsonApi\\Document');
 		$class->addUseStatement('Tobscure\\JsonApi\\Resource');
-		$class->addUseStatement('Tobscure\\JsonApi\\Parameters');
 		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName());
 		$class->setMethod($this->generateRunMethod($this->twig->render('create-run.twig', [
 			'class' => $model->getPhpName(),

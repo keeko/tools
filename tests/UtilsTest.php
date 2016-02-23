@@ -1,9 +1,9 @@
 <?php
 namespace keeko\tools\tests;
 
-use keeko\core\schema\PackageSchema;
-use keeko\tools\utils\NamespaceResolver;
+use keeko\framework\schema\PackageSchema;
 use keeko\tools\tests\command\AbstractCommandTestCase;
+use keeko\tools\utils\NamespaceResolver;
 
 class UtilsTest extends AbstractCommandTestCase {
 	

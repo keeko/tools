@@ -5,8 +5,6 @@ use gossi\codegen\model\PhpClass;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
 use gossi\docblock\tags\LicenseTag;
-use keeko\core\schema\AuthorSchema;
-use keeko\core\schema\ModuleSchema;
 use keeko\tools\helpers\QuestionHelperTrait;
 use keeko\tools\utils\NamespaceResolver;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,6 +14,7 @@ use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Process\ProcessUtils;
+use keeko\framework\schema\AuthorSchema;
 
 class InitCommand extends AbstractGenerateCommand {
 	
@@ -192,7 +191,6 @@ class InitCommand extends AbstractGenerateCommand {
 		}
 		
 		// asking for namespace
-		var_dump($this->hasAutoload());
 // 		if (!$this->hasAutoload() || $force) {
 // 			$namespace = $input->getOption('namespace');
 // 			if ($namespace === null) {
@@ -368,7 +366,7 @@ class InitCommand extends AbstractGenerateCommand {
 		$input = $this->io->getInput();
 		$type = $this->getPackageType();
 		$package = $this->package->getKeeko()->getKeekoPackage($type);
-		$fqcn = str_replace('\\', '/', $package->getClass());
+		$fqcn = str_replace(['\\', 'keeko-', '-module', '-app'], ['/', '', '', ''], $package->getClass());
 		$classname = basename($fqcn);
 		$filename = $this->project->getRootPath() . '/src/' . $classname . '.php';
 		$fqcn = str_replace('/', '\\', $fqcn);
@@ -390,7 +388,7 @@ class InitCommand extends AbstractGenerateCommand {
 	private function handleAppClass(PhpClass $class) {
 		// set parent
 		$class->setParentClassName('AbstractApplication');
-		$class->addUseStatement('keeko\\core\\package\\AbstractApplication');
+		$class->addUseStatement('keeko\\framework\\foundation\\AbstractApplication');
 
 		// method: run(Request $request, $path)
 		if (!$class->hasMethod('run')) {
@@ -405,7 +403,7 @@ class InitCommand extends AbstractGenerateCommand {
 	private function handleModuleClass(PhpClass $class) {
 		// set parent
 		$class->setParentClassName('AbstractModule');
-		$class->addUseStatement('keeko\\core\\package\\AbstractModule');
+		$class->addUseStatement('keeko\\framework\\foundation\\AbstractModule');
 		
 		// method: install()
 		if (!$class->hasMethod('install')) {

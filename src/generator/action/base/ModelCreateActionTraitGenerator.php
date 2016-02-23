@@ -2,9 +2,9 @@
 namespace keeko\tools\generator\action\base;
 
 use gossi\codegen\model\PhpTrait;
-use keeko\core\schema\ActionSchema;
+use keeko\framework\schema\ActionSchema;
+use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\AbstractActionTraitGenerator;
-use keeko\tools\utils\NameUtils;
 
 class ModelCreateActionTraitGenerator extends AbstractActionTraitGenerator {
 	
@@ -18,9 +18,9 @@ class ModelCreateActionTraitGenerator extends AbstractActionTraitGenerator {
 		$fullModelObjectName = $this->modelService->getFullModelObjectName($action);
 
 		// method: run(Request $request)
+		$trait->addUseStatement('phootwork\\json\\Json');
 		$trait->addUseStatement($fullModelObjectName);
-		$trait->addUseStatement('keeko\\core\\exceptions\\ValidationException');
-		$trait->addUseStatement('keeko\\core\\utils\\HydrateUtils');
+		$trait->addUseStatement('keeko\\framework\\exceptions\\ValidationException');
 		$trait->setMethod($this->generateRunMethod($this->twig->render('create-run.twig', [
 			'model' => $modelVariableName,
 			'class' => $modelObjectName,

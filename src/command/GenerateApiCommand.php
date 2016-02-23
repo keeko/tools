@@ -6,24 +6,14 @@ use gossi\codegen\model\PhpMethod;
 use gossi\swagger\collections\Definitions;
 use gossi\swagger\collections\Paths;
 use gossi\swagger\Swagger;
-use keeko\core\schema\ActionSchema;
+use gossi\swagger\Tag;
+use keeko\framework\utils\NameUtils;
 use keeko\tools\command\AbstractGenerateCommand;
-use keeko\tools\generator\action\ToManyRelationshipAddActionGenerator;
-use keeko\tools\generator\action\ToManyRelationshipReadActionGenerator;
-use keeko\tools\generator\action\ToManyRelationshipRemoveActionGenerator;
-use keeko\tools\generator\action\ToManyRelationshipUpdateActionGenerator;
-use keeko\tools\generator\action\ToOneRelationshipReadActionGenerator;
-use keeko\tools\generator\action\ToOneRelationshipUpdateActionGenerator;
-use keeko\tools\generator\response\ToManyRelationshipJsonResponseGenerator;
-use keeko\tools\generator\response\ToOneRelationshipJsonResponseGenerator;
-use keeko\tools\utils\NameUtils;
 use phootwork\file\File;
 use phootwork\lang\Text;
-use Propel\Generator\Model\ForeignKey;
 use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use gossi\swagger\Tag;
 
 class GenerateApiCommand extends AbstractGenerateCommand {
 
@@ -51,12 +41,6 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$this->preCheck();
-		
-		// prepare models ?
-		$this->prepareModels();
-		
-		// generate relationship actions
-		$this->generateRelationshipActions();
 		
 		// generate api
 		$api = new File($this->project->getApiFileName());
@@ -117,216 +101,6 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		}
 	}
 
-	protected function generateRelationshipActions() {
-		$models = $this->modelService->getPackageModelNames();
-		
-		foreach ($models as $modelName) {
-			$model = $this->modelService->getModel($modelName);
-			$relationships = $this->modelService->getRelationships($model);
-			
-			// to-one relationships
-			foreach ($relationships['one'] as $one) {
-				$fk = $one['fk'];
-				$this->generateToOneRelationshipAction($model, $fk->getForeignTable(), $fk);
-			}
-		
-			// to-many relationships
-			foreach ($relationships['many'] as $many) {
-				$fk = $many['fk'];
-				$cfk = $many['cfk'];
-				$this->generateToManyRelationshipAction($model, $fk->getForeignTable(), $cfk->getMiddleTable());
-			}
-		}
-		
-		$this->packageService->savePackage();
-	}
-	
-// 	protected function getRelationships(Table $model) {
-// 		// to-one relationships
-// 		$one = [];
-// 		$fks = $model->getForeignKeys();
-// 		foreach ($fks as $fk) {
-// 			$one[] = [
-// 				'fk' => $fk
-// 			];
-// 		}
-		
-// 		// to-many relationships
-// 		$many = [];
-// 		$cfks = $model->getCrossFks();
-// 		foreach ($cfks as $cfk) {
-// 			foreach ($cfk->getMiddleTable()->getForeignKeys() as $fk) {
-// 				if ($fk->getForeignTable() != $model) {
-// 					$many[] = [
-// 						'fk' => $fk,
-// 						'cfk' => $cfk
-// 					];
-// 					break;
-// 				}
-// 			}
-// 		}
-		
-// 		return [
-// 			'one' => $one,
-// 			'many' => $many
-// 		];
-// 	}
-
-	protected function generateToOneRelationshipAction(Table $model, Table $foreign, ForeignKey $fk) {
-		$module = $this->package->getKeeko()->getModule();
-		$fkModelName = $foreign->getPhpName();
-		$actionNamePrefix = sprintf('%s-to-%s-relationship',
-			NameUtils::dasherize($model->getPhpName()),
-			NameUtils::dasherize($fkModelName));
-		$actions = [];
-		
-		// response class name
-		$response = sprintf('%s\\response\\%s%sJsonResponse',
-			$this->modelService->getRootNamespace(),
-			$model->getPhpName(),
-			$fkModelName
-		);
-		
-		$generators = [
-			'read' => new ToOneRelationshipReadActionGenerator($this->service),
-			'update' => new ToOneRelationshipUpdateActionGenerator($this->service)
-		];
-		$titles = [
-			'read' => 'Reads the relationship of {model} to {foreign}',
-			'update' => 'Updates the relationship of {model} to {foreign}'
-		];
-		
-		foreach (array_keys($generators) as $type) {
-			// generate fqcn
-			$className = sprintf('%s%s%sAction', $model->getPhpName(), $fkModelName, ucfirst($type));
-			$fqcn = $this->modelService->getRootNamespace() . '\\action\\' . $className;
-				
-			// generate action
-			$action = new ActionSchema($actionNamePrefix . '-' . $type);
-			$action->addAcl('admin');
-			$action->setClass($fqcn);
-			$action->setTitle(str_replace(
-				['{model}', '{foreign}'],
-				[$model->getOriginCommonName(), $foreign->getoriginCommonName()],
-				$titles[$type])
-			);
-			$action->setResponse('json', $response);
-			$module->addAction($action);
-			$actions[$type] = $action;
-				
-			// generate class
-			$generator = $generators[$type];
-			$class = $generator->generate(new PhpClass($fqcn), $model, $foreign);
-			$this->codegenService->dumpStruct($class, true);
-		}
-		
-		// generate response class
-		$generator = new ToOneRelationshipJsonResponseGenerator($this->service, $model, $foreign);
-		$response = $generator->generate($actions['read']);
-		$this->codegenService->dumpStruct($response, true);
-
-// 		// generate read action
-// 		$className = sprintf('%s%sReadAction', $model->getPhpName(), $fkModelName);
-// 		$fqcn = $this->modelService->getRootNamespace() . '\\action\\' . $className;
-// 		$responseFqcn = str_replace(['action', 'Action'], ['response', 'JsonResponse'], $fqcn);
-		
-// 		$readAction = new ActionSchema($actionNamePrefix . '-read');
-// 		$readAction->addAcl('admin');
-// 		$readAction->setClass($fqcn);
-// 		$readAction->setTitle(sprintf('Reads the relationship of %s to %s', 
-// 			$model->getCommonName(), $foreign->getCommonName())
-// 		);
-// 		$readAction->setResponse('json', $responseFqcn);
-// 		$module->addAction($readAction);
-		
-// 		// generate read response
-// 		$generator = new ToOneRelationshipJsonResponseGenerator($this->service, $foreign);
-// 		$response = $generator->generate($readAction);
-// 		$this->codegenService->dumpStruct($response, true);
-		
-// 		// generate read class
-// 		$class = new PhpClass($fqcn);
-// 		$generator = new ToOneRelationshipReadActionGenerator($this->service);
-// 		$class = $generator->generate($class, $model);
-// 		$this->codegenService->dumpStruct($class, true);
-		
-// 		// generate update action
-// 		$className = sprintf('%s%sUpdateAction', $model->getPhpName(), $fkModelName);
-// 		$fqcn = $this->modelService->getRootNamespace() . '\\action\\' . $className;
-// 		$updateAction = new ActionSchema($actionNamePrefix . '-update');
-// 		$updateAction->addAcl('admin');
-// 		$updateAction->setClass($fqcn);
-// 		$updateAction->setTitle(sprintf('Updates the relationship of %s to %s',
-// 			$model->getCommonName(), $foreign->getCommonName())
-// 		);
-// 		$updateAction->setResponse('json', $responseFqcn);
-// 		$module->addAction($updateAction);
-		
-// 		// generate update class
-// 		$class = new PhpClass($fqcn);
-// 		$generator = new ToOneRelationshipUpdateActionGenerator($this->service);
-// 		$class = $generator->generate($class, $model, $foreign, $fk);
-// 		$this->codegenService->dumpStruct($class, true);
-	}
-	
-	protected function generateToManyRelationshipAction(Table $model, Table $foreign, Table $middle) {
-		$module = $this->package->getKeeko()->getModule();
-		$fkModelName = $foreign->getPhpName();
-		$actionNamePrefix = sprintf('%s-to-%s-relationship',
-			NameUtils::dasherize($model->getPhpName()),
-			NameUtils::dasherize($fkModelName));
-		$actions = [];
-		
-		// response class name
-		$response = sprintf('%s\\response\\%s%sJsonResponse', 
-			$this->modelService->getRootNamespace(),
-			$model->getPhpName(),
-			$fkModelName
-		);
-
-		$generators = [
-			'read' => new ToManyRelationshipReadActionGenerator($this->service), 
-			'update' => new ToManyRelationshipUpdateActionGenerator($this->service), 
-			'add' => new ToManyRelationshipAddActionGenerator($this->service),
-			'remove' => new ToManyRelationshipRemoveActionGenerator($this->service)
-		];
-		$titles = [
-			'read' => 'Reads the relationship of {model} to {foreign}',
-			'update' => 'Updates the relationship of {model} to {foreign}',
-			'add' => 'Adds {foreign} as relationship to {model}',
-			'remove' => 'Removes {foreign} as relationship of {model}'
-		];
-		
-		foreach (array_keys($generators) as $type) {
-			// generate fqcn
-			$className = sprintf('%s%s%sAction', $model->getPhpName(), $fkModelName, ucfirst($type));
-			$fqcn = $this->modelService->getRootNamespace() . '\\action\\' . $className;
-			
-			// generate action
-			$action = new ActionSchema($actionNamePrefix . '-' . $type);
-			$action->addAcl('admin');
-			$action->setClass($fqcn);
-			$action->setTitle(str_replace(
-				['{model}', '{foreign}'],
-				[$model->getOriginCommonName(), $foreign->getoriginCommonName()], 
-				$titles[$type])
-			);
-			$action->setResponse('json', $response);
-			$module->addAction($action);
-			$actions[$type] = $action;
-			
-			// generate class
-			$generator = $generators[$type];
-			$class = $generator->generate(new PhpClass($fqcn), $model, $foreign, $middle);
-			$this->codegenService->dumpStruct($class, true);
-		}
-		
-		// generate response class
-		$generator = new ToManyRelationshipJsonResponseGenerator($this->service, $model, $foreign);
-		$response = $generator->generate($actions['read']);
-		$this->codegenService->dumpStruct($response, true);
-	}
-	
 	protected function generatePaths(Swagger $swagger) {
 		$paths = $swagger->getPaths();
 		
@@ -544,10 +318,10 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		// models
 		$modelName = $this->modelService->getModelName();
 		if ($modelName !== null) {
-			$definitions = $this->generateDefinition($definitions, $modelName);
+			$this->generateDefinition($definitions, $modelName);
 		} else {
 			foreach ($this->modelService->getModels() as $model) {
-				$definitions = $this->generateDefinition($definitions, $model->getName());
+				$this->generateDefinition($definitions, $model);
 			}
 		}
 	}
@@ -577,9 +351,8 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		return $data;
 	}
 
-	protected function generateDefinition(Definitions $definitions, $modelName) {
-		$this->logger->notice('Generating Definition for: ' . $modelName);
-		$model = $this->modelService->getModel($modelName);
+	protected function generateDefinition(Definitions $definitions, Table $model) {
+		$this->logger->notice('Generating Definition for: ' . $model->getOriginCommonName());
 		$modelObjectName = $model->getPhpName();
 		
 		// paged model

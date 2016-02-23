@@ -1,8 +1,8 @@
 <?php
 namespace keeko\tools\generator;
 
+use keeko\framework\utils\NameUtils;
 use Propel\Generator\Model\Table;
-use keeko\tools\utils\NameUtils;
 
 class AbstractModelJsonResponseGenerator extends AbstractJsonResponseGenerator {
 	

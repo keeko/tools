@@ -1,8 +1,8 @@
 <?php
 namespace keeko\tools\generator;
 
+use keeko\framework\schema\ActionSchema;
 use keeko\tools\generator\AbstractResponseGenerator;
-use keeko\core\schema\ActionSchema;
 
 class AbstractHtmlResponseGenerator extends AbstractResponseGenerator {
 	

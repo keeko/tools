@@ -1,14 +1,14 @@
 <?php
 namespace keeko\tools\services;
 
-use phootwork\collection\ArrayList;
-use Propel\Generator\Model\Table;
-use Propel\Generator\Model\Database;
-use Propel\Generator\Util\QuickBuilder;
-use phootwork\lang\Text;
-use keeko\core\schema\ActionSchema;
+use keeko\framework\schema\ActionSchema;
+use keeko\framework\schema\PackageSchema;
 use keeko\tools\utils\NamespaceResolver;
-use keeko\core\schema\PackageSchema;
+use phootwork\collection\ArrayList;
+use phootwork\lang\Text;
+use Propel\Generator\Model\Database;
+use Propel\Generator\Model\Table;
+use Propel\Generator\Util\QuickBuilder;
 
 class ModelService extends AbstractService {
 
@@ -365,24 +365,31 @@ class ModelService extends AbstractService {
 		$many = [];
 		$cfks = $model->getCrossFks();
 		foreach ($cfks as $cfk) {
+			$foreign = null;
+			$local = null;
 			foreach ($cfk->getMiddleTable()->getForeignKeys() as $fk) {
 				if ($fk->getForeignTable() != $model) {
-					$item = [
-						'type' => 'many',
-						'fk' => $fk,
-						'cfk' => $cfk
-					];
-					$many[] = $item;
-					$all[] = $item;
-					break;
+					$foreign = $fk;
+				} else if ($fk->getForeignTable() == $model) {
+					$local = $fk;
 				}
 			}
+			$item = [
+				'type' => 'many',
+				'lk' => $local,
+				'fk' => $foreign,
+				'cfk' => $cfk
+			];
+			$many[] = $item;
+			$all[] = $item;
+			break;
 		}
 	
 		return [
 			'one' => $one,
 			'many' => $many,
-			'all' => $all
+			'all' => $all,
+			'count' => count($all)
 		];
 	}
 }

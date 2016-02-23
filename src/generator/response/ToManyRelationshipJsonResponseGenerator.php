@@ -2,10 +2,10 @@
 namespace keeko\tools\generator\response;
 
 use gossi\codegen\model\PhpClass;
-use keeko\core\schema\ActionSchema;
+use keeko\framework\schema\ActionSchema;
+use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\AbstractJsonResponseGenerator;
 use Propel\Generator\Model\Table;
-use keeko\tools\utils\NameUtils;
 
 class ToManyRelationshipJsonResponseGenerator extends AbstractJsonResponseGenerator {
 	

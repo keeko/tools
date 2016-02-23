@@ -2,7 +2,7 @@
 namespace keeko\tools\generator;
 
 use gossi\codegen\model\AbstractPhpStruct;
-use keeko\core\schema\ActionSchema;
+use keeko\framework\schema\ActionSchema;
 
 class AbstractJsonResponseGenerator extends AbstractResponseGenerator {
 

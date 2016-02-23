@@ -23,7 +23,6 @@ class ToManyRelationshipReadActionGenerator extends AbstractActionGenerator {
 		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
 		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 		$class->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');
-		$class->addUseStatement('Tobscure\\JsonApi\\Exception\\InvalidParameterException');
 		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName() . 'Query');
 		$class->setMethod($this->generateRunMethod($this->twig->render('to-many-read-run.twig', [
 			'model' => $model->getCamelCaseName(),

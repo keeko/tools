@@ -1,7 +1,8 @@
-$data = json_decode($request->getContent(), true);
+$data = Json::decode($request->getContent());
 
 // hydrate
-${{ model }} = HydrateUtils::hydrate($data, new {{ class }}(), {{ fields|raw }});
+$serializer = {{ class }}::getSerializer();
+${{ model }} = $serializer->hydrate(new {{ class }}(), $data);
 
 // validate
 if (!${{ model }}->validate()) {

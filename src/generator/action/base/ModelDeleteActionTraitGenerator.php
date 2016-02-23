@@ -2,9 +2,9 @@
 namespace keeko\tools\generator\action\base;
 
 use gossi\codegen\model\PhpTrait;
-use keeko\core\schema\ActionSchema;
+use keeko\framework\schema\ActionSchema;
+use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\AbstractActionTraitGenerator;
-use keeko\tools\utils\NameUtils;
 
 class ModelDeleteActionTraitGenerator extends AbstractActionTraitGenerator {
 

@@ -1,11 +1,7 @@
 <?php
 namespace keeko\tools\services;
 
-use keeko\core\schema\ActionSchema;
-use keeko\core\schema\AppSchema;
-use keeko\core\schema\KeekoSchema;
-use keeko\core\schema\ModuleSchema;
-use keeko\core\schema\PackageSchema;
+use keeko\framework\schema\PackageSchema;
 use phootwork\file\exception\FileException;
 use phootwork\file\File;
 
@@ -97,7 +93,7 @@ class PackageService extends AbstractService {
 		$input = $this->io->getInput();
 		$type = $input->hasOption('type') ? $input->getOption('type') : null;
 		if ($type === null) {
-			if (($pos = strpos($actionName, '-')) !== false) {
+			if (($pos = strrpos($actionName, '-')) !== false) {
 				$type = substr($actionName, $pos + 1);
 			} else if ($modelName == $actionName) {
 				$type = 'read';

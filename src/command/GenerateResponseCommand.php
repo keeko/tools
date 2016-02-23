@@ -6,17 +6,20 @@ use keeko\tools\generator\GeneratorFactory;
 use keeko\tools\generator\response\base\ModelResponseTraitGenerator;
 use keeko\tools\generator\response\BlankHtmlResponseGenerator;
 use keeko\tools\generator\response\BlankJsonResponseGenerator;
+use keeko\tools\generator\response\DumpJsonResponseGenerator;
 use keeko\tools\generator\response\TwigHtmlResponseGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
 use phootwork\collection\Set;
+use phootwork\file\File;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use phootwork\file\File;
-use keeko\tools\generator\response\DumpJsonResponseGenerator;
+use phootwork\lang\Text;
+use keeko\tools\generator\response\ToManyRelationshipJsonResponseGenerator;
+use keeko\tools\generator\response\ToOneRelationshipJsonResponseGenerator;
 
 class GenerateResponseCommand extends AbstractGenerateCommand {
 
@@ -137,7 +140,7 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		$this->packageService->savePackage();
 	}
 	
-	private function generateResponse($actionName) {
+	protected function generateResponse($actionName) {
 		$this->logger->info('Generate Response: ' . $actionName);
 		$module = $this->packageService->getModule();
 		
@@ -146,10 +149,16 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		}
 		
 		$input = $this->io->getInput();
-		$action = $module->getAction($actionName);
-		$modelName = $this->modelService->getModelNameByAction($action);
 		$format = $input->getOption('format');
 		$template = $input->getOption('template');
+		
+		// check if relationship response
+		if (Text::create($actionName)->contains('relationship') && $format == 'json') {
+			return $this->generateRelationshipResponse($actionName);
+		}
+
+		$action = $module->getAction($actionName);
+		$modelName = $this->modelService->getModelNameByAction($action);
 
 		if (!$action->hasResponse($format)) {
 			$action->setResponse($format, str_replace(['Action', 'action'], [ucwords($format) . 'Response', 'response'], $action->getClass()));
@@ -162,22 +171,22 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		$isModel = $type && $this->modelService->isModelAction($action); 
 
 		// model given and format is json
-		if ($isModel && $format === 'json') {
+		if ($isModel && $format == 'json') {
 			$generator = GeneratorFactory::createJsonResponseGenerator($type, $this->service);
 		}
 		
 		// json + dump
-		else if ($format === 'json' && $template == 'dump') {
+		else if ($format == 'json' && $template == 'dump') {
 			$generator = new DumpJsonResponseGenerator($this->service);
 		}
 		
 		// blank json
-		else if ($format === 'json') {
+		else if ($format == 'json') {
 			$generator = new BlankJsonResponseGenerator($this->service);
 		}
 		
 		// html + twig
-		else if ($format === 'html' && $template == 'twig') {
+		else if ($format == 'html' && $template == 'twig') {
 			$generator = new TwigHtmlResponseGenerator($this->service);
 		}
 		
@@ -214,6 +223,49 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 			}
 			$overwrite = $overwrite || $input->getOption('force');
 			$this->codegenService->dumpStruct($class, $overwrite);
+		}
+	}
+	
+	protected function generateRelationshipResponse($actionName) {
+		$module = $this->packageService->getModule();
+		$action = $module->getAction($actionName);
+		$prefix = substr($actionName, 0, strpos($actionName, 'relationship') + 12);
+		$readAction = $module->getAction($prefix.'-read');
+		
+		// get modules names
+		$matches = [];
+		preg_match('/([a-z_]+)-to-([a-z_]+)-relationship.*/i', $actionName, $matches);
+		$model = $this->modelService->getModel($matches[1]);
+		$foreign = $this->modelService->getModel($matches[2]);
+
+		// response class name
+		$response = sprintf('%s\\response\\%s%sJsonResponse',
+			$this->modelService->getRootNamespace(),
+			$model->getPhpName(),
+			$foreign->getPhpName()
+		);
+		
+		$many = $module->hasAction($prefix . '-read')
+			&& $module->hasAction($prefix . '-update')
+			&& $module->hasAction($prefix . '-add')
+			&& $module->hasAction($prefix . '-remove')
+		;
+		$single = $module->hasAction($prefix . '-read')
+			&& $module->hasAction($prefix . '-update')
+			&& !$many
+		;
+		
+		$generator = null;
+		if ($many) {
+			$generator = new ToManyRelationshipJsonResponseGenerator($this->service, $model, $foreign);
+		} else if ($single) {
+			$generator = new ToOneRelationshipJsonResponseGenerator($this->service, $model, $foreign);
+		}
+		
+		if ($generator !== null) {
+			$action->setResponse('json', $response);
+			$response = $generator->generate($readAction);
+			$this->codegenService->dumpStruct($response, true);
 		}
 	}
 

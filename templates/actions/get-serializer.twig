@@ -1,0 +1,5 @@
+if (self::$serializer === null) {
+	self::$serializer = new {{ class }}Serializer();
+}
+
+return self::$serializer;

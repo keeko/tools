@@ -1,7 +1,7 @@
 <?php
 namespace keeko\tools\command;
 
-use keeko\core\schema\PackageSchema;
+use keeko\framework\schema\PackageSchema;
 use keeko\tools\helpers\IOHelper;
 use keeko\tools\helpers\ServiceLoaderTrait;
 use keeko\tools\services\CommandService;

@@ -23,6 +23,7 @@ class ToOneRelationshipReadActionGenerator extends AbstractActionGenerator {
 		// method: run(Request $request) : Response
 		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
 		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
+		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName() . 'Query');
 		$class->setMethod($this->generateRunMethod($this->twig->render('to-one-read-run.twig', [
 			'model' => $model->getCamelCaseName(),
 			'class' => $model->getPhpName()

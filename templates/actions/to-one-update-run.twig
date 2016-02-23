@@ -1,8 +1,21 @@
-$id = $this->getParam('id');
-$fkId = $this->getParam('{{ fk_id }}');
-${{ model }} = {{ class }}Query::create()->findOneById($id);
-${{ model }}->set{{ foreign_class }}Id($fkId);
-${{ model }}->save();
+$body = Json::decode($request->getContent());
+if (!isset($body['data'])) {
+	throw new InvalidParameterException();
+}
+$data = $body['data'];
 
-// run response
-return $this->response->run($request, ${{ model }});
+if (!isset($data['id'])) {
+	throw new InvalidParameterException();
+}
+
+$id = $this->getParam('id');
+${{ model }} = {{ class }}Query::create()->findOneById($id);
+${{ model }}->set{{ foreign_class }}Id($data['id']);
+
+// validate
+if (!${{ model }}->validate()) {
+	throw new ValidationException(${{ model }}->getValidationFailures());
+} else {
+	${{ model }}->save();
+	return $this->response->run($request, ${{ model }});
+}

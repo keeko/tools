@@ -1,12 +1,12 @@
 <?php
 namespace keeko\tools\generator\action\base;
 
-use gossi\codegen\model\PhpTrait;
-use keeko\core\schema\ActionSchema;
-use keeko\tools\generator\AbstractActionTraitGenerator;
-use keeko\tools\utils\NameUtils;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
+use gossi\codegen\model\PhpTrait;
+use keeko\framework\schema\ActionSchema;
+use keeko\framework\utils\NameUtils;
+use keeko\tools\generator\AbstractActionTraitGenerator;
 
 class ModelListActionTraitGenerator extends AbstractActionTraitGenerator {
 		
@@ -23,8 +23,10 @@ class ModelListActionTraitGenerator extends AbstractActionTraitGenerator {
 		$this->addConfigureParamsMethod($trait, $this->twig->render('list-configureParams.twig'));
 
 		// method: run(Request $request)
-		$trait->addUseStatement('keeko\\core\\utils\\NameUtils');
+		$trait->addUseStatement($fullModelObjectName);
 		$trait->addUseStatement($fullModelObjectName . 'Query');
+		$trait->addUseStatement('keeko\\framework\\utils\\NameUtils');
+		$trait->addUseStatement('Tobscure\\JsonApi\\Parameters');
 		$trait->setMethod($this->generateRunMethod($this->twig->render('list-run.twig', [
 			'model' => $modelVariableName,
 			'class' => $modelObjectName

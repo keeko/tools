@@ -5,9 +5,9 @@ use gossi\codegen\model\AbstractPhpStruct;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
 use gossi\codegen\model\PhpTrait;
-use keeko\core\schema\ActionSchema;
+use keeko\framework\schema\ActionSchema;
+use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\AbstractResponseGenerator;
-use keeko\tools\utils\NameUtils;
 
 class ModelResponseTraitGenerator extends AbstractResponseGenerator {
 
@@ -46,7 +46,7 @@ class ModelResponseTraitGenerator extends AbstractResponseGenerator {
 	}
 	
 	protected function ensureUseStatements(AbstractPhpStruct $struct) {
-		$struct->addUseStatement('keeko\\core\\utils\\FilterUtils');
+		$struct->addUseStatement('keeko\\framework\\utils\\FilterUtils');
 		$struct->addUseStatement('Propel\\Runtime\\Map\\TableMap');
 	}
 	

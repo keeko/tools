@@ -1,7 +1,7 @@
 <?php
 namespace keeko\tools\utils;
 
-use keeko\core\schema\PackageSchema;
+use keeko\framework\schema\PackageSchema;
 use phootwork\file\Path;
 use phootwork\lang\Text;
 
