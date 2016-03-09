@@ -2,7 +2,6 @@
 namespace keeko\tools\generator\action;
 
 use gossi\codegen\model\PhpClass;
-use keeko\tools\generator\AbstractActionGenerator;
 use Propel\Generator\Model\Table;
 
 class ToManyRelationshipRemoveActionGenerator extends AbstractActionGenerator {

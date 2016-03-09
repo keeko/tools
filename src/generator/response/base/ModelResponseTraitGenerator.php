@@ -7,7 +7,7 @@ use gossi\codegen\model\PhpParameter;
 use gossi\codegen\model\PhpTrait;
 use keeko\framework\schema\ActionSchema;
 use keeko\framework\utils\NameUtils;
-use keeko\tools\generator\AbstractResponseGenerator;
+use keeko\tools\generator\response\AbstractResponseGenerator;
 
 class ModelResponseTraitGenerator extends AbstractResponseGenerator {
 

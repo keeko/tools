@@ -3,7 +3,6 @@ namespace keeko\tools\services;
 
 use keeko\framework\schema\ActionSchema;
 use keeko\framework\schema\PackageSchema;
-use keeko\tools\utils\NamespaceResolver;
 use phootwork\collection\ArrayList;
 use phootwork\lang\Text;
 use Propel\Generator\Model\Database;
@@ -14,7 +13,6 @@ class ModelService extends AbstractService {
 
 	private $models = null;
 	private $schema = null;
-	private $namespace = null;
 	
 	/** @var Database */
 	private $database = null;
@@ -118,7 +116,7 @@ class ModelService extends AbstractService {
 	 */
 	public function getModels() {
 		if ($this->models === null) {
-			$namespace = str_replace('\\\\', '\\', $this->getRootNamespace() . '\\model');
+			$namespace = $this->packageService->getNamespace() . '\\model';
 			$propel = $this->getDatabase();
 	
 			$this->models = new ArrayList();
@@ -189,28 +187,6 @@ class ModelService extends AbstractService {
 	 */
 	public function hasModel($name) {
 		return $this->getDatabase()->hasTable($this->getTableName($name), true);
-	}
-
-	/**
-	 * Returns the root namespace for this package
-	 *
-	 * @return string the namespace
-	 */
-	public function getRootNamespace() {
-		if ($this->namespace === null) {
-			$input = $this->io->getInput();
-			$ns = $input->hasOption('namespace')
-				? $input->getOption('namespace')
-				: null;
-			if ($ns === null) {
-				$package = $this->service->getPackageService()->getPackage();
-				$ns = NamespaceResolver::getNamespace('src', $package);
-			}
-				
-			$this->namespace = $ns;
-		}
-	
-		return $this->namespace;
 	}
 
 	/**

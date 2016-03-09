@@ -6,7 +6,7 @@ use gossi\codegen\model\PhpParameter;
 use gossi\codegen\model\PhpTrait;
 use keeko\framework\schema\ActionSchema;
 use keeko\framework\utils\NameUtils;
-use keeko\tools\generator\AbstractActionTraitGenerator;
+use keeko\tools\generator\action\AbstractActionTraitGenerator;
 
 class ModelListActionTraitGenerator extends AbstractActionTraitGenerator {
 		

@@ -240,7 +240,7 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 
 		// response class name
 		$response = sprintf('%s\\response\\%s%sJsonResponse',
-			$this->modelService->getRootNamespace(),
+			$this->packageService->getNamespace(),
 			$model->getPhpName(),
 			$foreign->getPhpName()
 		);

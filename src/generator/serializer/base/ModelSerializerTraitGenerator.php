@@ -1,29 +1,26 @@
 <?php
-namespace keeko\tools\generator;
+namespace keeko\tools\generator\serializer\base;
 
-use gossi\codegen\model\PhpClass;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
+use gossi\codegen\model\PhpTrait;
 use keeko\framework\utils\NameUtils;
-use keeko\tools\generator\AbstractCodeGenerator;
+use keeko\tools\generator\serializer\AbstractSerializerGenerator;
 use Propel\Generator\Model\Table;
-use phootwork\file\File;
 
-class SerializerGenerator extends AbstractCodeGenerator {
-
-	protected function getTemplateFolder() {
-		return 'serializer';
-	}
+class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 	
+	/**
+	 * 
+	 * @param Table $model
+	 * @return PhpTrait
+	 */
 	public function generate(Table $model) {
-		$fqcn = sprintf('%s\\serializer\\%sSerializer', $model->getNamespace(), $model->getPhpName());
-		$class = new PhpClass($fqcn);
-// 		$file = new File($this->codegenService->getFilename($class));
-// 		if ($file->exists()) {
-// 			$class = PhpClass::fromFile($file->getPathname());
-// 		}
-		$class->setParentClassName('AbstractSerializer');
-		$class->addUseStatement('keeko\\framework\\model\\AbstractSerializer');
+		$ns = $this->packageService->getNamespace();
+		$fqcn = sprintf('%s\\serializer\\base\\%sSerializerTrait', $ns, $model->getPhpName());
+		$class = new PhpTrait($fqcn);
+// 		$class->setParentClassName('AbstractSerializer');
+// 		$class->addUseStatement('keeko\\framework\\model\\AbstractSerializer');
 		
 		$this->generateIdentifyingMethods($class, $model);
 		$this->generateAttributeMethods($class, $model);
@@ -33,7 +30,7 @@ class SerializerGenerator extends AbstractCodeGenerator {
 		return $class;
 	}
 	
-	protected function generateIdentifyingMethods(PhpClass $class, Table $model) {
+	protected function generateIdentifyingMethods(PhpTrait $class, Table $model) {
 		$package = $this->packageService->getPackage();
 		$type = sprintf('%s/%s', $package->getCleanName(), NameUtils::dasherize($model->getOriginCommonName()));
 		
@@ -50,7 +47,7 @@ class SerializerGenerator extends AbstractCodeGenerator {
 		);
 	}
 	
-	protected function generateAttributeMethods(PhpClass $class, Table $model) {
+	protected function generateAttributeMethods(PhpTrait $class, Table $model) {
 		$writeFields = $this->codegenService->getWriteFields($model->getOriginCommonName());
 		$attrs = '';
 		
@@ -86,7 +83,7 @@ class SerializerGenerator extends AbstractCodeGenerator {
 		);
 	}
 	
-	protected function generateHydrateMethod(PhpClass $class, Table $model) {
+	protected function generateHydrateMethod(PhpTrait $class, Table $model) {
 		if ($model->isReadOnly()) {
 			$body = $this->twig->render('hydrate-readonly.twig');
 		} else {
@@ -122,7 +119,7 @@ class SerializerGenerator extends AbstractCodeGenerator {
 		);
 	}
 	
-	protected function generateRelationshipMethods(PhpClass $class, Table $model) {
+	protected function generateRelationshipMethods(PhpTrait $class, Table $model) {
 		if ($model->isReadOnly()) {
 			return;
 		}

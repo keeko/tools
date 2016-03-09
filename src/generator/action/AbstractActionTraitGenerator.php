@@ -1,10 +1,9 @@
 <?php
-namespace keeko\tools\generator;
+namespace keeko\tools\generator\action;
 
 use gossi\codegen\model\AbstractPhpStruct;
 use gossi\codegen\model\PhpTrait;
 use keeko\framework\schema\ActionSchema;
-use keeko\tools\generator\AbstractActionGenerator;
 
 class AbstractActionTraitGenerator extends AbstractActionGenerator {
 	

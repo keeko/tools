@@ -1,5 +1,5 @@
 <?php
-namespace keeko\tools\generator;
+namespace keeko\tools\generator\response;
 
 use gossi\codegen\model\AbstractPhpStruct;
 use keeko\framework\schema\ActionSchema;

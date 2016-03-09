@@ -2,8 +2,6 @@
 namespace keeko\tools\command;
 
 use gossi\codegen\model\PhpClass;
-use gossi\codegen\model\PhpMethod;
-use gossi\codegen\model\PhpProperty;
 use gossi\codegen\model\PhpTrait;
 use keeko\framework\schema\ActionSchema;
 use keeko\framework\utils\NameUtils;
@@ -16,7 +14,6 @@ use keeko\tools\generator\action\ToManyRelationshipUpdateActionGenerator;
 use keeko\tools\generator\action\ToOneRelationshipReadActionGenerator;
 use keeko\tools\generator\action\ToOneRelationshipUpdateActionGenerator;
 use keeko\tools\generator\GeneratorFactory;
-use keeko\tools\generator\SerializerGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
 use keeko\tools\utils\NamespaceResolver;
 use phootwork\file\File;
@@ -241,9 +238,6 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			$this->generateAction($actionName);
 		}
 		
-		// prepare model for API usage
-		$this->prepareModelForApi($model);
-		
 		// generate relationship actions
 		if (!$model->isReadOnly()) {
 			$relationships = $this->modelService->getRelationships($model);
@@ -444,40 +438,6 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		$this->codegenService->dumpStruct($class, $overwrite);
 	}
 	
-	private function prepareModelForApi(Table $model) {
-		$class = new PhpClass(str_replace('\\\\', '\\', $model->getNamespace() . '\\' . $model->getPhpName()));
-		$file = new File($this->codegenService->getFilename($class));
-			
-		if ($file->exists()) {
-			// generate serializer
-			$generator = new SerializerGenerator($this->service);
-			$serializer = $generator->generate($model);
-			$this->codegenService->dumpStruct($serializer, true);
-			
-			// add serializer + APIModelInterface
-			$class = PhpClass::fromFile($this->codegenService->getFilename($class));
-			if (!$class->hasInterface('ApiModelInterface')) {
-				$class
-					->addUseStatement($serializer->getQualifiedName())
-					->addUseStatement('keeko\\framework\\model\\ApiModelInterface')
-					->addInterface('ApiModelInterface')
-					->setProperty(PhpProperty::create('serializer')
-						->setStatic(true)
-						->setVisibility('private')
-					)
-					->setMethod(PhpMethod::create('getSerializer')
-						->setStatic(true)
-						->setBody($this->twig->render('get-serializer.twig', [
-							'class' => $class->getName()
-						]))
-					)
-				;
-		
-				$this->codegenService->dumpStruct($class, true);
-			}
-		}
-	}
-	
 	private function generateToOneRelationshipAction(Table $model, Table $foreign, ForeignKey $fk) {
 		$module = $this->package->getKeeko()->getModule();
 		$fkModelName = $foreign->getPhpName();
@@ -495,7 +455,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		foreach (array_keys($generators) as $type) {
 			// generate fqcn
 			$className = sprintf('%s%s%sAction', $model->getPhpName(), $fkModelName, ucfirst($type));
-			$fqcn = $this->modelService->getRootNamespace() . '\\action\\' . $className;
+			$fqcn = $this->packageService->getNamespace() . '\\action\\' . $className;
 	
 			// generate action
 			$action = new ActionSchema($actionNamePrefix . '-' . $type);
@@ -536,7 +496,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		foreach (array_keys($generators) as $type) {
 			// generate fqcn
 			$className = sprintf('%s%s%sAction', $model->getPhpName(), $fkModelName, ucfirst($type));
-			$fqcn = $this->modelService->getRootNamespace() . '\\action\\' . $className;
+			$fqcn = $this->packageService->getNamespace() . '\\action\\' . $className;
 	
 			// generate action
 			$action = new ActionSchema($actionNamePrefix . '-' . $type);

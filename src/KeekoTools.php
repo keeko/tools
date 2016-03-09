@@ -10,6 +10,7 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use keeko\tools\command\GenerateSerializerCommand;
 
 class KeekoTools extends Application {
 
@@ -37,6 +38,7 @@ class KeekoTools extends Application {
 		$cmds = parent::getDefaultCommands();
 		$cmds[] = new InitCommand();
 		$cmds[] = new GenerateActionCommand();
+		$cmds[] = new GenerateSerializerCommand();
 		$cmds[] = new GenerateResponseCommand();
 		$cmds[] = new GenerateApiCommand();
 		$cmds[] = new MagicCommand();

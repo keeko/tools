@@ -4,6 +4,7 @@ namespace keeko\tools\services;
 use keeko\framework\schema\PackageSchema;
 use phootwork\file\exception\FileException;
 use phootwork\file\File;
+use keeko\tools\utils\NamespaceResolver;
 
 class PackageService extends AbstractService {
 
@@ -13,6 +14,7 @@ class PackageService extends AbstractService {
 	private $module = null;
 	private $actions = null;
 	private $app = null;
+	private $namespace = null;
 	
 	/**
 	 *
@@ -30,6 +32,28 @@ class PackageService extends AbstractService {
 		}
 
 		return $this->package;
+	}
+	
+	/**
+	 * Returns the root namespace for this package
+	 *
+	 * @return string the namespace
+	 */
+	public function getNamespace() {
+		if ($this->namespace === null) {
+			$input = $this->io->getInput();
+			$ns = $input->hasOption('namespace')
+			? $input->getOption('namespace')
+			: null;
+			if ($ns === null) {
+				$package = $this->service->getPackageService()->getPackage();
+				$ns = NamespaceResolver::getNamespace('src', $package);
+			}
+	
+			$this->namespace = trim($ns, '\\');
+		}
+	
+		return $this->namespace;
 	}
 	
 	/**

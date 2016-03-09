@@ -1,5 +1,5 @@
 <?php
-namespace keeko\tools\generator;
+namespace keeko\tools\generator\response;
 
 use keeko\framework\schema\ActionSchema;
 use keeko\tools\generator\AbstractResponseGenerator;

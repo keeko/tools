@@ -4,7 +4,6 @@ namespace keeko\tools\generator\response;
 use gossi\codegen\model\PhpClass;
 use keeko\framework\schema\ActionSchema;
 use keeko\framework\utils\NameUtils;
-use keeko\tools\generator\AbstractJsonResponseGenerator;
 use Propel\Generator\Model\Table;
 
 class ToManyRelationshipJsonResponseGenerator extends AbstractJsonResponseGenerator {

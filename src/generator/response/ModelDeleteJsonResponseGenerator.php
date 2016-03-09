@@ -3,7 +3,6 @@ namespace keeko\tools\generator\response;
 
 use gossi\codegen\model\PhpClass;
 use keeko\framework\schema\ActionSchema;
-use keeko\tools\generator\AbstractModelJsonResponseGenerator;
 
 class ModelDeleteJsonResponseGenerator extends AbstractModelJsonResponseGenerator {
 

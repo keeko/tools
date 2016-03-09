@@ -4,7 +4,7 @@ namespace keeko\tools\generator\action\base;
 use gossi\codegen\model\PhpTrait;
 use keeko\framework\schema\ActionSchema;
 use keeko\framework\utils\NameUtils;
-use keeko\tools\generator\AbstractActionTraitGenerator;
+use keeko\tools\generator\action\AbstractActionTraitGenerator;
 
 class ModelReadActionTraitGenerator extends AbstractActionTraitGenerator {
 	

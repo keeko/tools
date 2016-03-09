@@ -1,7 +1,6 @@
 <?php
 namespace keeko\tools\generator\action;
 
-use keeko\tools\generator\AbstractActionGenerator;
 use gossi\codegen\model\PhpClass;
 
 class BlankActionGenerator extends AbstractActionGenerator {

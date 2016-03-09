@@ -56,6 +56,7 @@ class MagicCommand extends AbstractGenerateCommand {
 		$input->setInteractive(false);
 		
 		if ($package->getType() === 'keeko-module') {
+			$this->runCommand('generate:serializer', $input, $output);
 			$this->runCommand('generate:action', $input, $output);
 			$this->runCommand('generate:response', $input, $output);
 			$this->runCommand('generate:api', $input, $output);
