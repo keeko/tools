@@ -19,8 +19,6 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		$ns = $this->packageService->getNamespace();
 		$fqcn = sprintf('%s\\serializer\\base\\%sSerializerTrait', $ns, $model->getPhpName());
 		$class = new PhpTrait($fqcn);
-// 		$class->setParentClassName('AbstractSerializer');
-// 		$class->addUseStatement('keeko\\framework\\model\\AbstractSerializer');
 		
 		$this->generateIdentifyingMethods($class, $model);
 		$this->generateAttributeMethods($class, $model);

@@ -1,0 +1,16 @@
+// find
+${{ model }} = {{ class }}Query::create()->findOneById($id);
+
+if (${{ model }} === null) {
+	return new NotFound(['message' => '{{ class }} not found.']);
+}
+
+// delete
+${{ model }}->delete();
+$payload = ['model' => ${{ model }}];
+
+if (${{ model }}->isDeleted()) {
+	return new Deleted($payload);
+}
+
+return new NotDeleted($payload);

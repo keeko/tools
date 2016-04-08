@@ -2,7 +2,6 @@
 namespace keeko\tools\generator\response;
 
 use keeko\framework\schema\ActionSchema;
-use keeko\tools\generator\AbstractResponseGenerator;
 
 class AbstractHtmlResponseGenerator extends AbstractResponseGenerator {
 	

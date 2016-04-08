@@ -1,0 +1,13 @@
+// hydrate
+$serializer = {{ class }}::getSerializer();
+${{ model }} = $serializer->hydrate(new {{ class }}(), $data);
+
+// validate
+if (!${{ model }}->validate()) {
+	return new NotValid([
+		'errors' => ${{ model }}->getValidationFailures()
+	]);
+}
+
+${{ model }}->save();
+return new Created(['model' => ${{ model }}]);

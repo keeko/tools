@@ -1,0 +1,26 @@
+// find
+${{ model }} = {{ class }}Query::create()->findOneById($id);
+
+if (${{ model }} === null) {
+	return new NotFound(['message' => '{{ class }} not found.']);
+}
+
+// hydrate
+$serializer = {{ class }}::getSerializer();
+${{ model }} = $serializer->hydrate(${{ model }}, $data);
+
+// validate
+if (!${{ model }}->validate()) {
+	return new NotValid([
+		'errors' => ${{ model }}->getValidationFailures()
+	]);
+}
+
+$rows = ${{ model }}->save();
+$payload = ['model' => ${{ model }}];
+
+if ($rows === 0) {
+	return new NotUpdated($payload);
+}
+
+return new Updated($payload);

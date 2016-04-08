@@ -13,6 +13,9 @@ use keeko\tools\generator\action\ToManyRelationshipRemoveActionGenerator;
 use keeko\tools\generator\action\ToManyRelationshipUpdateActionGenerator;
 use keeko\tools\generator\action\ToOneRelationshipReadActionGenerator;
 use keeko\tools\generator\action\ToOneRelationshipUpdateActionGenerator;
+use keeko\tools\generator\domain\DomainGenerator;
+use keeko\tools\generator\domain\DomainTraitGenerator;
+use keeko\tools\generator\domain\ReadOnlyDomainTraitGenerator;
 use keeko\tools\generator\GeneratorFactory;
 use keeko\tools\helpers\QuestionHelperTrait;
 use keeko\tools\utils\NamespaceResolver;
@@ -214,13 +217,18 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		$this->logger->info('Generate Action from Model: ' . $modelName);
 		$input = $this->io->getInput();
 		$model = $this->modelService->getModel($modelName);
+		
+		// generate domain
+		$this->generateDomain($model);
+
+		// generate action type(s)
 		$typeDump = $input->getOption('type');
 		if ($typeDump !== null) {
 			$types = [$typeDump];
 		} else {
 			$types = ['create', 'read', 'list', 'update', 'delete'];
 		}
-
+		
 		foreach ($types as $type) {
 			$input->setOption('acl', ['admin']);
 			$input->setOption('type', $type);
@@ -273,6 +281,26 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 	}
 
+	/**
+	 * Generates a domain with trait for the given model
+	 * 
+	 * @TODO: Externalize this into its own command and call the command from here 
+	 * 
+	 * @param Table $model
+	 */
+	private function generateDomain(Table $model) {
+		// generate class
+		$generator = new DomainGenerator($this->service);
+		$class = $generator->generate($model);
+		$this->codegenService->dumpStruct($class, true);
+		
+		// generate trait
+		$generator = $model->isReadOnly()
+			? new ReadOnlyDomainTraitGenerator($this->service)
+			: new DomainTraitGenerator($this->service);
+		$trait = $generator->generate($model);
+		$this->codegenService->dumpStruct($trait, true);
+	}
 	
 	/**
 	 * Generates an action.

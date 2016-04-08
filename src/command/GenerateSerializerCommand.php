@@ -13,6 +13,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
+use keeko\tools\generator\serializer\ActionSerializerGenerator;
 
 class GenerateSerializerCommand extends AbstractGenerateCommand {
 
@@ -151,8 +152,8 @@ class GenerateSerializerCommand extends AbstractGenerateCommand {
 		
 		// generate stub if not
 		else {
-			$serializer->setParentClassName('AbstractSerializer');
-			$serializer->addUseStatement('keeko\\framework\\model\\AbstractSerializer');
+			$serializer->setParentClassName('AbstractModelSerializer');
+			$serializer->addUseStatement('keeko\\framework\\model\\AbstractModelSerializer');
 		}
 		
 		// add serializer trait and write
@@ -192,7 +193,11 @@ class GenerateSerializerCommand extends AbstractGenerateCommand {
 	private function generateAction($actionName) {
 		$this->logger->info('Generate Serializer for action: ' . $actionName);
 		
+		$action = $this->packageService->getAction($actionName);
+		$generator = new ActionSerializerGenerator($this->service);
+		$class = $generator->generate($action);
 		
+		$this->codegenService->dumpStruct($class, true);
 	}
 	
 	

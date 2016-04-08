@@ -3,23 +3,22 @@ namespace keeko\tools\command;
 
 use gossi\codegen\model\PhpClass;
 use keeko\tools\generator\GeneratorFactory;
-use keeko\tools\generator\response\base\ModelResponseTraitGenerator;
 use keeko\tools\generator\response\BlankHtmlResponseGenerator;
 use keeko\tools\generator\response\BlankJsonResponseGenerator;
 use keeko\tools\generator\response\DumpJsonResponseGenerator;
+use keeko\tools\generator\response\ToManyRelationshipJsonResponseGenerator;
+use keeko\tools\generator\response\ToOneRelationshipJsonResponseGenerator;
 use keeko\tools\generator\response\TwigHtmlResponseGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
 use phootwork\collection\Set;
 use phootwork\file\File;
+use phootwork\lang\Text;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use phootwork\lang\Text;
-use keeko\tools\generator\response\ToManyRelationshipJsonResponseGenerator;
-use keeko\tools\generator\response\ToOneRelationshipJsonResponseGenerator;
 
 class GenerateResponseCommand extends AbstractGenerateCommand {
 
@@ -199,22 +198,6 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		if ($generator !== null) {
 			/* @var $class PhpClass */
 			$class = $generator->generate($action);
-			
-			// generate json trait
-// 			if ($isModel && $format === 'json') {
-// 				$generator = new ModelResponseTraitGenerator($this->service);
-// 				$trait = $generator->generate($action);
-				
-// 				if (!$class->hasTrait($trait)) {
-// 					$class->addTrait($trait);
-// 					$overwrite = true;
-// 				}
-				
-// 				if (!$this->traits->contains($trait->getName())) {
-// 					$this->codegenService->dumpStruct($trait, true);
-// 					$this->traits->add($trait->getName());
-// 				}
-// 			}
 
 			// write to file
 			$file = new File($this->codegenService->getFilename($class));

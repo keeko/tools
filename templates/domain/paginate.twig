@@ -1,0 +1,25 @@
+$sysPrefs = $this->getServiceContainer()->getPreferenceLoader()->getSystemPreferences();
+$defaultSize = $sysPrefs->getPaginationSize();
+$page = $params->getPage('number');
+$size = $params->getPage('size', $defaultSize);
+
+$query = {{ class }}Query::create();
+
+// sorting
+$sort = $params->getSort({{ class }}::getSerializer()->getSortFields());
+foreach ($sort as $field => $order) {
+	$method = 'orderBy' . NameUtils::toStudlyCase($field);
+	$query->$method($order);
+}
+
+// filtering
+$filter = $params->getFilter();
+if (!empty($filter)) {
+	$this->applyFilter($query, $filter);
+}
+
+// paginate
+${{ model }} = $query->paginate($page, $size);
+
+// run response
+return new Found(['model' => ${{ model }}]);

@@ -1,0 +1,12 @@
+// read
+${{ model }} = {{ class }}Query::create()->findOneById($id);
+
+// check existence
+if (${{ model }} === null) {
+	$payload = new NotFound(['message' => '{{ class }} not found.']);
+} else {
+	$payload = new Found(['model' => ${{ model }}]);
+}
+
+// run response
+return $payload;
