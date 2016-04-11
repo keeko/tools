@@ -124,8 +124,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 		
 		// ask questions for a model
-		if ($generateModel /*&& !($this->package->getVendor() === 'keeko' && $this->modelService->isCoreSchema())*/) {
-
+		if ($generateModel) {
 			$schema = str_replace(getcwd(), '', $this->modelService->getSchema());
 			$allQuestion = new ConfirmationQuestion(sprintf('For all models in the schema (%s)?', $schema));
 			$allModels = $this->askConfirmation($allQuestion);
@@ -289,17 +288,19 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	 * @param Table $model
 	 */
 	private function generateDomain(Table $model) {
-		// generate class
-		$generator = new DomainGenerator($this->service);
-		$class = $generator->generate($model);
-		$this->codegenService->dumpStruct($class, true);
+		$this->runCommand('generate:domain', ['--model', $model->getOriginCommonName()]);
 		
-		// generate trait
-		$generator = $model->isReadOnly()
-			? new ReadOnlyDomainTraitGenerator($this->service)
-			: new DomainTraitGenerator($this->service);
-		$trait = $generator->generate($model);
-		$this->codegenService->dumpStruct($trait, true);
+// 		// generate class
+// 		$generator = new DomainGenerator($this->service);
+// 		$class = $generator->generate($model);
+// 		$this->codegenService->dumpStruct($class, true);
+		
+// 		// generate trait
+// 		$generator = $model->isReadOnly()
+// 			? new ReadOnlyDomainTraitGenerator($this->service)
+// 			: new DomainTraitGenerator($this->service);
+// 		$trait = $generator->generate($model);
+// 		$this->codegenService->dumpStruct($trait, true);
 	}
 	
 	/**
