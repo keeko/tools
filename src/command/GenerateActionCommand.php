@@ -13,9 +13,6 @@ use keeko\tools\generator\action\ToManyRelationshipRemoveActionGenerator;
 use keeko\tools\generator\action\ToManyRelationshipUpdateActionGenerator;
 use keeko\tools\generator\action\ToOneRelationshipReadActionGenerator;
 use keeko\tools\generator\action\ToOneRelationshipUpdateActionGenerator;
-use keeko\tools\generator\domain\DomainGenerator;
-use keeko\tools\generator\domain\DomainTraitGenerator;
-use keeko\tools\generator\domain\ReadOnlyDomainTraitGenerator;
 use keeko\tools\generator\GeneratorFactory;
 use keeko\tools\helpers\QuestionHelperTrait;
 use keeko\tools\utils\NamespaceResolver;
@@ -217,8 +214,9 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		$input = $this->io->getInput();
 		$model = $this->modelService->getModel($modelName);
 		
-		// generate domain
+		// generate domain + serializer
 		$this->generateDomain($model);
+		$this->generateSerializer($model);
 
 		// generate action type(s)
 		$typeDump = $input->getOption('type');
@@ -283,24 +281,23 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	/**
 	 * Generates a domain with trait for the given model
 	 * 
-	 * @TODO: Externalize this into its own command and call the command from here 
-	 * 
 	 * @param Table $model
 	 */
 	private function generateDomain(Table $model) {
-		$this->runCommand('generate:domain', ['--model', $model->getOriginCommonName()]);
-		
-// 		// generate class
-// 		$generator = new DomainGenerator($this->service);
-// 		$class = $generator->generate($model);
-// 		$this->codegenService->dumpStruct($class, true);
-		
-// 		// generate trait
-// 		$generator = $model->isReadOnly()
-// 			? new ReadOnlyDomainTraitGenerator($this->service)
-// 			: new DomainTraitGenerator($this->service);
-// 		$trait = $generator->generate($model);
-// 		$this->codegenService->dumpStruct($trait, true);
+		$this->runCommand('generate:domain', [
+			'--model' => $model->getOriginCommonName()
+		]);
+	}
+	
+	/**
+	 * Generates a serializer for the given model
+	 *
+	 * @param Table $model
+	 */
+	private function generateSerializer(Table $model) {
+		$this->runCommand('generate:serializer', [
+			'--model' => $model->getOriginCommonName()
+		]);
 	}
 	
 	/**
