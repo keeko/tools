@@ -7,10 +7,9 @@ if (${{ model }} === null) {
 
 // delete
 ${{ model }}->delete();
-$payload = ['model' => ${{ model }}];
 
 if (${{ model }}->isDeleted()) {
-	return new Deleted($payload);
+	return new Deleted(['model' => ${{ model }}]);
 }
 
-return new NotDeleted($payload);
+return new NotDeleted(['message' => 'Could not delete {{ class }}']);

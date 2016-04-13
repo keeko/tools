@@ -30,8 +30,6 @@ use Symfony\Component\Console\Question\Question;
 class GenerateActionCommand extends AbstractGenerateCommand {
 
 	use QuestionHelperTrait;
-	
-	private $twig;
 
 	protected function configure() {
 		$this
@@ -72,13 +70,6 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 				InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
 				'The acl\s for this action (guest, user and/or admin)'
 			)
-// 			->addOption(
-// 				'schema',
-// 				's',
-// 				InputOption::VALUE_OPTIONAL,
-// 				'Path to the database schema (if ommited, database/schema.xml is used)',
-// 				null
-// 			)
 		;
 		
 		$this->configureGenerateOptions();
@@ -88,9 +79,6 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 
 	protected function initialize(InputInterface $input, OutputInterface $output) {
 		parent::initialize($input, $output);
-
-		$loader = new \Twig_Loader_Filesystem($this->service->getConfig()->getTemplateRoot() . '/actions');
-		$this->twig = new \Twig_Environment($loader);
 	}
 
 	/**
@@ -168,36 +156,21 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$this->preCheck();
-		
-		// 1. find out which action(s) to generate
-		// 2. generate the information in the package
-		// 3. generate the code for the action
-		
+
 		$name = $input->getArgument('name');
 		$model = $input->getOption('model');
 
 		// only a specific action
 		if ($name) {
-			$this->generateAction($name);
+			$this->generateNamed($name);
 		}
 
 		// create action(s) from a model
 		else if ($model) {
 			$this->generateModel($model);
 		}
-		
-		// if this is a core-module, find the related model
-// 		else /*if ($this->package->getVendor() == 'keeko' && $this->modelService->isCoreSchema()) */ {
-// 			$model = $this->package->getName();
-// 			if ($this->modelService->hasModel($model)) {
-// 				$input->setOption('model', $model);
-// 				$this->generateModel($model);
-// 			} else {
-// 				$this->logger->error('Tried to find model on my own, wasn\'t lucky - please provide model with the --model option');
-// 			}
-// 		}
 
-		// anyway, generate all
+		// anyway, generate all models
 		else {
 			foreach ($this->modelService->getModels() as $model) {
 				$modelName = $model->getOriginCommonName();
@@ -240,7 +213,12 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			if (Text::create($action->getTitle())->isEmpty()) {
 				$action->setTitle($this->getActionTitle($modelName, $type));
 			}
-			$this->generateAction($actionName);
+			$action = $this->generateAction($actionName);
+			
+			// generate code
+			$generator = GeneratorFactory::createModelActionGenerator($type, $this->service);
+			$class = $generator->generate($action);
+			$this->codegenService->dumpStruct($class, true);
 		}
 		
 		// generate relationship actions
@@ -306,8 +284,22 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	 * @param string $actionName
 	 * @param ActionSchema $action the action node from composer.json
 	 */
-	private function generateAction($actionName) {
+	private function generateNamed($actionName) {
 		$this->logger->info('Generate Action: ' . $actionName);
+		$action = $this->generateAction($actionName);
+		
+		// generate code
+		$this->generateCode($action);
+	}
+	
+	/**
+	 * Generates the action for the package
+	 * 
+	 * @param unknown $actionName
+	 * @throws \RuntimeException
+	 * @return ActionSchema
+	 */
+	private function generateAction($actionName) {
 		$input = $this->io->getInput();
 		
 		// get action and create it if it doesn't exist
@@ -316,11 +308,11 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		if (($title = $input->getOption('title')) !== null) {
 			$action->setTitle($title);
 		}
-
+		
 		if (Text::create($action->getTitle())->isEmpty()) {
 			throw new \RuntimeException(sprintf('Cannot create action %s, because I am missing a title for it', $actionName));
 		}
-
+		
 		if (($classname = $input->getOption('classname')) !== null) {
 			$action->setClass($classname);
 		}
@@ -331,19 +323,18 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 		
 		// guess title if there is none set yet
-		if (Text::create($action->getTitle())->isEmpty() 
+		if (Text::create($action->getTitle())->isEmpty()
 				&& $this->modelService->isModelAction($action)
 				&& $this->modelService->isCrudAction($action)) {
 			$modelName = $this->modelService->getModelNameByAction($action);
 			$type = $this->modelService->getOperationByAction($action);
 			$action->setTitle($this->getActionTitle($modelName, $type));
 		}
-		
+	
 		// set acl
 		$action->setAcl($this->getAcl($action));
 		
-		// generate code
-		$this->generateCode($action);
+		return $action;
 	}
 	
 	private function guessClassname($name) {

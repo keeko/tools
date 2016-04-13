@@ -48,6 +48,7 @@ class DomainGenerator extends AbstractDomainGenerator {
 				->addParameter(PhpParameter::create('query')
 					->setType($model->getPhpName() . 'Query')
 				)
+				->addParameter(PhpParameter::create('filter'))
 				->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
 			);
 		}

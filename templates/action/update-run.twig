@@ -1,0 +1,5 @@
+$id = $this->getParam('id');
+$data = Json::decode($request->getContent());
+$domain = new {{ domain }}($this->getServiceContainer());
+$payload = $domain->update($id, $data);
+return $this->response->run($request, $payload);

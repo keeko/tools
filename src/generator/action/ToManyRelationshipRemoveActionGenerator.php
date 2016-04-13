@@ -19,8 +19,6 @@ class ToManyRelationshipRemoveActionGenerator extends AbstractActionGenerator {
 		$this->addConfigureParamsMethod($class, $this->twig->render('relationship-configureParams.twig'));
 
 		// method: run(Request $request) : Response
-		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
-		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 		$class->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');
 		$class->addUseStatement('Tobscure\\JsonApi\\Exception\\InvalidParameterException');
 		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName() . 'Query');

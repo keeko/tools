@@ -9,7 +9,6 @@ use keeko\tools\generator\domain\ReadOnlyDomainTraitGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
 use keeko\tools\utils\NamespaceResolver;
 use phootwork\lang\Text;
-use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -154,27 +153,6 @@ class GenerateDomainCommand extends AbstractGenerateCommand {
 		$this->logger->info('Generate Domain from Model: ' . $modelName);
 		$model = $this->modelService->getModel($modelName);
 		
-		// generate class
-		$generator = new DomainGenerator($this->service);
-		$class = $generator->generate($model);
-		$this->codegenService->dumpStruct($class, true);
-		
-		// generate trait
-		$generator = $model->isReadOnly()
-			? new ReadOnlyDomainTraitGenerator($this->service)
-			: new DomainTraitGenerator($this->service);
-		$trait = $generator->generate($model);
-		$this->codegenService->dumpStruct($trait, true);
-	}
-
-	/**
-	 * Generates a domain with trait for the given model
-	 * 
-	 * @TODO: Externalize this into its own command and call the command from here 
-	 * 
-	 * @param Table $model
-	 */
-	private function generateDomain(Table $model) {
 		// generate class
 		$generator = new DomainGenerator($this->service);
 		$class = $generator->generate($model);

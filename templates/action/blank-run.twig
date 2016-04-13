@@ -1,0 +1,18 @@
+return $this->response->run($request);
+
+// alternatively:
+
+// 1) get data:
+// $data = Json::decode($request->getContent());
+//
+// -- or -- an id:
+// $id = $this->getParam('id');
+
+// 2) instantiate your domain
+// $domain = new YourDomain($this->getServiceContainer());
+
+// 3) run domain and store payload
+// $payload = $domain->yourMethod($id, $data);
+
+// 4) return response with payload
+// return $this->responder->run($request, $payload);

@@ -23,8 +23,6 @@ class ToOneRelationshipUpdateActionGenerator extends AbstractActionGenerator {
 		$class->addUseStatement('keeko\\framework\\exceptions\\ValidationException'); 
 		$class->addUseStatement('Tobscure\\JsonApi\\Exception\\InvalidParameterException');
 		$class->addUseStatement('phootwork\\json\\Json');
-		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
-		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName() . 'Query');
 		$class->setMethod($this->generateRunMethod($this->twig->render('to-one-update-run.twig', [
 			'model' => $model->getCamelCaseName(),

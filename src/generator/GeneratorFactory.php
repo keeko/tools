@@ -1,16 +1,18 @@
 <?php
 namespace keeko\tools\generator;
 
-use keeko\tools\generator\action\base\ModelCreateActionTraitGenerator;
-use keeko\tools\generator\action\base\ModelDeleteActionTraitGenerator;
-use keeko\tools\generator\action\base\ModelListActionTraitGenerator;
-use keeko\tools\generator\action\base\ModelReadActionTraitGenerator;
-use keeko\tools\generator\action\base\ModelUpdateActionTraitGenerator;
-use keeko\tools\generator\response\ModelCreateJsonResponseGenerator;
-use keeko\tools\generator\response\ModelDeleteJsonResponseGenerator;
-use keeko\tools\generator\response\ModelListJsonResponseGenerator;
-use keeko\tools\generator\response\ModelReadJsonResponseGenerator;
-use keeko\tools\generator\response\ModelUpdateJsonResponseGenerator;
+use keeko\tools\generator\action\AbstractModelActionGenerator;
+use keeko\tools\generator\action\ModelCreateActionGenerator;
+use keeko\tools\generator\action\ModelDeleteActionGenerator;
+use keeko\tools\generator\action\ModelListActionGenerator;
+use keeko\tools\generator\action\ModelReadActionGenerator;
+use keeko\tools\generator\action\ModelUpdateActionGenerator;
+use keeko\tools\generator\responder\AbstractModelJsonResponderGenerator;
+use keeko\tools\generator\responder\ModelCreateJsonResponderGenerator;
+use keeko\tools\generator\responder\ModelDeleteJsonResponderGenerator;
+use keeko\tools\generator\responder\ModelListJsonResponderGenerator;
+use keeko\tools\generator\responder\ModelReadJsonResponderGenerator;
+use keeko\tools\generator\responder\ModelUpdateJsonResponderGenerator;
 use keeko\tools\services\CommandService;
 
 class GeneratorFactory {
@@ -19,24 +21,24 @@ class GeneratorFactory {
 	 * Creates a generator for the given trait type
 	 * 
 	 * @param string $type
-	 * @return AbstractActionTraitGenerator
+	 * @return AbstractModelActionGenerator
 	 */
-	public static function createActionTraitGenerator($type, CommandService $service) {
+	public static function createModelActionGenerator($type, CommandService $service) {
 		switch ($type) {
 			case 'list':
-				return new ModelListActionTraitGenerator($service);
+				return new ModelListActionGenerator($service);
 				
 			case 'create':
-				return new ModelCreateActionTraitGenerator($service);
+				return new ModelCreateActionGenerator($service);
 				
 			case 'update':
-				return new ModelUpdateActionTraitGenerator($service);
+				return new ModelUpdateActionGenerator($service);
 				
 			case 'read':
-				return new ModelReadActionTraitGenerator($service);
+				return new ModelReadActionGenerator($service);
 				
 			case 'delete':
-				return new ModelDeleteActionTraitGenerator($service);
+				return new ModelDeleteActionGenerator($service);
 		}
 	}
 	
@@ -45,23 +47,24 @@ class GeneratorFactory {
 	 * 
 	 * @param string $type
 	 * @param CommandService $service
+	 * @return AbstractModelJsonResponderGenerator
 	 */
-	public static function createJsonResponseGenerator($type, CommandService $service) {
+	public static function createModelJsonResponderGenerator($type, CommandService $service) {
 		switch ($type) {
 			case 'list':
-				return new ModelListJsonResponseGenerator($service);
+				return new ModelListJsonResponderGenerator($service);
 
 			case 'create':
-				return new ModelCreateJsonResponseGenerator($service);
+				return new ModelCreateJsonResponderGenerator($service);
 		
 			case 'update':
-				return new ModelUpdateJsonResponseGenerator($service);
+				return new ModelUpdateJsonResponderGenerator($service);
 		
 			case 'read':
-				return new ModelReadJsonResponseGenerator($service);
+				return new ModelReadJsonResponderGenerator($service);
 		
 			case 'delete':
-				return new ModelDeleteJsonResponseGenerator($service);
+				return new ModelDeleteJsonResponderGenerator($service);
 		}
 	}
 

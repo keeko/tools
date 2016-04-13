@@ -20,6 +20,7 @@
 	"require" : {
 		"php" : ">=5.4",
 		"keeko/framework" : "dev-master",
+		"keeko/core" : "@dev",
 		"composer/composer" : "@dev",
 		"propel/propel" : "2.0.0-alpha5",
 		"puli/composer-plugin" : "@beta",

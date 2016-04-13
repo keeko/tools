@@ -1,0 +1,19 @@
+$params = new Parameters($request->query->all());
+$data = $payload->get('model');
+$serializer = {{ class }}::getSerializer();
+$resource = new Collection($data, $serializer);
+$resource = $resource->with($params->getInclude({{ includes|raw }}));
+$resource = $resource->fields($params->getFields({{ fields|raw }}));
+$document = new Document($resource);
+
+// meta
+$document->setMeta([
+	'total' => $data->getNbResults(),
+	'first' => $data->getFirstPage(),
+	'next' => $data->getNextPage(),
+	'previous' => $data->getPreviousPage(),
+	'last' => $data->getLastPage()
+]);
+
+// return response
+return new JsonResponse($document->toArray());

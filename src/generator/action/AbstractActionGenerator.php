@@ -10,7 +10,7 @@ use keeko\tools\generator\AbstractCodeGenerator;
 class AbstractActionGenerator extends AbstractCodeGenerator {
 
 	protected function getTemplateFolder() {
-		return 'actions';
+		return 'action';
 	}
 	
 	protected function generateRunMethod($body = '') {
@@ -31,6 +31,8 @@ class AbstractActionGenerator extends AbstractCodeGenerator {
 	
 	protected function ensureUseStatements(AbstractPhpStruct $struct) {
 		$struct->addUseStatement('keeko\\framework\\foundation\\AbstractAction');
+		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
+		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 	}
 	
 	protected function ensureBasicSetup(PhpClass $class) {
