@@ -1,5 +1,0 @@
-$serializer = {{ class }}::getSerializer();
-$resource = new Resource($data, $serializer);
-$document = new Document($resource);
-
-return new JsonResponse($document->toArray(), 201, ['Location' => $resource->getLinks()['self']]);

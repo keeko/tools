@@ -1,8 +1,0 @@
-$params = new Parameters($request->query->all());
-$serializer = {{ class }}::getSerializer();
-$resource = new Resource($data, $serializer);
-$resource = $resource->with($params->getInclude({{ includes|raw }}));
-$resource = $resource->fields($params->getFields({{ fields|raw }}));
-$document = new Document($resource);
-
-return new JsonResponse($document->toArray(), 200);

@@ -70,6 +70,7 @@ class ReadOnlyDomainTraitGenerator extends AbstractDomainGenerator {
 			->addParameter(PhpParameter::create('query')
 				->setType($model->getPhpName() . 'Query')
 			)
+			->addParameter(PhpParameter::create('filter'))	
 			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
 			->setAbstract(true)
 			->setDescription('Implement this functionality at ' . $this->getClassName($model))
