@@ -61,8 +61,6 @@ class NamespaceResolver {
 	 */
 	public static function getNamespace($path, PackageSchema $package) {
 		$autoload = $package->getAutoload();
-		$namespace = null;
-		
 		$suffix = '';
 		$namespace = null;
 		$path = new Path($path);

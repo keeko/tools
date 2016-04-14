@@ -21,8 +21,8 @@ class ModelService extends AbstractService {
 	 * Returns the propel schema. The three locations, where the schema is looked up in:
 	 *
 	 * 1. --schema option (if available)
-	 * 2. database/schema.xml
-	 * 3. core/database/schema.xml
+	 * 2. res/database/schema.xml
+	 * 3. <keeko/core>/res/database/schema.xml
 	 *
 	 * @throws \RuntimeException
 	 * @return string the path to the schema
@@ -35,8 +35,9 @@ class ModelService extends AbstractService {
 			$schemas = [
 				$input->hasOption('schema') ? $input->getOption('schema') : '',
 				$workDir . '/database/schema.xml',
-				$workDir . '/core/database/schema.xml',
-				$workDir . '/vendor/keeko/core/database/schema.xml'
+				$workDir . '/res/database/schema.xml',
+				$workDir . '/vendor/keeko/core/database/schema.xml',
+				$workDir . '/vendor/keeko/core/res/database/schema.xml'
 			];
 			foreach ($schemas as $path) {
 				if (file_exists($path)) {
@@ -140,10 +141,6 @@ class ModelService extends AbstractService {
 	public function getModel($name) {
 		$tableName = $this->getTableName($name);
 		$db = $this->getDatabase();
-// 		echo $db->getNamespace();
-// 		foreach ($db->getTables() as $table) {
-// 			echo $table->getName();
-// 		}
 		$table = $db->getTable($tableName);
 	
 		return $table;

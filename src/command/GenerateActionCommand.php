@@ -2,11 +2,9 @@
 namespace keeko\tools\command;
 
 use gossi\codegen\model\PhpClass;
-use gossi\codegen\model\PhpTrait;
 use keeko\framework\schema\ActionSchema;
 use keeko\framework\utils\NameUtils;
-use keeko\tools\generator\action\BlankActionGenerator;
-use keeko\tools\generator\action\NoopActionGenerator;
+use keeko\tools\generator\action\SkeletonActionGenerator;
 use keeko\tools\generator\action\ToManyRelationshipAddActionGenerator;
 use keeko\tools\generator\action\ToManyRelationshipReadActionGenerator;
 use keeko\tools\generator\action\ToManyRelationshipRemoveActionGenerator;
@@ -16,7 +14,6 @@ use keeko\tools\generator\action\ToOneRelationshipUpdateActionGenerator;
 use keeko\tools\generator\GeneratorFactory;
 use keeko\tools\helpers\QuestionHelperTrait;
 use keeko\tools\utils\NamespaceResolver;
-use phootwork\file\File;
 use phootwork\lang\Text;
 use Propel\Generator\Model\ForeignKey;
 use Propel\Generator\Model\Table;
@@ -120,7 +117,12 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 				$model = $this->askQuestion($modelQuestion);
 				$input->setOption('model', $model);
 			}
-		} else if (!$generateModel) {
+		} else {
+			if ($name === null) {
+				$nameQuestion = new Question('What\'s the name for your action (must be a unique identifier)?', '');
+				$name = $this->askQuestion($nameQuestion);
+				$input->setArgument('name', $name);
+			}
 			$action = $this->getAction($name);
 			
 			// ask for title
@@ -160,17 +162,22 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		$name = $input->getArgument('name');
 		$model = $input->getOption('model');
 
-		// only a specific action
+		// generate a skeleton action (or model, if action name belongs to a model)
 		if ($name) {
-			$this->generateNamed($name);
+			$action = $this->getAction($name);
+			if ($this->modelService->isModelAction($action)) {
+				$this->generateModel($this->modelService->getModelNameByAction($action));
+			} else {
+				$this->generateSkeleton($name);
+			}
 		}
 
-		// create action(s) from a model
+		// generate an action for a specific model
 		else if ($model) {
 			$this->generateModel($model);
 		}
 
-		// anyway, generate all models
+		// generate actions for all models
 		else {
 			foreach ($this->modelService->getModels() as $model) {
 				$modelName = $model->getOriginCommonName();
@@ -186,7 +193,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		$this->logger->info('Generate Action from Model: ' . $modelName);
 		$input = $this->io->getInput();
 		$model = $this->modelService->getModel($modelName);
-		
+
 		// generate domain + serializer
 		$this->generateDomain($model);
 		$this->generateSerializer($model);
@@ -228,14 +235,13 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			// to-one relationships
 			foreach ($relationships['one'] as $one) {
 				$fk = $one['fk'];
-				$this->generateToOneRelationshipAction($model, $fk->getForeignTable(), $fk);
+				$this->generateToOneRelationshipActions($model, $fk->getForeignTable(), $fk);
 			}
 			
 			// to-many relationships
 			foreach ($relationships['many'] as $many) {
 				$fk = $many['fk'];
-				$cfk = $many['cfk'];
-				$this->generateToManyRelationshipAction($model, $fk->getForeignTable(), $cfk->getMiddleTable());
+				$this->generateToManyRelationshipActions($model, $fk->getForeignTable());
 			}
 		}
 		
@@ -282,20 +288,24 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	 * Generates an action.
 	 *  
 	 * @param string $actionName
-	 * @param ActionSchema $action the action node from composer.json
 	 */
-	private function generateNamed($actionName) {
+	private function generateSkeleton($actionName) {
 		$this->logger->info('Generate Action: ' . $actionName);
+		$input = $this->io->getInput();
+		
+		// generate action
 		$action = $this->generateAction($actionName);
 		
 		// generate code
-		$this->generateCode($action);
+		$generator = new SkeletonActionGenerator($this->service);
+		$class = $generator->generate($action);
+		$this->codegenService->dumpStruct($class, $input->getOption('force'));
 	}
 	
 	/**
 	 * Generates the action for the package
 	 * 
-	 * @param unknown $actionName
+	 * @param string $actionName
 	 * @throws \RuntimeException
 	 * @return ActionSchema
 	 */
@@ -349,7 +359,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	 */
 	private function getAction($actionName) {
 		$action = $this->packageService->getAction($actionName);
-		if ($action == null) {
+		if ($action === null) {
 			$action = new ActionSchema($actionName);
 			$module = $this->packageService->getModule();
 			$module->addAction($action);
@@ -386,76 +396,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		return $acls;
 	}
 	
-	/**
-	 * Generates code for an action
-	 * 
-	 * @param ActionSchema $action
-	 */
-	private function generateCode(ActionSchema $action) {
-		$input = $this->io->getInput();
-		$trait = null;
-
-		// class
-		$class = new PhpClass($action->getClass());
-		$filename = $this->codegenService->getFilename($class);
-		$traitNs = $class->getNamespace() . '\\base';
-		$traitName = $class->getName() . 'Trait';
-		$overwrite = false;
-		
-		// load from file, when class exists
-		if (file_exists($filename)) {
-			// load trait
-			$trait = new PhpTrait($traitNs . '\\' . $traitName);
-			$traitFile = new File($this->codegenService->getFilename($trait));
-
-			if ($traitFile->exists()) {
-				$trait = PhpTrait::fromFile($traitFile->getPathname());
-			}
-		
-			// load class
-			$class = PhpClass::fromFile($filename);
-		}
-		
-		// anyway seed class information
-		else {
-			$overwrite = true;
-			$class->setParentClassName('AbstractAction');
-			$class->setDescription($action->getTitle());
-			$class->setLongDescription($action->getDescription());
-			$this->codegenService->addAuthors($class, $this->package);
-		}
-		
-		// create base trait
-		$modelName = $input->getOption('model');
-		if ($modelName !== null) {
-			$type = $this->packageService->getActionType($action->getName(), $modelName);
-			$generator = GeneratorFactory::createActionTraitGenerator($type, $this->service);
-			$trait = $generator->generate($traitNs . '\\' . $traitName, $action);
-
-			$this->codegenService->addAuthors($trait, $this->package);
-			$this->codegenService->dumpStruct($trait, true);
-			
-			if (!$class->hasTrait($trait)) {
-				$class->addTrait($trait);
-				$overwrite = true;
-			}
-		}
-		
-		// create class generator
-		if ($modelName === null && !$class->hasMethod('run')) {
-			$overwrite = true;
-			$generator = new BlankActionGenerator($this->service);
-		} else {
-			$generator = new NoopActionGenerator($this->service);
-		}
-
-		$class = $generator->generate($class);
-		$overwrite = $overwrite || $input->getOption('force');
-
-		$this->codegenService->dumpStruct($class, $overwrite);
-	}
-	
-	private function generateToOneRelationshipAction(Table $model, Table $foreign, ForeignKey $fk) {
+	private function generateToOneRelationshipActions(Table $model, Table $foreign, ForeignKey $fk) {
 		$module = $this->package->getKeeko()->getModule();
 		$fkModelName = $foreign->getPhpName();
 		$actionNamePrefix = sprintf('%s-to-%s-relationship', $model->getOriginCommonName(), $foreign->getOriginCommonName());
@@ -473,7 +414,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			// generate fqcn
 			$className = sprintf('%s%s%sAction', $model->getPhpName(), $fkModelName, ucfirst($type));
 			$fqcn = $this->packageService->getNamespace() . '\\action\\' . $className;
-	
+
 			// generate action
 			$action = new ActionSchema($actionNamePrefix . '-' . $type);
 			$action->addAcl('admin');
@@ -492,7 +433,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 	}
 	
-	private function generateToManyRelationshipAction(Table $model, Table $foreign, Table $middle) {
+	private function generateToManyRelationshipActions(Table $model, Table $foreign) {
 		$module = $this->package->getKeeko()->getModule();
 		$fkModelName = $foreign->getPhpName();
 		$actionNamePrefix = sprintf('%s-to-%s-relationship', $model->getOriginCommonName(), $foreign->getOriginCommonName());
@@ -528,7 +469,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	
 			// generate class
 			$generator = $generators[$type];
-			$class = $generator->generate(new PhpClass($fqcn), $model, $foreign, $middle);
+			$class = $generator->generate(new PhpClass($fqcn), $model, $foreign);
 			$this->codegenService->dumpStruct($class, true);
 		}
 	}

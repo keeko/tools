@@ -100,7 +100,13 @@ abstract class AbstractGenerateCommand extends Command {
 		$cmd->run($input, $this->io->getOutput());
 	}
 	
-	private function sanitizeInput($input) {
+	/**
+	 * Prepares input as used for running a command
+	 * 
+	 * @param array $input
+	 * @return array
+	 */
+	private function sanitizeInput(array $input) {
 		// check if at least one argument is present and if not add a blank one
 		$hasArgs = false;
 		foreach (array_keys($input) as $key) {

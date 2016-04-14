@@ -35,6 +35,11 @@ trait QuestionHelperTrait {
 	
 	private $dialog;
 	
+	/**
+	 * 
+	 * @param Question $question
+	 * @return string the answer
+	 */
 	private function ask(Question $question) {
 		if ($this->dialog === null) {
 			$this->dialog = $this->getHelperSet()->get('question');
@@ -44,6 +49,12 @@ trait QuestionHelperTrait {
 		return $this->dialog->ask($input, $output, $question);
 	}
 	
+	/**
+	 * Asks a question
+	 * 
+	 * @param Question $question
+	 * @return string the answer
+	 */
 	protected function askQuestion(Question $question) {
 		$default = $question->getDefault();
 		$q = $this->getQuestion($question->getQuestion(), $default);
@@ -52,10 +63,16 @@ trait QuestionHelperTrait {
 		return $this->ask($q);
 	}
 	
+	/**
+	 * Asks a confirmation question
+	 * 
+	 * @param ConfirmationQuestion $question
+	 * @return string the answer
+	 */
 	protected function askConfirmation(ConfirmationQuestion $question) {
 		$default = 'y/n';
 		$q = $this->getQuestion($question->getQuestion(), $default);
-		return $this->ask(new ConfirmationQuestion($q, $default));
+		return $this->ask(new ConfirmationQuestion($q));
 	}
 	
 }

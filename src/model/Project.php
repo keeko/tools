@@ -2,6 +2,7 @@
 namespace keeko\tools\model;
 
 use phootwork\file\File;
+
 class Project {
 	
 	private $root;
@@ -10,6 +11,9 @@ class Project {
 		$this->root = $workdir;
 	}
 	
+	/**
+	 * @return string
+	 */
 	public function getRootPath() {
 		return $this->root;
 	}

@@ -58,6 +58,11 @@ class MagicCommand extends AbstractGenerateCommand {
 		}
 	}
 
+	/**
+	 * Returns a random magic spell
+	 * 
+	 * @return string
+	 */
 	protected function getRandomHex() {
 		return $this->hex[array_rand($this->hex)];
 	}

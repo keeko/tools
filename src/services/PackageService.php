@@ -12,7 +12,6 @@ class PackageService extends AbstractService {
 	private $package = null;
 	private $keeko = null;
 	private $module = null;
-	private $actions = null;
 	private $app = null;
 	private $namespace = null;
 	
@@ -125,18 +124,6 @@ class PackageService extends AbstractService {
 		}
 		return $type;
 	}
-
-// 	public function updateAction($name, $data) {
-// 		$this->actions[$name] = $data;
-// 		$this->package['extra']['keeko']['module']['actions'] = $this->actions;
-// 	}
-	
-// 	private function getSlug($package = null) {
-// 		if ($package === null) {
-// 			$package = $this->getPackage();
-// 		}
-// 		return str_replace('/', '.', $package['name']);
-// 	}
 	
 	public function savePackage(PackageSchema $package = null) {
 		if ($package === null) {

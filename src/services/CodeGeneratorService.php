@@ -64,7 +64,10 @@ class CodeGeneratorService extends AbstractService {
 	 * @param AbstractPhpStruct $struct
 	 * @param array $package
 	 */
-	public function addAuthors(AbstractPhpStruct $struct, PackageSchema $package) {
+	public function addAuthors(AbstractPhpStruct $struct, PackageSchema $package = null) {
+		if ($package === null) {
+			$package = $this->packageService->getPackage();
+		}
 		$docblock = $struct->getDocblock();
 		
 		foreach ($package->getAuthors() as $author) {

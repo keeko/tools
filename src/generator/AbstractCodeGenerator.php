@@ -1,8 +1,10 @@
 <?php
 namespace keeko\tools\generator;
 
+use gossi\codegen\model\PhpClass;
 use keeko\tools\helpers\ServiceLoaderTrait;
 use keeko\tools\services\CommandService;
+use phootwork\file\File;
 
 abstract class AbstractCodeGenerator {
 	
@@ -29,4 +31,14 @@ abstract class AbstractCodeGenerator {
 		return $this->service;
 	}
 
+	protected function loadClass(PhpClass $class) {
+		$file = new File($this->codegenService->getFilename($class));
+		
+		// load from file, if exists
+		if ($file->exists()) {
+			return PhpClass::fromFile($file->getPathname());
+		}
+		
+		return $class;
+	}
 }

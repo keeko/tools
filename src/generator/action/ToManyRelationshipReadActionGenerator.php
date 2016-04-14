@@ -11,7 +11,7 @@ class ToManyRelationshipReadActionGenerator extends AbstractActionGenerator {
 	 * 
 	 * @param PhpClass $class
 	 */
-	public function generate(PhpClass $class, Table $model, Table $foreign, Table $middle) {
+	public function generate(PhpClass $class, Table $model, Table $foreign) {
 		// add use statements
 		$this->ensureBasicSetup($class);
 		

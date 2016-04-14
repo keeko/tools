@@ -1,23 +1,16 @@
 <?php
 namespace keeko\tools\generator\domain;
 
-use keeko\tools\generator\domain\AbstractDomainGenerator;
-use Propel\Generator\Model\Table;
 use gossi\codegen\model\PhpClass;
-use phootwork\file\File;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
+use Propel\Generator\Model\Table;
 
 class DomainGenerator extends AbstractDomainGenerator {
 	
 	public function generate(Table $model) {
 		$class = $this->generateClass($model);
-		$file = new File($this->codegenService->getFilename($class));
-		
-		// load from file, if exists
-		if ($file->exists()) {
-			$class = PhpClass::fromFile($file->getPathname());
-		}
+		$class = $this->loadClass($class);
 		
 		$this->ensureUseStatements($class, $model);
 		$this->generateApplyFilter($class, $model);

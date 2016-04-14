@@ -2,9 +2,10 @@
 namespace keeko\tools\services;
 
 use keeko\tools\exceptions\JsonEmptyException;
-use phootwork\json\Json;
-use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use phootwork\file\File;
+use phootwork\json\Json;
+use phootwork\json\JsonException;
+use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 
 class JsonService extends AbstractService {
 
@@ -26,11 +27,11 @@ class JsonService extends AbstractService {
 			$file = new File($filename);
 			$json = Json::decode($file->read());
 		} catch (JsonException $e) {
-			if ($json === null) {
-				throw new JsonEmptyException(sprintf('%s is empty', $filename));
-			} else {
-				throw new \RuntimeException(sprintf('Problem occured while decoding %s: %s', $filename, $e->getMessage()));
-			}
+			throw new \RuntimeException(sprintf('Problem occured while decoding %s: %s', $filename, $e->getMessage()));
+		}
+		
+		if ($json === null) {
+			throw new JsonEmptyException(sprintf('%s is empty', $filename));
 		}
 		
 		return $json;

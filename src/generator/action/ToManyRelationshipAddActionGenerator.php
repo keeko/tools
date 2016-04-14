@@ -11,7 +11,7 @@ class ToManyRelationshipAddActionGenerator extends AbstractActionGenerator {
 	 * 
 	 * @param PhpClass $class
 	 */
-	public function generate(PhpClass $class, Table $model, Table $foreignModel, Table $middle) {
+	public function generate(PhpClass $class, Table $model, Table $foreign) {
 		// add use statements
 		$this->ensureBasicSetup($class);
 		
@@ -24,7 +24,7 @@ class ToManyRelationshipAddActionGenerator extends AbstractActionGenerator {
 		$class->addUseStatement(str_replace('model', 'domain', $model->getNamespace()) . '\\' . $model->getPhpName() . 'Domain');
 		$class->setMethod($this->generateRunMethod($this->twig->render('to-many-add-run.twig', [
 			'domain' =>  $model->getPhpName() . 'Domain',
-			'foreign_class' => $foreignModel->getPhpName()
+			'foreign_class' => $foreign->getPhpName()
 		])));
 
 		return $class;
