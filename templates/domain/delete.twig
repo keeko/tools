@@ -1,5 +1,5 @@
 // find
-${{ model }} = {{ class }}Query::create()->findOneById($id);
+${{ model }} = $this->get($id);
 
 if (${{ model }} === null) {
 	return new NotFound(['message' => '{{ class }} not found.']);

@@ -20,15 +20,16 @@ class ToOneRelationshipUpdateActionGenerator extends AbstractActionGenerator {
 		$this->addConfigureParamsMethod($class, $this->twig->render('relationship-configureParams.twig'));
 
 		// method: run(Request $request) : Response
-		$class->addUseStatement('keeko\\framework\\exceptions\\ValidationException'); 
-		$class->addUseStatement('Tobscure\\JsonApi\\Exception\\InvalidParameterException');
+		$name = $fk->getPhpName();
+		if (empty($name)) {
+			$name = $foreign->getPhpName();
+		}
 		$class->addUseStatement('phootwork\\json\\Json');
-		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName() . 'Query');
+		$class->addUseStatement('Tobscure\\JsonApi\\Exception\\InvalidParameterException');
+		$class->addUseStatement(str_replace('model', 'domain', $model->getNamespace()) . '\\' . $model->getPhpName() . 'Domain');
 		$class->setMethod($this->generateRunMethod($this->twig->render('to-one-update-run.twig', [
-			'model' => $model->getCamelCaseName(),
-			'class' => $model->getPhpName(),
-			'foreign_class' => $foreign->getPhpName(),
-			'required' => $fk->getLocalColumn()->isNotNull()
+			'domain' =>  $model->getPhpName() . 'Domain',
+			'foreign' => $name
 		])));
 
 		return $class;

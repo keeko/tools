@@ -4,10 +4,10 @@ namespace keeko\tools\generator\responder;
 use gossi\codegen\model\PhpClass;
 use keeko\framework\schema\ActionSchema;
 
-class ModelReadJsonResponderGenerator extends AbstractModelJsonResponderGenerator {
+class ModelReadJsonResponderGenerator extends AbstractPayloadJsonResponderGenerator {
 
 	protected function addMethods(PhpClass $class, ActionSchema $action) {
-		$this->generateGetPayloadMethods($class, $this->twig->render('getPayloadMethods-read.twig'));
+		$this->generateGetPayloadMethods($class, $this->twig->render('model/getPayloadMethods-read.twig'));
 		$this->generateNotFound($class);
 		
 		// method: found(Request $request, PayloadInterface $payload)
@@ -19,7 +19,7 @@ class ModelReadJsonResponderGenerator extends AbstractModelJsonResponderGenerato
 			$class->addUseStatement($field->getNamespace() . '\\' . $field->getPhpName());
 		}
 		
-		$found = $this->generatePayloadMethod('found', $this->twig->render('model-read.twig', [
+		$found = $this->generatePayloadMethod('found', $this->twig->render('payload/read.twig', [
 			'class' => $model->getPhpName(),
 			'includes' => $this->codegenService->arrayToCode($this->getRelationshipIncludes($model)),
 			'fields' => $this->getFieldsCode($fields)

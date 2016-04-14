@@ -149,17 +149,18 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 				// read
 				$body = $this->twig->render('to-one-read.twig', [
 					'ref' => $refPhpName,
-					'class' => $foreignModel->getPhpName()
+					'class' => $foreignModel->getPhpName(),
+					'related' => $name
 				]);
 				
-				// set
-				$class->setMethod(PhpMethod::create('set'.$crudMethod)
-					->addParameter(PhpParameter::create('model'))
-					->addParameter(PhpParameter::create('data'))
-					->setBody($this->twig->render('to-one-set.twig', [
-						'ref' => $refPhpName
-					]))
-				);
+// 				// set
+// 				$class->setMethod(PhpMethod::create('set'.$crudMethod)
+// 					->addParameter(PhpParameter::create('model'))
+// 					->addParameter(PhpParameter::create('data'))
+// 					->setBody($this->twig->render('to-one-set.twig', [
+// 						'ref' => $refPhpName
+// 					]))
+// 				);
 			}
 			
 			if ($rel['type'] == 'many') {
@@ -176,52 +177,52 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 				$crudMethod = NameUtils::pluralize($refPhpName);
 				$rels[$name] = $foreignModel->getPhpName() . '::getSerializer()->getType(null)';
 				$class->addUseStatement($foreignModel->getNamespace() . '\\' . $foreignModel->getPhpName());
-				$class->addUseStatement($foreignModel->getNamespace() . '\\' . $foreignModel->getPhpName() . 'Query');
+// 				$class->addUseStatement($foreignModel->getNamespace() . '\\' . $foreignModel->getPhpName() . 'Query');
 				$class->addUseStatement('Tobscure\\JsonApi\\Collection');
 				
 				// read
 				$body = $this->twig->render('to-many-read.twig', [
 					'getter' => NameUtils::pluralize($refPhpName),
-					'class' => $refPhpName
+					'class' => $refPhpName,
+					'related' => $name
 				]);
 				
-				// set
-				$class->addUseStatement($rel['cfk']->getMiddleTable()->getNamespace() . '\\' .$rel['cfk']->getMiddleTable()->getPhpName() . 'Query');
-				$class->setMethod(PhpMethod::create('set'.$crudMethod)
-					->addParameter(PhpParameter::create('model'))
-					->addParameter(PhpParameter::create('data'))
-					->setBody($this->twig->render('to-many-set.twig', [
-						'query_class' => $rel['cfk']->getMiddleTable()->getPhpName(),
-						'class' => $refPhpName,
-						'adder' => $crudMethod
-					]))
-				);
+// 				// set
+// 				$class->addUseStatement($rel['cfk']->getMiddleTable()->getNamespace() . '\\' .$rel['cfk']->getMiddleTable()->getPhpName() . 'Query');
+// 				$class->setMethod(PhpMethod::create('set'.$crudMethod)
+// 					->addParameter(PhpParameter::create('model'))
+// 					->addParameter(PhpParameter::create('data'))
+// 					->setBody($this->twig->render('to-many-set.twig', [
+// 						'query_class' => $rel['cfk']->getMiddleTable()->getPhpName(),
+// 						'class' => $refPhpName,
+// 						'adder' => $crudMethod
+// 					]))
+// 				);
 
-				// add
-				$class->setMethod(PhpMethod::create('add'.$crudMethod)
-					->addParameter(PhpParameter::create('model'))
-					->addParameter(PhpParameter::create('data'))
-					->setBody($this->twig->render('to-many-add.twig', [
-						'ref' => $refPhpName,
-						'ref_var' => $method
-					]))
-				);
+// 				// add
+// 				$class->setMethod(PhpMethod::create('add'.$crudMethod)
+// 					->addParameter(PhpParameter::create('model'))
+// 					->addParameter(PhpParameter::create('data'))
+// 					->setBody($this->twig->render('to-many-add.twig', [
+// 						'ref' => $refPhpName,
+// 						'ref_var' => $method
+// 					]))
+// 				);
 				
-				// remove
-				$class->setMethod(PhpMethod::create('remove'.$crudMethod)
-					->addParameter(PhpParameter::create('model'))
-					->addParameter(PhpParameter::create('data'))
-					->setBody($this->twig->render('to-many-remove.twig', [
-						'ref' => $refPhpName,
-						'ref_var' => $method
-					]))
-				);
+// 				// remove
+// 				$class->setMethod(PhpMethod::create('remove'.$crudMethod)
+// 					->addParameter(PhpParameter::create('model'))
+// 					->addParameter(PhpParameter::create('data'))
+// 					->setBody($this->twig->render('to-many-remove.twig', [
+// 						'ref' => $refPhpName,
+// 						'ref_var' => $method
+// 					]))
+// 				);
 			}
 			
 			// needs to go down
 			$class->setMethod(PhpMethod::create($method)
 				->addParameter(PhpParameter::create('model'))
-				->addParameter(PhpParameter::create('related'))
 				->setBody($body)
 			);
 		}

@@ -7,7 +7,7 @@ use keeko\tools\generator\action\ModelDeleteActionGenerator;
 use keeko\tools\generator\action\ModelListActionGenerator;
 use keeko\tools\generator\action\ModelReadActionGenerator;
 use keeko\tools\generator\action\ModelUpdateActionGenerator;
-use keeko\tools\generator\responder\AbstractModelJsonResponderGenerator;
+use keeko\tools\generator\responder\AbstractPayloadJsonResponderGenerator;
 use keeko\tools\generator\responder\ModelCreateJsonResponderGenerator;
 use keeko\tools\generator\responder\ModelDeleteJsonResponderGenerator;
 use keeko\tools\generator\responder\ModelListJsonResponderGenerator;
@@ -47,7 +47,7 @@ class GeneratorFactory {
 	 * 
 	 * @param string $type
 	 * @param CommandService $service
-	 * @return AbstractModelJsonResponderGenerator
+	 * @return AbstractPayloadJsonResponderGenerator
 	 */
 	public static function createModelJsonResponderGenerator($type, CommandService $service) {
 		switch ($type) {

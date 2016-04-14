@@ -9,7 +9,7 @@ use gossi\codegen\model\PhpParameter;
 use gossi\codegen\model\AbstractPhpStruct;
 use keeko\framework\schema\ActionSchema;
 
-class AbstractModelJsonResponderGenerator extends AbstractJsonResponderGenerator {
+class AbstractPayloadJsonResponderGenerator extends AbstractJsonResponderGenerator {
 	
 	protected function ensureUseStatements(AbstractPhpStruct $struct) {
 		parent::ensureUseStatements($struct);
@@ -46,13 +46,13 @@ class AbstractModelJsonResponderGenerator extends AbstractJsonResponderGenerator
 	
 	protected function generateNotValid(PhpClass $class) {
 		$class->addUseStatement('keeko\framework\exceptions\ValidationException');
-		$notValid = $this->generatePayloadMethod('notValid', $this->twig->render('model-notValid.twig'));
+		$notValid = $this->generatePayloadMethod('notValid', $this->twig->render('payload/notValid.twig'));
 		$class->setMethod($notValid);
 	}
 	
 	protected function generateNotFound(PhpClass $class) {
 		$class->addUseStatement('Symfony\Component\Routing\Exception\ResourceNotFoundException');
-		$notFound = $this->generatePayloadMethod('notFound', $this->twig->render('model-notFound.twig'));
+		$notFound = $this->generatePayloadMethod('notFound', $this->twig->render('payload/notFound.twig'));
 		$class->setMethod($notFound);
 	}
 	

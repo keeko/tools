@@ -1,0 +1,28 @@
+// find
+${{ model }} = $this->get($id);
+
+if (${{ model }} === null) {
+	return new NotFound(['message' => '{{ class }} not found.']);
+}
+
+// remove them
+$errors = [];
+foreach ($data as $entry) {
+	if (!isset($entry['id'])) {
+		$errors[] = 'Missing id for {{ foreign_class }}';
+	}
+	${{ foreign_model }} = {{ foreign_class }}Query::create()->findOneById($entry['id']);
+	${{ model }}->remove{{ foreign_class }}(${{ foreign_model }});
+}
+
+if (count($errors) > 0) {
+	return new NotValid(['errors' => $errors]);
+}
+
+$rows = ${{ model }}->save();
+
+if ($rows > 0) {
+	return Updated(['model' => ${{ model }}]);
+}
+
+return NotUpdated(['model' => ${{ model }}]);

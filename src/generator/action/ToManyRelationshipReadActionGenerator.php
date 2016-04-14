@@ -19,11 +19,9 @@ class ToManyRelationshipReadActionGenerator extends AbstractActionGenerator {
 		$this->addConfigureParamsMethod($class, $this->twig->render('relationship-configureParams.twig'));
 
 		// method: run(Request $request) : Response
-		$class->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');
-		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName() . 'Query');
+		$class->addUseStatement(str_replace('model', 'domain', $model->getNamespace()) . '\\' . $model->getPhpName() . 'Domain');
 		$class->setMethod($this->generateRunMethod($this->twig->render('to-many-read-run.twig', [
-			'model' => $model->getCamelCaseName(),
-			'class' => $model->getPhpName()
+			'domain' =>  $model->getPhpName() . 'Domain'
 		])));
 
 		return $class;

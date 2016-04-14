@@ -7,10 +7,12 @@ use keeko\tools\generator\serializer\AbstractSerializerGenerator;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
 
-class ActionSerializerGenerator extends AbstractSerializerGenerator {
+class BlankSerializerGenerator extends AbstractSerializerGenerator {
 	
 	public function generate(ActionSchema $action) {
-		$class = new PhpClass(str_replace(['Action', 'action'], ['Serializer', 'serializer'], $action->getClass()));
+		$className = str_replace('action', 'serializer', $action->getClass());
+		$className = preg_replace('/Action$/', 'Serializer', $className);
+		$class = new PhpClass($className);
 		$class->setParentClassName('AbstractSerializer');
 		$class->addUseStatement('keeko\\framework\\model\\AbstractSerializer');
 		

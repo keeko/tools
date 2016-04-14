@@ -160,7 +160,9 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		$modelName = $this->modelService->getModelNameByAction($action);
 
 		if (!$action->hasResponse($format)) {
-			$action->setResponse($format, str_replace(['Action', 'action'], [ucwords($format) . 'Responder', 'responder'], $action->getClass()));
+			$className = str_replace('action', 'responder', $action->getClass());
+			$className = preg_replace('/Action$/', ucwords($format) . 'Responder', $className);
+			$action->setResponse($format, $className);
 		}
 
 		// find generator

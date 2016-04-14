@@ -1,0 +1,15 @@
+// find
+${{ model }} = $this->get($id);
+
+if (${{ model }} === null) {
+	return new NotFound(['message' => '{{ class }} not found.']);
+}
+
+// update
+if (${{ model }}->get{{ local }}() !== ${{ fk_id }}) {
+	${{ model }}->set{{ local }}(${{ fk_id }});
+	${{ model }}->save();
+	return Updated(['model' => ${{ model }}]);
+}
+
+return NotUpdated(['model' => ${{ model }}]);

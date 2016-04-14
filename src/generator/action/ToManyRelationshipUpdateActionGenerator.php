@@ -19,17 +19,12 @@ class ToManyRelationshipUpdateActionGenerator extends AbstractActionGenerator {
 		$this->addConfigureParamsMethod($class, $this->twig->render('relationship-configureParams.twig'));
 
 		// method: run(Request $request) : Response
-		$class->addUseStatement('Symfony\\Component\\Routing\\Exception\\ResourceNotFoundException');
+		$class->addUseStatement('phootwork\\json\\Json');
 		$class->addUseStatement('Tobscure\\JsonApi\\Exception\\InvalidParameterException');
-		$class->addUseStatement($middle->getNamespace() . '\\' . $middle->getPhpName() . 'Query');
-		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName() . 'Query');
-		$class->addUseStatement($model->getNamespace() . '\\' . $foreignModel->getPhpName() . 'Query');
+		$class->addUseStatement(str_replace('model', 'domain', $model->getNamespace()) . '\\' . $model->getPhpName() . 'Domain');
 		$class->setMethod($this->generateRunMethod($this->twig->render('to-many-update-run.twig', [
-			'model' => $model->getCamelCaseName(),
-			'class' => $model->getPhpName(),
-			'foreign_model' => $foreignModel->getCamelCaseName(),
-			'foreign_class' => $foreignModel->getPhpName(),
-			'fk_class' => $middle->getPhpName()
+			'domain' =>  $model->getPhpName() . 'Domain',
+			'foreign_class' => $foreignModel->getPhpName()
 		])));
 
 		return $class;

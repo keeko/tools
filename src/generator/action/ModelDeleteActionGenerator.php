@@ -17,7 +17,7 @@ class ModelDeleteActionGenerator extends AbstractModelActionGenerator {
 		$this->addConfigureParamsMethod($class, $this->twig->render('delete-configureParams.twig'));
 
 		// method: run(Request $request)
-		$class->addUseStatement(str_replace('model', 'domain', $model->getNamespace()) . '\\' . $model->getPhpName() . 'Domain');		
+		$class->addUseStatement(str_replace('model', 'domain', $model->getNamespace()) . '\\' . $model->getPhpName() . 'Domain');
 		$class->setMethod($this->generateRunMethod($this->twig->render('delete-run.twig', [
 			'domain' => $model->getPhpName() . 'Domain'
 		])));

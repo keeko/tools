@@ -1,4 +1,4 @@
 $serializer = {{ class }}::getSerializer();
-$relationship = $serializer->{{ related }}();
+$relationship = $serializer->{{ related }}($payload->getModel());
 
 return new JsonResponse($relationship->toArray());

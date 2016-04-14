@@ -13,7 +13,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use keeko\tools\generator\serializer\ActionSerializerGenerator;
+use keeko\tools\generator\serializer\BlankSerializerGenerator;
 
 class GenerateSerializerCommand extends AbstractGenerateCommand {
 
@@ -160,7 +160,7 @@ class GenerateSerializerCommand extends AbstractGenerateCommand {
 		$serializer->addTrait($trait);
 		$this->codegenService->dumpStruct($serializer, true);
 		
-		// add serializer + APIModelInterface on the model
+		// add serializer + ApiModelInterface on the model
 		$class = new PhpClass(str_replace('\\\\', '\\', $model->getNamespace() . '\\' . $model->getPhpName()));
 		$file = new File($this->codegenService->getFilename($class));
 		if ($file->exists()) {
@@ -182,7 +182,7 @@ class GenerateSerializerCommand extends AbstractGenerateCommand {
 			;
 		
 			$this->codegenService->dumpStruct($class, true);
-		}	
+		}
 	}
 	
 	/**
@@ -194,7 +194,7 @@ class GenerateSerializerCommand extends AbstractGenerateCommand {
 		$this->logger->info('Generate Serializer for action: ' . $actionName);
 		
 		$action = $this->packageService->getAction($actionName);
-		$generator = new ActionSerializerGenerator($this->service);
+		$generator = new BlankSerializerGenerator($this->service);
 		$class = $generator->generate($action);
 		
 		$this->codegenService->dumpStruct($class, true);

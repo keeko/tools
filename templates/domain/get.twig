@@ -1,0 +1,10 @@
+if ($this->pool === null) {
+	$this->pool = new Map();
+} else if ($this->pool->has($id)) {
+	return $this->pool->get($id);
+}
+
+${{ model }} = {{ class }}Query::create()->findOneById($id);
+$this->pool->set($id, ${{ model }});
+
+return ${{ model }};

@@ -12,6 +12,7 @@ class ReadOnlyDomainTraitGenerator extends AbstractDomainGenerator {
 	public function generate(Table $model) {
 		$trait = $this->generateTrait($model);
 		
+		$this->generateGet($trait, $model);
 		$this->generateRead($trait, $model);
 		$this->generatePaginate($trait, $model);
 		
@@ -32,8 +33,24 @@ class ReadOnlyDomainTraitGenerator extends AbstractDomainGenerator {
 				->setDescription('Returns the service container')
 			)
 		;
+		$trait->addUseStatement('keeko\framework\domain\payload\PayloadInterface');
+		$trait->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName());
 
 		return $trait;
+	}
+	
+	protected function generateGet(PhpTrait $trait, Table $model) {
+		$trait->addUseStatement('phootwork\collection\Map');
+		$trait->setMethod(PhpMethod::create('get')
+			->addParameter(PhpParameter::create('id'))
+			->setBody($this->twig->render('get.twig', [
+				'model' => NameUtils::toCamelCase($model->getOriginCommonName()),
+				'class' => $model->getPhpName()
+			]))
+			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+			->setDescription('Returns one ' . $model->getPhpName() . ' with the given id from cache')
+			->setType($model->getPhpName() . '|null')
+		);
 	}
 	
 	protected function generateRead(PhpTrait $trait, Table $model) {
@@ -47,6 +64,7 @@ class ReadOnlyDomainTraitGenerator extends AbstractDomainGenerator {
 				'class' => $model->getPhpName()
 			]))
 			->setDescription('Returns one ' . $model->getPhpName() . ' with the given id')
+			->setType('PayloadInterface')
 		);
 	}
 	
@@ -64,13 +82,14 @@ class ReadOnlyDomainTraitGenerator extends AbstractDomainGenerator {
 				'class' => $model->getPhpName()
 			]))
 			->setDescription('Returns a paginated result')
+			->setType('PayloadInterface')
 		);
 		
 		$trait->setMethod(PhpMethod::create('applyFilter')
 			->addParameter(PhpParameter::create('query')
 				->setType($model->getPhpName() . 'Query')
 			)
-			->addParameter(PhpParameter::create('filter'))	
+			->addParameter(PhpParameter::create('filter'))
 			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
 			->setAbstract(true)
 			->setDescription('Implement this functionality at ' . $this->getClassName($model))

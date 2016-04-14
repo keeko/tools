@@ -15,6 +15,7 @@ class ModelCreateActionGenerator extends AbstractModelActionGenerator {
 
 		// method: run(Request $request)
 		$class->addUseStatement('phootwork\\json\\Json');
+		$class->addUseStatement('Tobscure\\JsonApi\\Exception\\InvalidParameterException');
 		$class->addUseStatement(str_replace('model', 'domain', $model->getNamespace()) . '\\' . $model->getPhpName() . 'Domain');
 		$class->setMethod($this->generateRunMethod($this->twig->render('create-run.twig', [
 			'domain' => $model->getPhpName() . 'Domain'

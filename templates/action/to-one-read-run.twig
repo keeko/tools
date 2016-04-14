@@ -1,5 +1,4 @@
 $id = $this->getParam('id');
-${{ model }} = {{ class }}Query::create()->findOneById($id);
-
-// run response
-return $this->response->run($request, ${{ model }});
+$domain = new {{ domain }}($this->getServiceContainer());
+$payload = $domain->read($id);
+return $this->responder->run($request, $payload);

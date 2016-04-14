@@ -1,9 +1,4 @@
 $id = $this->getParam('id');
-${{ model }} = {{ class }}Query::create()->findOneById($id);
-
-if (${{ model }} === null) {
-	throw new ResourceNotFoundException('{{ class }} with id ' . $id . ' does not exist');
-}
-
-// run response
-return $this->response->run($request, ${{ model }});
+$domain = new {{ domain }}($this->getServiceContainer());
+$payload = $domain->read($id);
+return $this->responder->run($request, $payload);

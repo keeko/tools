@@ -1,10 +1,11 @@
 <?php
 namespace keeko\tools\generator\domain;
 
-use gossi\codegen\model\PhpTrait;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
+use gossi\codegen\model\PhpTrait;
 use keeko\framework\utils\NameUtils;
+use Propel\Generator\Model\ForeignKey;
 use Propel\Generator\Model\Table;
 
 class DomainTraitGenerator extends ReadOnlyDomainTraitGenerator {
@@ -15,6 +16,26 @@ class DomainTraitGenerator extends ReadOnlyDomainTraitGenerator {
 		$this->generateCreate($trait, $model);
 		$this->generateUpdate($trait, $model);
 		$this->generateDelete($trait, $model);
+		
+		// generate relationship methods
+		if (!$model->isReadOnly()) {
+			$relationships = $this->modelService->getRelationships($model);
+			
+			// to-one relationships
+			foreach ($relationships['one'] as $one) {
+				$fk = $one['fk'];
+				$this->generateToOneRelationshipSet($trait, $model, $fk->getForeignTable(), $fk);
+			}
+
+			// to-many relationships
+			foreach ($relationships['many'] as $many) {
+				$fk = $many['fk'];
+				$cfk = $many['cfk'];
+				$this->generateToManyRelationshipAdd($trait, $model, $fk->getForeignTable(), $cfk->getMiddleTable());
+				$this->generateToManyRelationshipUpdate($trait, $model, $fk->getForeignTable(), $cfk->getMiddleTable());
+				$this->generateToManyRelationshipRemove($trait, $model, $fk->getForeignTable(), $cfk->getMiddleTable());
+			}
+		}
 
 		return $trait;
 	}
@@ -30,6 +51,7 @@ class DomainTraitGenerator extends ReadOnlyDomainTraitGenerator {
 				'class' => $model->getPhpName()
 			]))
 			->setDescription('Creates a new ' . $model->getPhpName() . ' with the provided data')
+			->setType('PayloadInterface')
 		);
 	}
 	
@@ -48,6 +70,7 @@ class DomainTraitGenerator extends ReadOnlyDomainTraitGenerator {
 			]))
 			->setDescription('Updates a ' . $model->getPhpName() . ' with the given id' .
 				'and the provided data')
+			->setType('PayloadInterface')
 		);
 	}
 	
@@ -63,7 +86,77 @@ class DomainTraitGenerator extends ReadOnlyDomainTraitGenerator {
 				'class' => $model->getPhpName()
 			]))
 			->setDescription('Deletes a ' . $model->getPhpName() . ' with the given id')
+			->setType('PayloadInterface')
 		);
 	}
-
+	
+	protected function generateToOneRelationshipSet(PhpTrait $trait, Table $model, Table $foreign, ForeignKey $fk) {
+		$name = $fk->getPhpName();
+		if (empty($name)) {
+			$name = $foreign->getPhpName();
+		}
+		$localId = NameUtils::toCamelCase($fk->getLocalColumn()->getPhpName());
+		$trait->setMethod(PhpMethod::create('set' . $name . 'Id')
+			->setDescription(str_replace('{foreign}', $foreign->getPhpName(), 'Sets the {foreign} id'))
+			->addParameter(PhpParameter::create('id'))
+			->addParameter(PhpParameter::create($localId))
+			->setBody($this->twig->render('to-one-set.twig', [
+				'model' => NameUtils::toCamelCase($model->getOriginCommonName()),
+				'class' => $model->getPhpName(),
+				'fk_id' => $localId,
+				'local' => $fk->getLocalColumn()->getPhpName()
+			]))
+			->setType('PayloadInterface')
+		);
+	}
+	
+	protected function generateToManyRelationshipAdd(PhpTrait $trait, Table $model, Table $foreign, Table $middle) {
+		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
+		$trait->setMethod(PhpMethod::create('add' . $foreign->getPhpName())
+			->setDescription('Adds ' . $foreign->getPhpName() . ' to ' . $model->getPhpName())
+			->addParameter(PhpParameter::create('id'))
+			->addParameter(PhpParameter::create('data'))
+			->setBody($this->twig->render('to-many-add.twig', [
+				'model' => $model->getCamelCaseName(),
+				'class' => $model->getPhpName(),				
+				'foreign_model' => $foreign->getCamelCaseName(),
+				'foreign_class' => $foreign->getPhpName()
+			]))
+			->setType('PayloadInterface')
+		);
+	}
+	
+	protected function generateToManyRelationshipUpdate(PhpTrait $trait, Table $model, Table $foreign, Table $middle) {
+		$trait->addUseStatement($middle->getNamespace() . '\\' . $middle->getPhpName() . 'Query');
+		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
+		$trait->setMethod(PhpMethod::create('update' . $foreign->getPhpName())
+			->setDescription('Updates ' . $foreign->getPhpName() . ' on ' . $model->getPhpName())
+			->addParameter(PhpParameter::create('id'))
+			->addParameter(PhpParameter::create('data'))
+			->setBody($this->twig->render('to-many-update.twig', [
+				'model' => $model->getCamelCaseName(),
+				'class' => $model->getPhpName(),
+				'foreign_model' => $foreign->getCamelCaseName(),
+				'foreign_class' => $foreign->getPhpName(),
+				'middle_class' => $middle->getPhpName()
+			]))
+			->setType('PayloadInterface')
+		);
+	}
+	
+	protected function generateToManyRelationshipRemove(PhpTrait $trait, Table $model, Table $foreign, Table $middle) {
+		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
+		$trait->setMethod(PhpMethod::create('remove' . $foreign->getPhpName())
+			->setDescription('Removes ' . $foreign->getPhpName() . ' from ' . $model->getPhpName())
+			->addParameter(PhpParameter::create('id'))
+			->addParameter(PhpParameter::create('data'))
+			->setBody($this->twig->render('to-many-remove.twig', [
+				'model' => $model->getCamelCaseName(),
+				'class' => $model->getPhpName(),
+				'foreign_model' => $foreign->getCamelCaseName(),
+				'foreign_class' => $foreign->getPhpName()
+			]))
+			->setType('PayloadInterface')
+		);
+	}
 }
