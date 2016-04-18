@@ -239,7 +239,6 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		}
 
 		// find generator
-		$overwrite = false;
 		$generator = null;
 		$type = $this->packageService->getActionType($actionName, $modelName);
 		$isModel = $type && $this->modelService->isModelAction($action); 

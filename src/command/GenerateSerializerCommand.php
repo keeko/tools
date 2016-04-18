@@ -81,7 +81,7 @@ class GenerateSerializerCommand extends AbstractGenerateCommand {
 		}
 		
 		// ask questions for a model
-		if ($generateModel) {
+		if ($generateModel !== false) {
 			$schema = str_replace(getcwd(), '', $this->modelService->getSchema());
 			$allQuestion = new ConfirmationQuestion(sprintf('For all models in the schema (%s)?', $schema));
 			$allModels = $this->askConfirmation($allQuestion);

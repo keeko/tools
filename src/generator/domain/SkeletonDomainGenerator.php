@@ -6,7 +6,7 @@ class SkeletonDomainGenerator extends AbstractDomainGenerator {
 	/**
 	 * Add default blank methods
 	 * 
-	 * @param string $classname
+	 * @param string $className
 	 */
 	public function generate($className) {
 		$class = $this->generateClass($className);
