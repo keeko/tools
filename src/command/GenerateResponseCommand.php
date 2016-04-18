@@ -285,7 +285,7 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		$module = $this->packageService->getModule();
 		$action = $module->getAction($actionName);
 		$prefix = substr($actionName, 0, strpos($actionName, 'relationship') + 12);
-		$readAction = $module->getAction($prefix.'-read');
+		$readAction = $module->getAction($prefix . '-read');
 		
 		// get modules names
 		$matches = [];

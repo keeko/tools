@@ -29,7 +29,7 @@ class KeekoTools extends Application {
 		$this->setDispatcher($dispatcher);
 		$this->keekoDispatcher = $dispatcher;
 
-		$dispatcher->addListener(ConsoleEvents::TERMINATE, function (ConsoleTerminateEvent $event) {
+		$dispatcher->addListener(ConsoleEvents::TERMINATE, function(ConsoleTerminateEvent $event) {
 			$command = $event->getCommand();
 			$this->finishedCommands[] = $command->getName();
 		});

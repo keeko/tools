@@ -162,14 +162,14 @@ class ModelService extends AbstractService {
 		if ($package->getVendor() == 'keeko' && $this->isCoreSchema()) {
 			$model = $package->getName();
 			if ($this->hasModel($model)) {
-				$models []= $model;
+				$models [] = $model;
 			}
 		}
 		
 		// anyway, generate all
 		else {
 			foreach ($this->getModels() as $model) {
-				$models []= $model->getOriginCommonName();
+				$models [] = $model->getOriginCommonName();
 			}
 		}
 		
