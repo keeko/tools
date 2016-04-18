@@ -171,7 +171,7 @@ class InitCommand extends AbstractGenerateCommand {
 			$types = ['module', 'app'];
 			$question = new Question('Package type (module|app)', $type);
 			$question->setAutocompleterValues($types);
-			$question->setValidator(function ($answer) use ($types) {
+			$question->setValidator(function($answer) use ($types) {
 				if (!in_array($answer, $types)) {
 					throw new \RuntimeException('The name of the type should be one of: ' . 
 							implode(',', $types));
@@ -549,7 +549,7 @@ class InitCommand extends AbstractGenerateCommand {
 	private function validateName($name) {
 		if (!preg_match('{^[a-z0-9_.-]+/[a-z0-9_.-]+$}', $name)) {
 			throw new \InvalidArgumentException(
-				'The package name '.$name.' is invalid, it should be lowercase and have a vendor name, a forward slash, and a package name, matching: [a-z0-9_.-]+/[a-z0-9_.-]+'
+				'The package name ' . $name . ' is invalid, it should be lowercase and have a vendor name, a forward slash, and a package name, matching: [a-z0-9_.-]+/[a-z0-9_.-]+'
 			);
 		}
 	}

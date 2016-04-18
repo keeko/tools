@@ -8,6 +8,9 @@ class ApiJsonResponderGenerator extends AbstractJsonResponderGenerator {
 
 	protected $serializer;
 
+	/**
+	 * @param string $serializer
+	 */
 	public function setSerializer($serializer) {
 		$this->serializer = $serializer;
 	}

@@ -62,7 +62,7 @@ class CodeGeneratorService extends AbstractService {
 	 * Adds authors to the docblock of the given struct
 	 *
 	 * @param AbstractPhpStruct $struct
-	 * @param array $package
+	 * @param PackageSchema $package
 	 */
 	public function addAuthors(AbstractPhpStruct $struct, PackageSchema $package = null) {
 		if ($package === null) {

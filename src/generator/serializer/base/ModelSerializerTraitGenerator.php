@@ -94,7 +94,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 			foreach ($fields as $field) {
 				$code .= "'$field'";
 				if (isset($conversions[$field])) {
-					$code .= ' => function($v) {'."\n\t".'return ' . $conversions[$field] . ';'."\n".'}';
+					$code .= ' => function($v) {' . "\n\t" . 'return ' . $conversions[$field] . ';' . "\n" . '}';
 				}
 		
 				$code .= ', ';

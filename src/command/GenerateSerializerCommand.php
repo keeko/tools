@@ -7,7 +7,6 @@ use gossi\codegen\model\PhpProperty;
 use keeko\tools\generator\serializer\base\ModelSerializerTraitGenerator;
 use keeko\tools\generator\serializer\SkeletonSerializerGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
-use phootwork\file\File;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
