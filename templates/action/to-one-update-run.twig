@@ -5,5 +5,5 @@ if (!isset($body['data'])) {
 $data = $body['data'];
 $id = $this->getParam('id');
 $domain = new {{ domain }}($this->getServiceContainer());
-$payload = $domain->set{{ foreign }}($id, $data);
+$payload = $domain->set{{ foreign }}Id($id, $data);
 return $this->responder->run($request, $payload);

@@ -7,6 +7,7 @@ use gossi\codegen\model\PhpTrait;
 use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\domain\AbstractDomainGenerator;
 use Propel\Generator\Model\Table;
+use gossi\codegen\model\PhpProperty;
 
 class ReadOnlyModelDomainTraitGenerator extends AbstractDomainGenerator {
 	
@@ -42,6 +43,9 @@ class ReadOnlyModelDomainTraitGenerator extends AbstractDomainGenerator {
 	
 	protected function generateGet(PhpTrait $trait, Table $model) {
 		$trait->addUseStatement('phootwork\collection\Map');
+		$trait->setProperty(PhpProperty::create('pool')
+			->setVisibility(PhpProperty::VISIBILITY_PROTECTED)
+		);
 		$trait->setMethod(PhpMethod::create('get')
 			->addParameter(PhpParameter::create('id'))
 			->setBody($this->twig->render('get.twig', [

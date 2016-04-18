@@ -1,5 +1,5 @@
 $params = new Parameters($request->query->all());
-$data = $payload->Model();
+$data = $payload->getModel();
 $serializer = {{ class }}::getSerializer();
 $resource = new Collection($data, $serializer);
 $resource = $resource->with($params->getInclude({{ includes|raw }}));

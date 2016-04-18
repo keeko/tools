@@ -95,7 +95,7 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		if (empty($name)) {
 			$name = $foreign->getPhpName();
 		}
-		$localId = NameUtils::toCamelCase($fk->getLocalColumn()->getPhpName());
+		$localId = NameUtils::toCamelCase($name) . 'Id';
 		$trait->setMethod(PhpMethod::create('set' . $name . 'Id')
 			->setDescription(str_replace('{foreign}', $foreign->getPhpName(), 'Sets the {foreign} id'))
 			->addParameter(PhpParameter::create('id'))

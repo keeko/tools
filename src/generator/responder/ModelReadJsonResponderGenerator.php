@@ -10,7 +10,7 @@ class ModelReadJsonResponderGenerator extends AbstractPayloadJsonResponderGenera
 		$this->generateGetPayloadMethods($class, $this->twig->render('model/getPayloadMethods-read.twig'));
 		$this->generateNotFound($class);
 		
-		// method: found(Request $request, PayloadInterface $payload)
+		// method: found(Request $request, Found $payload) : JsonResponse
 		$modelName = $this->modelService->getModelNameByAction($action);
 		$model = $this->modelService->getModel($modelName);
 
@@ -23,9 +23,10 @@ class ModelReadJsonResponderGenerator extends AbstractPayloadJsonResponderGenera
 			'class' => $model->getPhpName(),
 			'includes' => $this->codegenService->arrayToCode($this->getRelationshipIncludes($model)),
 			'fields' => $this->getFieldsCode($fields)
-		]));
+		]), 'Found');
 		
 		$class->setMethod($found);
+		$class->addUseStatement('keeko\\framework\\domain\\payload\\Found');
 		$class->addUseStatement('Tobscure\\JsonApi\\Document');
 		$class->addUseStatement('Tobscure\\JsonApi\\Resource');
 		$class->addUseStatement('Tobscure\\JsonApi\\Parameters');

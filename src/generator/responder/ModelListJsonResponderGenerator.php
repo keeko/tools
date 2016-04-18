@@ -9,7 +9,7 @@ class ModelListJsonResponderGenerator extends AbstractPayloadJsonResponderGenera
 	protected function addMethods(PhpClass $class, ActionSchema $action) {
 		$this->generateGetPayloadMethods($class, $this->twig->render('model/getPayloadMethods-list.twig'));
 
-		// method: found(Request $request, PayloadInterface $payload)
+		// method: found(Request $request, Found $payload) : JsonResponse
 		$modelName = $this->modelService->getModelNameByAction($action);
 		$model = $this->modelService->getModel($modelName);
 		$fields = $this->getModelFields($model);
@@ -21,9 +21,10 @@ class ModelListJsonResponderGenerator extends AbstractPayloadJsonResponderGenera
 			'class' => $model->getPhpName(),
 			'includes' => $this->codegenService->arrayToCode($this->getRelationshipIncludes($model)),
 			'fields' => $this->getFieldsCode($fields)
-		]));
+		]), 'Found');
 		
 		$class->setMethod($found);
+		$class->addUseStatement('keeko\\framework\\domain\\payload\\Found');
 		$class->addUseStatement('Tobscure\\JsonApi\\Document');
 		$class->addUseStatement('Tobscure\\JsonApi\\Collection');
 		$class->addUseStatement('Tobscure\\JsonApi\\Parameters');

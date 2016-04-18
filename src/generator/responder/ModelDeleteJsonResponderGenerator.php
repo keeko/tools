@@ -10,12 +10,16 @@ class ModelDeleteJsonResponderGenerator extends AbstractPayloadJsonResponderGene
 		$this->generateGetPayloadMethods($class, $this->twig->render('model/getPayloadMethods-delete.twig'));
 		$this->generateNotFound($class);
 		
-		// method: deleted(Request $request, PayloadInterface $payload)
-		$deleted = $this->generatePayloadMethod('deleted', $this->twig->render('payload/deleted.twig'));
+		// method: deleted(Request $request, Deleted $payload) : JsonResponse
+		$deleted = $this->generatePayloadMethod('deleted', $this->twig->render('payload/deleted.twig'), 
+			'Deleted');
 		$class->setMethod($deleted);
+		$class->addUseStatement('keeko\\framework\\domain\\payload\\Deleted');
 		
-		// method: notDeleted(Request $request, PayloadInterface $payload)
-		$notDeleted = $this->generatePayloadMethod('notDeleted', $this->twig->render('payload/notDeleted.twig'));
+		// method: notDeleted(Request $request, NotDeleted $payload) : JsonResponse
+		$notDeleted = $this->generatePayloadMethod('notDeleted', $this->twig->render('payload/notDeleted.twig'),
+			'NotDeleted');
 		$class->setMethod($notDeleted);
+		$class->addUseStatement('keeko\\framework\\domain\\payload\\NotDeleted');
 	}
 }

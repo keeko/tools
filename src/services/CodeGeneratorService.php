@@ -38,26 +38,6 @@ class CodeGeneratorService extends AbstractService {
 		return $this->codegen;
 	}
 	
-// 	/**
-// 	 * Returns the codegen part for the given action name or an empty map
-// 	 *
-// 	 * @param string $name
-// 	 * @return Map
-// 	 */
-// 	public function getCodegenAction($name) {
-// 		$codegen = $this->getCodegen();
-	
-// 		if (isset($codegen['actions'])) {
-// 			$actions = $codegen['actions'];
-				
-// 			if (isset($actions[$name])) {
-// 				return $actions[$name];
-// 			}
-// 		}
-	
-// 		return null;
-// 	}
-	
 	/**
 	 * Adds authors to the docblock of the given struct
 	 *
@@ -135,28 +115,6 @@ class CodeGeneratorService extends AbstractService {
 		return $fields;
 	}
 	
-// 	/**
-// 	 * Returns conversions for model columns
-// 	 *
-// 	 * @param string $model
-// 	 * @param string $type
-// 	 * @return array
-// 	 */
-// 	public function getConversions($model, $type) {
-// 		return $this->getActionProp($model, $type, 'conversion');
-// 	}
-	
-// 	/**
-// 	 * Returns model columns that should be filtered
-// 	 *
-// 	 * @param string $model
-// 	 * @param string $type
-// 	 * @return array
-// 	 */
-// 	public function getFilter($model, $type) {
-// 		return $this->getActionProp($model, $type, 'filter');
-// 	}
-	
 	/**
 	 * Returns computed model fields
 	 *
@@ -201,19 +159,6 @@ class CodeGeneratorService extends AbstractService {
 	
 		return sprintf('[%s]', $fields);
 	}
-	
-// 	public function mapToCode(array $array) {
-// 		$fields = '';
-// 		foreach ($array as $k => $item) {
-// 			$fields .= sprintf("\t'%s' => %s,\n", $k, $this->arrayToCode($item));
-// 		}
-
-// 		if (strlen($fields) > 0) {
-// 			$fields = substr($fields, 0, -2);
-// 		}
-		
-// 		return sprintf("[\n%s\n]", $fields);
-// 	}
 
 	/**
 	 * Returns the filename for a given struct

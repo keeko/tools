@@ -13,6 +13,7 @@ class AbstractPayloadJsonResponderGenerator extends AbstractJsonResponderGenerat
 	
 	protected function ensureUseStatements(AbstractPhpStruct $struct) {
 		parent::ensureUseStatements($struct);
+		$struct->removeUseStatement('keeko\\framework\\domain\\payload\\PayloadInterface');
 		$struct->removeUseStatement('keeko\\framework\\foundation\\AbstractResponder');
 		$struct->addUseStatement('keeko\\framework\\foundation\\AbstractPayloadResponder');
 	}
@@ -31,27 +32,31 @@ class AbstractPayloadJsonResponderGenerator extends AbstractJsonResponderGenerat
 		);
 	}
 	
-	protected function generatePayloadMethod($name, $body) {
+	protected function generatePayloadMethod($name, $body, $type = 'PayloadInterface') {
 		return PhpMethod::create($name)
 			->addParameter(PhpParameter::create('request')
 				->setType('Request')
 			)
 			->addParameter(PhpParameter::create('payload')
-				->setType('PayloadInterface')
+				->setType($type)
 			)
 			->setBody($body)
 		;
 	}
 	
 	protected function generateNotValid(PhpClass $class) {
+		$class->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
 		$class->addUseStatement('keeko\framework\exceptions\ValidationException');
-		$notValid = $this->generatePayloadMethod('notValid', $this->twig->render('payload/notValid.twig'));
+		$notValid = $this->generatePayloadMethod('notValid', $this->twig->render('payload/notValid.twig'),
+			'NotValid');
 		$class->setMethod($notValid);
 	}
 	
 	protected function generateNotFound(PhpClass $class) {
+		$class->addUseStatement('keeko\\framework\\domain\\payload\\NotFound');
 		$class->addUseStatement('Symfony\Component\Routing\Exception\ResourceNotFoundException');
-		$notFound = $this->generatePayloadMethod('notFound', $this->twig->render('payload/notFound.twig'));
+		$notFound = $this->generatePayloadMethod('notFound', $this->twig->render('payload/notFound.twig'),
+			'NotFound');
 		$class->setMethod($notFound);
 	}
 	

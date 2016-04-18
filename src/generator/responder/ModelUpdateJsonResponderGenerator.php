@@ -11,7 +11,7 @@ class ModelUpdateJsonResponderGenerator extends AbstractPayloadJsonResponderGene
 		$this->generateNotFound($class);
 		$this->generateNotValid($class);
 		
-		// method: updated(Request $request, PayloadInterface $payload)
+		// method: updated(Request $request, Updated $payload) : JsonResponse
 		$modelName = $this->modelService->getModelNameByAction($action);
 		$model = $this->modelService->getModel($modelName);
 
@@ -24,16 +24,19 @@ class ModelUpdateJsonResponderGenerator extends AbstractPayloadJsonResponderGene
 			'class' => $model->getPhpName(),
 			'includes' => $this->codegenService->arrayToCode($this->getRelationshipIncludes($model)),
 			'fields' => $this->getFieldsCode($fields)
-		]));
+		]), 'Updated');
 		
 		$class->setMethod($updated);
+		$class->addUseStatement('keeko\\framework\\domain\\payload\\Updated');
 		$class->addUseStatement('Tobscure\\JsonApi\\Document');
 		$class->addUseStatement('Tobscure\\JsonApi\\Resource');
 		$class->addUseStatement('Tobscure\\JsonApi\\Parameters');
 		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName());
 		
-		// method: notUpdated(Request $request, PayloadInterface $payload)
-		$notUpdated = $this->generatePayloadMethod('notUpdated', $this->twig->render('payload/notUpdated.twig'));
+		// method: notUpdated(Request $request, NotUpdated $payload) : JsonResponse
+		$notUpdated = $this->generatePayloadMethod('notUpdated', $this->twig->render('payload/notUpdated.twig'),
+			'NotUpdated');
 		$class->setMethod($notUpdated);
+		$class->addUseStatement('keeko\\framework\\domain\\payload\\NotUpdated');
 	}
 }

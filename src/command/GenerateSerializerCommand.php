@@ -156,6 +156,7 @@ class GenerateSerializerCommand extends AbstractGenerateCommand {
 				)
 				->setMethod(PhpMethod::create('getSerializer')
 					->setStatic(true)
+					->setType($serializer->getName())
 					->setBody($this->twig->render('get-serializer.twig', [
 						'class' => $serializer->getName()
 					]))

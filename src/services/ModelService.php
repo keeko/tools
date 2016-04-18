@@ -8,6 +8,7 @@ use phootwork\lang\Text;
 use Propel\Generator\Model\Database;
 use Propel\Generator\Model\Table;
 use Propel\Generator\Util\QuickBuilder;
+use phootwork\collection\Set;
 
 class ModelService extends AbstractService {
 
@@ -321,11 +322,24 @@ class ModelService extends AbstractService {
 	 */
 	public function getRelationships(Table $model) {
 		$all = [];
+		$blacklist = new Set();
+		
+		// check if it's using concrete_inheritance behavior
+		foreach ($model->getBehaviors() as $behavior) {
+			if ($behavior->getName() == 'concrete_inheritance') {
+				$blacklist->add($behavior->getParameter('extends'));
+			}
+		}
 		
 		// to-one relationships
 		$one = [];
 		$fks = $model->getForeignKeys();
 		foreach ($fks as $fk) {
+			// skip, if fk is blacklisted 
+			if ($blacklist->contains($fk->getForeignTable()->getOriginCommonName())) {
+				continue;
+			}
+
 			$item = [
 				'type' => 'one',
 				'fk' => $fk
@@ -347,6 +361,12 @@ class ModelService extends AbstractService {
 					$local = $fk;
 				}
 			}
+			
+			// skip, if fk is blacklisted
+			if ($blacklist->contains($foreign->getForeignTable()->getOriginCommonName())) {
+				continue;
+			}
+			
 			$item = [
 				'type' => 'many',
 				'lk' => $local,

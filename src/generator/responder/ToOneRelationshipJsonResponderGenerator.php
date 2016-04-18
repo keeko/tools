@@ -23,20 +23,23 @@ class ToOneRelationshipJsonResponderGenerator extends AbstractPayloadJsonRespond
 		$this->generateGetPayloadMethods($class, $this->twig->render('to-many/getPayloadMethods.twig'));
 		$this->generateNotFound($class);
 
-		// method: read(Request $request, PayloadInterface $payload) : Response
+		// method: read(Request $request, Found $payload) : JsonResponse
 		$modelName = $this->modelService->getModelNameByAction($action);
 		$model = $this->modelService->getModel($modelName);
 		
 		$read = $this->generatePayloadMethod('read', $this->twig->render('to-one/read.twig', [
 			'class' => $model->getPhpName(),
 			'related' => $this->foreign->getCamelCaseName()
-		]));
+		]), 'Found');
 		
 		$class->setMethod($read);
+		$class->addUseStatement('keeko\\framework\\domain\\payload\\Found');
 		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName());
 		
-		// method: notUpdated(Request $request, PayloadInterface $payload)
-		$notUpdated = $this->generatePayloadMethod('notUpdated', $this->twig->render('payload/notUpdated.twig'));
+		// method: notUpdated(Request $request, NotUpdated $payload) : JsonResponse
+		$notUpdated = $this->generatePayloadMethod('notUpdated', $this->twig->render('payload/notUpdated.twig'),
+			'NotUpdated');
 		$class->setMethod($notUpdated);
+		$class->addUseStatement('keeko\\framework\\domain\\payload\\NotUpdated');
 	}
 }
