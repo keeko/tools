@@ -236,6 +236,16 @@ class CodeGeneratorService extends AbstractService {
 		return $path->toString();
 	}
 	
+	/**
+	 * Returns a file object for a given struct
+	 * 
+	 * @param AbstractPhpStruct $struct
+	 * @return File
+	 */
+	public function getFile(AbstractPhpStruct $struct) {
+		return new File($this->getFilename($struct));
+	}
+	
 	public function dumpStruct(AbstractPhpStruct $struct, $overwrite = false) {
 		$filename = $this->getFilename($struct);
 		$file = new File($filename);

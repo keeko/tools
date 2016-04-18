@@ -59,11 +59,12 @@ abstract class AbstractResponderGenerator extends AbstractCodeGenerator {
 			->setDescription('Automatically generated run method')
 			->setType('Response')
 			->addParameter(PhpParameter::create('request')->setType('Request'))
-			->addParameter(PhpParameter::create('data')->setDefaultValue(null))
+			->addParameter(PhpParameter::create('payload')->setType('PayloadInterface')->setDefaultValue(null))
 			->setBody($body);
 	}
 
 	protected function ensureUseStatements(AbstractPhpStruct $struct) {
+		$struct->addUseStatement('keeko\\framework\\domain\\payload\\PayloadInterface');
 		$struct->addUseStatement('keeko\\framework\\foundation\\AbstractResponder');
 		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
 		$struct->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');

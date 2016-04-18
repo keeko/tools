@@ -1,0 +1,5 @@
+$serializer = new {{ serializer }}();
+$resource = new Resource($payload->get(), $serializer);
+$document = new Document($resource);
+
+return new JsonResponse($document->toArray(), 200);

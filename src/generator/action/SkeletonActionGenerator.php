@@ -1,7 +1,6 @@
 <?php
 namespace keeko\tools\generator\action;
 
-use gossi\codegen\model\PhpClass;
 use keeko\framework\schema\ActionSchema;
 
 class SkeletonActionGenerator extends AbstractActionGenerator {
@@ -9,7 +8,7 @@ class SkeletonActionGenerator extends AbstractActionGenerator {
 	/**
 	 * Add default blank methods
 	 * 
-	 * @param PhpClass $class
+	 * @param ActionSchema $action
 	 */
 	public function generate(ActionSchema $action) {
 		$class = $this->generateClass($action);

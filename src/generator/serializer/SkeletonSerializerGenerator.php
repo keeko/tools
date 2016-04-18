@@ -2,16 +2,13 @@
 namespace keeko\tools\generator\serializer;
 
 use gossi\codegen\model\PhpClass;
-use keeko\framework\schema\ActionSchema;
-use keeko\tools\generator\serializer\AbstractSerializerGenerator;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
+use keeko\tools\generator\serializer\AbstractSerializerGenerator;
 
-class BlankSerializerGenerator extends AbstractSerializerGenerator {
+class SkeletonSerializerGenerator extends AbstractSerializerGenerator {
 	
-	public function generate(ActionSchema $action) {
-		$className = str_replace('action', 'serializer', $action->getClass());
-		$className = preg_replace('/Action$/', 'Serializer', $className);
+	public function generate($className) {
 		$class = new PhpClass($className);
 		$class->setParentClassName('AbstractSerializer');
 		$class->addUseStatement('keeko\\framework\\model\\AbstractSerializer');

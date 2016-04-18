@@ -1,13 +1,14 @@
 <?php
-namespace keeko\tools\generator\domain;
+namespace keeko\tools\generator\domain\base;
 
-use Propel\Generator\Model\Table;
-use gossi\codegen\model\PhpTrait;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
+use gossi\codegen\model\PhpTrait;
 use keeko\framework\utils\NameUtils;
+use keeko\tools\generator\domain\AbstractDomainGenerator;
+use Propel\Generator\Model\Table;
 
-class ReadOnlyDomainTraitGenerator extends AbstractDomainGenerator {
+class ReadOnlyModelDomainTraitGenerator extends AbstractDomainGenerator {
 	
 	public function generate(Table $model) {
 		$trait = $this->generateTrait($model);

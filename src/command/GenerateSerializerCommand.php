@@ -5,6 +5,7 @@ use gossi\codegen\model\PhpClass;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpProperty;
 use keeko\tools\generator\serializer\base\ModelSerializerTraitGenerator;
+use keeko\tools\generator\serializer\SkeletonSerializerGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
 use phootwork\file\File;
 use Symfony\Component\Console\Input\InputArgument;
@@ -13,7 +14,9 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use keeko\tools\generator\serializer\BlankSerializerGenerator;
+use keeko\tools\utils\NamespaceResolver;
+use phootwork\lang\Text;
+use keeko\tools\generator\serializer\ModelSerializerGenerator;
 
 class GenerateSerializerCommand extends AbstractGenerateCommand {
 
@@ -91,17 +94,10 @@ class GenerateSerializerCommand extends AbstractGenerateCommand {
 			}
 		} 
 		
-		// ask for which action
-		else {
-			$names = [];
-			$module = $this->packageService->getModule();
-			foreach ($module->getActionNames() as $name) {
-				$names[] = $name;
-			}
-			
-			$actionQuestion = new Question('Which action');
-			$actionQuestion->setAutocompleterValues($names);
-			$name = $this->askQuestion($actionQuestion);
+		// ask question for a skeleton
+		else if (empty($name)) {
+			// ask for classname
+			$name = $this->askQuestion(new Question('Classname', $name));
 			$input->setArgument('name', $name);
 		}
 	}
@@ -114,7 +110,7 @@ class GenerateSerializerCommand extends AbstractGenerateCommand {
 
 		// only a specific action
 		if ($name) {
-			$this->generateAction($name);
+			$this->generateSkeleton($name);
 		}
 
 		// create action(s) from a model
@@ -135,34 +131,20 @@ class GenerateSerializerCommand extends AbstractGenerateCommand {
 	private function generateModel($modelName) {
 		$this->logger->info('Generate Serializer from Model: ' . $modelName);
 		$model = $this->modelService->getModel($modelName);
-
-		// trait
+		
+		// generate class
+		$generator = new ModelSerializerGenerator($this->service);
+		$serializer = $generator->generate($model);
+		$this->codegenService->dumpStruct($serializer, true);
+		
+		// generate trait
 		$generator = new ModelSerializerTraitGenerator($this->service);
 		$trait = $generator->generate($model);
 		$this->codegenService->dumpStruct($trait, true);
 		
-		// class
-		$serializer = new PhpClass(sprintf('%s\\serializer\\%sSerializer', $this->packageService->getNamespace(), $model->getPhpName()));
-		$file = new File($this->codegenService->getFilename($serializer));
-
-		// load from file if already exists
-		if ($file->exists()) {
-			$serializer = PhpClass::fromFile($file->getPathname());
-		}
-		
-		// generate stub if not
-		else {
-			$serializer->setParentClassName('AbstractModelSerializer');
-			$serializer->addUseStatement('keeko\\framework\\model\\AbstractModelSerializer');
-		}
-		
-		// add serializer trait and write
-		$serializer->addTrait($trait);
-		$this->codegenService->dumpStruct($serializer, true);
-		
 		// add serializer + ApiModelInterface on the model
 		$class = new PhpClass(str_replace('\\\\', '\\', $model->getNamespace() . '\\' . $model->getPhpName()));
-		$file = new File($this->codegenService->getFilename($class));
+		$file = $this->codegenService->getFile($class);
 		if ($file->exists()) {
 			$class = PhpClass::fromFile($this->codegenService->getFilename($class));
 			$class
@@ -186,18 +168,24 @@ class GenerateSerializerCommand extends AbstractGenerateCommand {
 	}
 	
 	/**
-	 * Generates an action.
+	 * Generates a skeleton serializer
 	 *  
-	 * @param string $actionName
+	 * @param string $name
 	 */
-	private function generateAction($actionName) {
-		$this->logger->info('Generate Serializer for action: ' . $actionName);
+	private function generateSkeleton($name) {
+		$this->logger->info('Generate Skeleton Serializer: ' . $name);
+		$input = $this->io->getInput();
+
+		$className = NamespaceResolver::getNamespace('src/serializer', $this->package) . '\\' . $name;
 		
-		$action = $this->packageService->getAction($actionName);
-		$generator = new BlankSerializerGenerator($this->service);
-		$class = $generator->generate($action);
-		
-		$this->codegenService->dumpStruct($class, true);
+		if (!Text::create($className)->endsWith('Serializer')) {
+			$className .= 'Serializer';
+		}
+
+		// generate code
+		$generator = new SkeletonSerializerGenerator($this->service);
+		$class = $generator->generate($className);
+		$this->codegenService->dumpStruct($class, $input->getOption('force'));
 	}
 	
 	

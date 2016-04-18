@@ -1,5 +1,5 @@
 <?php
-namespace keeko\tools\generator\domain;
+namespace keeko\tools\generator\domain\base;
 
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
@@ -8,7 +8,7 @@ use keeko\framework\utils\NameUtils;
 use Propel\Generator\Model\ForeignKey;
 use Propel\Generator\Model\Table;
 
-class DomainTraitGenerator extends ReadOnlyDomainTraitGenerator {
+class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 	
 	public function generate(Table $model) {
 		$trait = parent::generate($model);

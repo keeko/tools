@@ -6,24 +6,18 @@ use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
 use Propel\Generator\Model\Table;
 
-class DomainGenerator extends AbstractDomainGenerator {
+class ModelDomainGenerator extends AbstractDomainGenerator {
 	
 	public function generate(Table $model) {
-		$class = $this->generateClass($model);
+		$class = $this->generateClass($this->getClassName($model));
 		$class = $this->loadClass($class);
+		$this->ensureBasicSetup($class);
 		
-		$this->ensureUseStatements($class, $model);
+		$this->ensureModelUseStatements($class, $model);
 		$this->generateApplyFilter($class, $model);
 		$this->ensureDomainTrait($class, $model);
 		
 		return $class;
-	}
-	
-	protected function generateClass(Table $model) {
-		return PhpClass::create($this->getClassName($model))
-			->setParentClassName('AbstractDomain')
-			->addUseStatement('keeko\\framework\\foundation\\AbstractDomain')
-		;
 	}
 	
 	protected function getClassName(Table $model) {
@@ -31,7 +25,7 @@ class DomainGenerator extends AbstractDomainGenerator {
 			'\\' . $model->getPhpName() . 'Domain';
 	}
 	
-	protected function ensureUseStatements(PhpClass $class, Table $model) {
+	protected function ensureModelUseStatements(PhpClass $class, Table $model) {
 		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName() . 'Query');
 	}
 	

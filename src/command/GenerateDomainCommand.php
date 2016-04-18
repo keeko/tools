@@ -1,11 +1,10 @@
 <?php
 namespace keeko\tools\command;
 
-use keeko\framework\schema\ActionSchema;
-use keeko\framework\utils\NameUtils;
-use keeko\tools\generator\domain\DomainGenerator;
-use keeko\tools\generator\domain\DomainTraitGenerator;
-use keeko\tools\generator\domain\ReadOnlyDomainTraitGenerator;
+use keeko\tools\generator\domain\base\ModelDomainTraitGenerator;
+use keeko\tools\generator\domain\base\ReadOnlyModelDomainTraitGenerator;
+use keeko\tools\generator\domain\ModelDomainGenerator;
+use keeko\tools\generator\domain\SkeletonDomainGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
 use keeko\tools\utils\NamespaceResolver;
 use phootwork\lang\Text;
@@ -30,13 +29,6 @@ class GenerateDomainCommand extends AbstractGenerateCommand {
 				'name',
 				InputArgument::OPTIONAL,
 				'The name of the action, which should be generated. Typically in the form %nomen%-%verb% (e.g. user-create)'
-			)
-			->addOption(
-				'classname',
-				'c',
-				InputOption::VALUE_OPTIONAL,
-				'The main class name (If ommited, class name will be guessed from action name)',
-				null
 			)
 			->addOption(
 				'model',
@@ -86,7 +78,7 @@ class GenerateDomainCommand extends AbstractGenerateCommand {
 		}
 		
 		// ask questions for a model
-		if ($generateModel) {
+		if ($generateModel !== false) {
 			$schema = str_replace(getcwd(), '', $this->modelService->getSchema());
 			$allQuestion = new ConfirmationQuestion(sprintf('For all models in the schema (%s)?', $schema));
 			$allModels = $this->askConfirmation($allQuestion);
@@ -98,24 +90,11 @@ class GenerateDomainCommand extends AbstractGenerateCommand {
 				$input->setOption('model', $model);
 			}
 			
-		// ask question for a name
-		} else if (!$generateModel) {
-			// TODO: What to do here?
-// 			$action = $this->getAction($name);
-			
-// 			// ask for classname
-// 			$pkgClass = $action->getClass();
-// 			$classname = $input->getOption('classname');
-// 			if ($classname === null) {
-// 				if (!empty($pkgClass)) {
-// 					$classname = $pkgClass;
-// 				} else {
-// 					$classname = $this->guessClassname($name);
-// 				}
-// 			}
-// 			$classname = $this->askQuestion(new Question('Classname', $classname));
-// 			$input->setOption('classname', $classname);
-
+		// ask question for a skeleton
+		} else if (empty($name)) {
+			// ask for classname
+			$name = $this->askQuestion(new Question('Classname', $name));
+			$input->setArgument('name', $name);
 		}
 	}
 
@@ -129,17 +108,17 @@ class GenerateDomainCommand extends AbstractGenerateCommand {
 		$name = $input->getArgument('name');
 		$model = $input->getOption('model');
 
-		// only a specific domain
+		// generate a skeleton
 		if ($name) {
-// 			$this->generateAction($name);
+			$this->generateSkeleton($name);
 		}
 
-		// create action(s) from a model
+		// create domain for one model
 		else if ($model) {
 			$this->generateModel($model);
 		}
 
-		// anyway, generate all
+		// generate domain for all models
 		else {
 			foreach ($this->modelService->getModels() as $model) {
 				$modelName = $model->getOriginCommonName();
@@ -154,67 +133,32 @@ class GenerateDomainCommand extends AbstractGenerateCommand {
 		$model = $this->modelService->getModel($modelName);
 		
 		// generate class
-		$generator = new DomainGenerator($this->service);
+		$generator = new ModelDomainGenerator($this->service);
 		$class = $generator->generate($model);
 		$this->codegenService->dumpStruct($class, true);
 		
 		// generate trait
 		$generator = $model->isReadOnly()
-			? new ReadOnlyDomainTraitGenerator($this->service)
-			: new DomainTraitGenerator($this->service);
+			? new ReadOnlyModelDomainTraitGenerator($this->service)
+			: new ModelDomainTraitGenerator($this->service);
 		$trait = $generator->generate($model);
 		$this->codegenService->dumpStruct($trait, true);
 	}
 	
-// 	/**
-// 	 * Generates an action.
-// 	 *  
-// 	 * @param string $actionName
-// 	 * @param ActionSchema $action the action node from composer.json
-// 	 */
-// 	private function generateAction($actionName) {
-// 		$this->logger->info('Generate Action: ' . $actionName);
-// 		$input = $this->io->getInput();
-		
-// 		// get action and create it if it doesn't exist
-// 		$action = $this->getAction($actionName);
-		
-// 		if (($title = $input->getOption('title')) !== null) {
-// 			$action->setTitle($title);
-// 		}
+	private function generateSkeleton($name) {
+		$this->logger->info('Generate Skeleton Domain: ' . $name);
+		$input = $this->io->getInput();
 
-// 		if (Text::create($action->getTitle())->isEmpty()) {
-// 			throw new \RuntimeException(sprintf('Cannot create action %s, because I am missing a title for it', $actionName));
-// 		}
+		$className = NamespaceResolver::getNamespace('src/domain', $this->package) . '\\' . $name;
+		
+		if (!Text::create($className)->endsWith('Domain')) {
+			$className .= 'Domain';
+		}
 
-// 		if (($classname = $input->getOption('classname')) !== null) {
-// 			$action->setClass($classname);
-// 		}
-		
-// 		// guess classname if there is none set yet
-// 		if (Text::create($action->getClass())->isEmpty()) {
-// 			$action->setClass($this->guessClassname($actionName));
-// 		}
-		
-// 		// guess title if there is none set yet
-// 		if (Text::create($action->getTitle())->isEmpty() 
-// 				&& $this->modelService->isModelAction($action)
-// 				&& $this->modelService->isCrudAction($action)) {
-// 			$modelName = $this->modelService->getModelNameByAction($action);
-// 			$type = $this->modelService->getOperationByAction($action);
-// 			$action->setTitle($this->getActionTitle($modelName, $type));
-// 		}
-		
-// 		// set acl
-// 		$action->setAcl($this->getAcl($action));
-		
-// 		// generate code
-// 		$this->generateCode($action);
-// 	}
-	
-// 	private function guessClassname($name) {
-// 		$namespace = NamespaceResolver::getNamespace('src/action', $this->package);
-// 		return $namespace . '\\' . NameUtils::toStudlyCase($name) . 'Action';
-// 	}
+		// generate code
+		$generator = new SkeletonDomainGenerator($this->service);
+		$class = $generator->generate($className);
+		$this->codegenService->dumpStruct($class, $input->getOption('force'));
+	}
 	
 }

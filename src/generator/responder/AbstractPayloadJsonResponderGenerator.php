@@ -13,7 +13,6 @@ class AbstractPayloadJsonResponderGenerator extends AbstractJsonResponderGenerat
 	
 	protected function ensureUseStatements(AbstractPhpStruct $struct) {
 		parent::ensureUseStatements($struct);
-		$struct->addUseStatement('keeko\framework\domain\payload\PayloadInterface');
 		$struct->removeUseStatement('keeko\\framework\\foundation\\AbstractResponder');
 		$struct->addUseStatement('keeko\\framework\\foundation\\AbstractPayloadResponder');
 	}

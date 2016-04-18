@@ -106,7 +106,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		}
 		
 		// ask questions for a model
-		if ($generateModel) {
+		if ($generateModel !== false) {
 			$schema = str_replace(getcwd(), '', $this->modelService->getSchema());
 			$allQuestion = new ConfirmationQuestion(sprintf('For all models in the schema (%s)?', $schema));
 			$allModels = $this->askConfirmation($allQuestion);
@@ -290,7 +290,7 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	 * @param string $actionName
 	 */
 	private function generateSkeleton($actionName) {
-		$this->logger->info('Generate Action: ' . $actionName);
+		$this->logger->info('Generate Skeleton Action: ' . $actionName);
 		$input = $this->io->getInput();
 		
 		// generate action

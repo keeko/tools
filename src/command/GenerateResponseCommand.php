@@ -2,8 +2,16 @@
 namespace keeko\tools\command;
 
 use gossi\codegen\model\PhpClass;
+use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\GeneratorFactory;
+use keeko\tools\generator\responder\ApiJsonResponderGenerator;
+use keeko\tools\generator\responder\SkeletonHtmlResponderGenerator;
+use keeko\tools\generator\responder\SkeletonJsonResponderGenerator;
+use keeko\tools\generator\responder\ToManyRelationshipJsonResponderGenerator;
+use keeko\tools\generator\responder\ToOneRelationshipJsonResponderGenerator;
+use keeko\tools\generator\responder\TwigHtmlResponderGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
+use keeko\tools\utils\NamespaceResolver;
 use phootwork\collection\Set;
 use phootwork\file\File;
 use phootwork\lang\Text;
@@ -13,12 +21,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use keeko\tools\generator\responder\DumpJsonResponderGenerator;
-use keeko\tools\generator\responder\BlankJsonResponderGenerator;
-use keeko\tools\generator\responder\TwigHtmlResponderGenerator;
-use keeko\tools\generator\responder\BlankHtmlResponderGenerator;
-use keeko\tools\generator\responder\ToManyRelationshipJsonResponderGenerator;
-use keeko\tools\generator\responder\ToOneRelationshipJsonResponderGenerator;
 
 class GenerateResponseCommand extends AbstractGenerateCommand {
 
@@ -38,6 +40,12 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 				'The name of the action, which should be generated. Typically in the form %nomen%-%verb% (e.g. user-create)'
 			)
 			->addOption(
+				'model',
+				'm',
+				InputOption::VALUE_OPTIONAL,
+				'The model for which the response should be generated, when there is no name argument (if ommited all models will be generated)'
+			)
+			->addOption(
 				'format',
 				'',
 				InputOption::VALUE_OPTIONAL,
@@ -50,6 +58,12 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 				InputOption::VALUE_OPTIONAL,
 				'The template for the body method (blank or twig)',
 				'blank'
+			)
+			->addOption(
+				'serializer',
+				'',
+				InputOption::VALUE_OPTIONAL,
+				'The serializer to be used for the json api template'
 			)
 		;
 		
@@ -74,73 +88,132 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		
 		// check if the dialog can be skipped
 		$name = $input->getArgument('name');
-		$specificAction = false;
+		$model = $input->getOption('model');
 		
-		if ($name === null) {
-			$specificQuestion = new ConfirmationQuestion('Do you want to generate a response for a specific action?');
-			$specificAction = $this->askConfirmation($specificQuestion);
+		if ($model !== null) {
+			return;
+		} else if ($name !== null) {
+			$generateModel = false;
+		} else {
+			$modelQuestion = new ConfirmationQuestion('Do you want to generate an action based off a model?');
+			$generateModel = $this->askConfirmation($modelQuestion);
 		}
 		
-		// ask which action
-		if ($specificAction) {
+		// ask questions for a model
+		if ($generateModel !== false) {
+			$schema = str_replace(getcwd(), '', $this->modelService->getSchema());
+			$allQuestion = new ConfirmationQuestion(sprintf('For all models in the schema (%s)?', $schema));
+			$allModels = $this->askConfirmation($allQuestion);
+			
+			if (!$allModels) {
+				$modelQuestion = new Question('Which model');
+				$modelQuestion->setAutocompleterValues($this->modelService->getModelNames());
+				$model = $this->askQuestion($modelQuestion);
+				$input->setOption('model', $model);
+			}
+		}
+		
+		// ask questions for a skeleton
+		else {
 			$names = [];
 			$module = $this->packageService->getModule();
 			foreach ($module->getActionNames() as $name) {
 				$names[] = $name;
 			}
-			
+				
 			$actionQuestion = new Question('Which action');
 			$actionQuestion->setAutocompleterValues($names);
 			$name = $this->askQuestion($actionQuestion);
 			$input->setArgument('name', $name);
-		} 
-		
-		
-		// ask which format
-		$formatQuestion = new Question('Which format', 'json');
-		$formatQuestion->setAutocompleterValues(['json', 'html']);
-		$format = $this->askQuestion($formatQuestion);
-		$input->setOption('format', $format);
-		
-		// ask which template
-		$templates = [
-			'html' => ['twig', 'blank'],
-			'json' => ['dump', 'blank']
-		];
-		
-		$suggestions = isset($templates[$format]) ? $templates[$format] : [];
-		$default = count($suggestions) ? $suggestions[0] : '';
-		$templateQuestion = new Question('Which template', $default);
-		$templateQuestion->setAutocompleterValues($suggestions);
-		$template = $this->askQuestion($templateQuestion);
-		$input->setOption('template', $template);
-		
+			
+			// ask which format
+			$formatQuestion = new Question('Which format', 'json');
+			$formatQuestion->setAutocompleterValues(['json', 'html']);
+			$format = $this->askQuestion($formatQuestion);
+			$input->setOption('format', $format);
+			
+			// ask which template
+			$action = $this->packageService->getAction($name);
+			if (!($format == 'json' && $this->modelService->isModelAction($action))) {
+				$templates = [
+					'html' => ['twig', 'blank'],
+					'json' => ['api', 'blank']
+				];
+				
+				$suggestions = isset($templates[$format]) ? $templates[$format] : [];
+				$default = count($suggestions) ? $suggestions[0] : '';
+				$templateQuestion = new Question('Which template', $default);
+				$templateQuestion->setAutocompleterValues($suggestions);
+				$template = $this->askQuestion($templateQuestion);
+				$input->setOption('template', $template);
+				
+				// aks for serializer
+				if ($format == 'json' && $template == 'api') {
+					$guessedSerializer = NameUtils::toStudlyCase($name) . 'Serializer';
+					$serializerQuestion = new Question('Which format', $guessedSerializer);
+					$serializer = $this->askQuestion($serializerQuestion);
+					$input->setOption('serializer', $serializer);
+				}
+			}
+		}
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$this->preCheck();
 		
 		$name = $input->getArgument('name');
+		$model = $input->getOption('model');
 
-		// only a specific action
+		// generate responser for a specific action
 		if ($name) {
-			$this->generateResponse($name);
+			$this->generateResponder($name);
 		}
 		
-		// anyway all actions
+		// generate a responder for a specific model
+		else if ($model) {
+			$this->generateModel($model);
+		}
+		
+		// generate responders for all models
 		else {
-			$actions = $this->packageService->getModule()->getActionNames();
-			
-			foreach ($actions as $name) {
-				$this->generateResponse($name);
+			foreach ($this->modelService->getModels() as $model) {
+				$this->generateModel($model->getOriginCommonName());
 			}
 		}
 		
 		$this->packageService->savePackage();
 	}
 	
-	protected function generateResponse($actionName) {
-		$this->logger->info('Generate Response: ' . $actionName);
+	protected function generateModel($modelName) {
+		$model = $this->modelService->getModel($modelName);
+		$types = $model->isReadOnly() ? ['read', 'list'] : ['read', 'list', 'create', 'update', 'delete'];
+	
+		// generate responders for crud actions
+		foreach ($types as $type) {
+			$actionName = $modelName . '-' . $type;
+	
+			$this->generateResponder($actionName);
+		}
+		
+		// generate responders for relationships
+		if (!$model->isReadOnly()) {
+			$types = [
+				'one' => ['read', 'update'],
+				'many' => ['read', 'add', 'update', 'remove']
+			];
+			$relationships = $this->modelService->getRelationships($model);
+			foreach ($relationships['all'] as $relationship) {
+				$fk = $relationship['fk'];
+				$foreignName = $fk->getForeignTable()->getOriginCommonName();
+				foreach ($types[$relationship['type']] as $type) {
+					$this->generateResponder($modelName . '-to-' . $foreignName . '-relationship-' . $type);
+				}
+			}
+		}
+	}
+	
+	protected function generateResponder($actionName) {
+		$this->logger->info('Generate Responder for: ' . $actionName);
 		$module = $this->packageService->getModule();
 		
 		if (!$module->hasAction($actionName)) {
@@ -177,13 +250,14 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		}
 		
 		// json + dump
-		else if ($format == 'json' && $template == 'dump') {
-			$generator = new DumpJsonResponderGenerator($this->service);
+		else if ($format == 'json' && $template == 'api') {
+			$generator = new ApiJsonResponderGenerator($this->service);
+			$generator->setSerializer($this->getSerializer());
 		}
 		
 		// blank json
 		else if ($format == 'json') {
-			$generator = new BlankJsonResponderGenerator($this->service);
+			$generator = new SkeletonJsonResponderGenerator($this->service);
 		}
 		
 		// html + twig
@@ -193,7 +267,7 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		
 		// blank html as default
 		else if ($format == 'html') {
-			$generator = new BlankHtmlResponderGenerator($this->service);
+			$generator = new SkeletonHtmlResponderGenerator($this->service);
 		}
 		
 		// run generation, if generator was chosen
@@ -202,15 +276,12 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 			$class = $generator->generate($action);
 
 			// write to file
-			$file = new File($this->codegenService->getFilename($class));
-			if (!$file->exists()) {
-				$overwrite = true;
-			}
-			$overwrite = $overwrite || $input->getOption('force');
+			$file = $this->codegenService->getFile($class);
+			$overwrite = !$file->exists() || $input->getOption('force');
 			$this->codegenService->dumpStruct($class, $overwrite);
 		}
 	}
-	
+
 	protected function generateRelationshipResponder($actionName) {
 		$module = $this->packageService->getModule();
 		$action = $module->getAction($actionName);
@@ -253,5 +324,28 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 			$this->codegenService->dumpStruct($responder, true);
 		}
 	}
+	
+	private function getSerializer() {
+		$input = $this->io->getInput();
+		$serializer = $input->getOption('serializer');
+		
+		if (empty($serializer)) {
+			throw new \RuntimeException('No serializer given, please pass --serializer for template');
+		}
+		
+		// check fqcn
+		$class = PhpClass::create($serializer);
+		if ($class->getQualifiedName() == $serializer) {
+			$class->setQualifiedName(NamespaceResolver::getNamespace('src/serializer', $this->package) . 
+				'\\' . $serializer);
+		}
+		
+		// check serializer exists
+		$file = new File($this->codegenService->getFilename($class));
+		if (!$file->exists()) {
+			$this->io->writeln(sprintf('<error>Warning:</error> Serializer <info>%s</info> does not exists, please run `keeko generate:serializer %s`', $serializer, $class->getName()));
+		}
 
+		return $class->getQualifiedName();
+	}
 }
