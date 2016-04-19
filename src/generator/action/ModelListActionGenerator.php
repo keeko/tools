@@ -14,7 +14,7 @@ class ModelListActionGenerator extends AbstractModelActionGenerator {
 		$model = $this->modelService->getModel($modelName);
 
 		// method: run(Request $request)
-		$class->addUseStatement('Tobscure\\JsonApi\\Parameters');
+		$class->addUseStatement('keeko\\framework\\utils\\Parameters');
 		$class->addUseStatement(str_replace('model', 'domain', $model->getNamespace()) . '\\' . $model->getPhpName() . 'Domain');
 		$class->setMethod($this->generateRunMethod($this->twig->render('list-run.twig', [
 			'domain' => $model->getPhpName() . 'Domain'

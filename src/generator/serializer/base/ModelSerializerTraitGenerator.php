@@ -134,7 +134,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		if ($model->isReadOnly()) {
 			return;
 		}
-		
+
 		$fields = [];
 		$relationships = $this->modelService->getRelationships($model);
 		

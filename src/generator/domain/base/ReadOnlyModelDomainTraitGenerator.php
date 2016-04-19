@@ -75,7 +75,7 @@ class ReadOnlyModelDomainTraitGenerator extends AbstractDomainGenerator {
 	
 	protected function generatePaginate(PhpTrait $trait, Table $model) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\Found');
-		$trait->addUseStatement('Tobscure\\JsonApi\\Parameters');
+		$trait->addUseStatement('keeko\\framework\\utils\\Parameters');
 		$trait->addUseStatement('keeko\\framework\\utils\\NameUtils');
 		
 		$trait->setMethod(PhpMethod::create('paginate')
