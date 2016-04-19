@@ -10,7 +10,9 @@ class ToManyRelationshipUpdateActionGenerator extends AbstractActionGenerator {
 	/**
 	 * Add default blank methods
 	 * 
-	 * @param PhpClass $class
+	 * @param ActionSchema $action
+	 * @param ManyRelationship $relationship
+	 * @return PhpClass
 	 */
 	public function generate(ActionSchema $action, ManyRelationship $relationship) {
 		$model = $relationship->getModel();

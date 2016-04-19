@@ -10,7 +10,9 @@ class ToOneRelationshipUpdateActionGenerator extends AbstractActionGenerator {
 	/**
 	 * Add default blank methods
 	 * 
-	 * @param PhpClass $class
+	 * @param ActionSchema $action
+	 * @param Relationship $relationship
+	 * @return PhpClass
 	 */
 	public function generate(ActionSchema $action, Relationship $relationship) {
 		$model = $relationship->getModel();
