@@ -117,6 +117,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 				->addParameter(PhpParameter::create('model'))
 				->addParameter(PhpParameter::create('data'))
 				->setAbstract(true)
+				->setType('void')
 				->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
 			);
 		}
@@ -134,11 +135,25 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 			return;
 		}
 		
-		$rels = [];
+		$fields = [];
 		$relationships = $this->modelService->getRelationships($model);
 		
 		if ($relationships->size() > 0) {
 			$class->addUseStatement('Tobscure\\JsonApi\\Relationship');
+			$class->setMethod(PhpMethod::create('addRelationshipSelfLink')
+				->addParameter(PhpParameter::create('relationship')
+					->setType('Relationship')
+				)
+				->addParameter(PhpParameter::create('model')
+					->setType('mixed')
+				)
+				->addParameter(PhpParameter::create('related')
+					->setType('string')
+				)
+				->setAbstract(true)
+				->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+				->setType('Relationship')
+			);
 		}
 		
 		foreach ($relationships->getAll() as $rel) {
@@ -150,7 +165,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 				
 				$typeName = $rel->getRelatedTypeName();
 				$method = NameUtils::toCamelCase($typeName);
-				$rels[$typeName] = $foreign->getPhpName() . '::getSerializer()->getType(null)';
+				$fields[$typeName] = $foreign->getPhpName() . '::getSerializer()->getType(null)';
 				$class->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName());
 				$class->addUseStatement('Tobscure\\JsonApi\\Collection');
 				
@@ -169,7 +184,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 				
 				$typeName = $rel->getRelatedTypeName();
 				$method = NameUtils::toCamelCase($typeName);
-				$rels[$typeName] = $foreign->getPhpName() . '::getSerializer()->getType(null)';
+				$fields[$typeName] = $foreign->getPhpName() . '::getSerializer()->getType(null)';
 				$class->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName());
 				$class->addUseStatement('Tobscure\\JsonApi\\Resource');
 				
@@ -191,7 +206,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		
 		$class->setMethod(PhpMethod::create('getRelationships')
 			->setBody($this->twig->render('getRelationships.twig', [
-				'fields' => $rels
+				'fields' => $fields
 			]))
 		);
 	}

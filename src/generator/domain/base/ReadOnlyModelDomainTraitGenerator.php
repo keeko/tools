@@ -97,6 +97,7 @@ class ReadOnlyModelDomainTraitGenerator extends AbstractDomainGenerator {
 			->addParameter(PhpParameter::create('filter'))
 			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
 			->setAbstract(true)
+			->setType('void')
 			->setDescription('Implement this functionality at ' . $this->getClassName($model))
 		);
 	}
