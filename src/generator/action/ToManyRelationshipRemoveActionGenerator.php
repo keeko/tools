@@ -2,7 +2,8 @@
 namespace keeko\tools\generator\action;
 
 use gossi\codegen\model\PhpClass;
-use Propel\Generator\Model\Table;
+use keeko\tools\model\ManyRelationship;
+use keeko\framework\schema\ActionSchema;
 
 class ToManyRelationshipRemoveActionGenerator extends AbstractActionGenerator {
 
@@ -11,7 +12,11 @@ class ToManyRelationshipRemoveActionGenerator extends AbstractActionGenerator {
 	 * 
 	 * @param PhpClass $class
 	 */
-	public function generate(PhpClass $class, Table $model, Table $foreign) {
+	public function generate(ActionSchema $action, ManyRelationship $relationship) {
+		$model = $relationship->getModel();
+		$foreign = $relationship->getForeign();
+		$class = $this->generateClass($action);
+		
 		// add use statements
 		$this->ensureBasicSetup($class);
 		

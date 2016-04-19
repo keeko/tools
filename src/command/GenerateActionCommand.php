@@ -1,7 +1,6 @@
 <?php
 namespace keeko\tools\command;
 
-use gossi\codegen\model\PhpClass;
 use keeko\framework\schema\ActionSchema;
 use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\action\SkeletonActionGenerator;
@@ -13,9 +12,10 @@ use keeko\tools\generator\action\ToOneRelationshipReadActionGenerator;
 use keeko\tools\generator\action\ToOneRelationshipUpdateActionGenerator;
 use keeko\tools\generator\GeneratorFactory;
 use keeko\tools\helpers\QuestionHelperTrait;
+use keeko\tools\model\ManyRelationship;
+use keeko\tools\model\Relationship;
 use keeko\tools\utils\NamespaceResolver;
 use phootwork\lang\Text;
-use Propel\Generator\Model\ForeignKey;
 use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -233,15 +233,13 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			$relationships = $this->modelService->getRelationships($model);
 				
 			// to-one relationships
-			foreach ($relationships['one'] as $one) {
-				$fk = $one['fk'];
-				$this->generateToOneRelationshipActions($model, $fk->getForeignTable(), $fk);
+			foreach ($relationships->getOne() as $one) {
+				$this->generateToOneRelationshipActions($one);
 			}
 			
 			// to-many relationships
-			foreach ($relationships['many'] as $many) {
-				$fk = $many['fk'];
-				$this->generateToManyRelationshipActions($model, $fk->getForeignTable());
+			foreach ($relationships->getMany() as $many) {
+				$this->generateToManyRelationshipActions($many);
 			}
 		}
 		
@@ -396,7 +394,9 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 		return $acls;
 	}
 	
-	private function generateToOneRelationshipActions(Table $model, Table $foreign, ForeignKey $fk) {
+	private function generateToOneRelationshipActions(Relationship $relationship) {
+		$model = $relationship->getModel();
+		$foreign = $relationship->getForeign();
 		$module = $this->package->getKeeko()->getModule();
 		$fkModelName = $foreign->getPhpName();
 		$actionNamePrefix = sprintf('%s-to-%s-relationship', $model->getOriginCommonName(), $foreign->getOriginCommonName());
@@ -422,18 +422,20 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			$action->setTitle(str_replace(
 				['{model}', '{foreign}'],
 				[$model->getOriginCommonName(), $foreign->getoriginCommonName()],
-				$titles[$type])
-			);
+				$titles[$type]
+			));
 			$module->addAction($action);
 	
 			// generate class
 			$generator = $generators[$type];
-			$class = $generator->generate(new PhpClass($fqcn), $model, $foreign, $fk);
+			$class = $generator->generate($action, $relationship);
 			$this->codegenService->dumpStruct($class, true);
 		}
 	}
 	
-	private function generateToManyRelationshipActions(Table $model, Table $foreign) {
+	private function generateToManyRelationshipActions(ManyRelationship $relationship) {
+		$model = $relationship->getModel();
+		$foreign = $relationship->getForeign();
 		$module = $this->package->getKeeko()->getModule();
 		$fkModelName = $foreign->getPhpName();
 		$actionNamePrefix = sprintf('%s-to-%s-relationship', $model->getOriginCommonName(), $foreign->getOriginCommonName());
@@ -463,13 +465,13 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 			$action->setTitle(str_replace(
 				['{model}', '{foreign}'],
 				[$model->getOriginCommonName(), $foreign->getoriginCommonName()],
-				$titles[$type])
-			);
+				$titles[$type]
+			));
 			$module->addAction($action);
 	
 			// generate class
 			$generator = $generators[$type];
-			$class = $generator->generate(new PhpClass($fqcn), $model, $foreign);
+			$class = $generator->generate($action, $relationship);
 			$this->codegenService->dumpStruct($class, true);
 		}
 	}

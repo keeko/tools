@@ -5,7 +5,8 @@ use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
 use gossi\codegen\model\PhpTrait;
 use keeko\framework\utils\NameUtils;
-use Propel\Generator\Model\ForeignKey;
+use keeko\tools\model\ManyRelationship;
+use keeko\tools\model\Relationship;
 use Propel\Generator\Model\Table;
 
 class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
@@ -22,18 +23,15 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			$relationships = $this->modelService->getRelationships($model);
 			
 			// to-one relationships
-			foreach ($relationships['one'] as $one) {
-				$fk = $one['fk'];
-				$this->generateToOneRelationshipSet($trait, $model, $fk->getForeignTable(), $fk);
+			foreach ($relationships->getOne() as $one) {
+				$this->generateToOneRelationshipSet($trait, $one);
 			}
 
 			// to-many relationships
-			foreach ($relationships['many'] as $many) {
-				$fk = $many['fk'];
-				$cfk = $many['cfk'];
-				$this->generateToManyRelationshipAdd($trait, $model, $fk->getForeignTable(), $cfk->getMiddleTable());
-				$this->generateToManyRelationshipUpdate($trait, $model, $fk->getForeignTable(), $cfk->getMiddleTable());
-				$this->generateToManyRelationshipRemove($trait, $model, $fk->getForeignTable(), $cfk->getMiddleTable());
+			foreach ($relationships->getMany() as $many) {
+				$this->generateToManyRelationshipAdd($trait, $many);
+				$this->generateToManyRelationshipUpdate($trait, $many);
+				$this->generateToManyRelationshipRemove($trait, $many);
 			}
 		}
 
@@ -90,11 +88,10 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		);
 	}
 	
-	protected function generateToOneRelationshipSet(PhpTrait $trait, Table $model, Table $foreign, ForeignKey $fk) {
-		$name = $fk->getPhpName();
-		if (empty($name)) {
-			$name = $foreign->getPhpName();
-		}
+	protected function generateToOneRelationshipSet(PhpTrait $trait, Relationship $relationship) {
+		$model = $relationship->getModel();
+		$foreign = $relationship->getForeign();
+		$name = $relationship->getRelatedName();
 		$localId = NameUtils::toCamelCase($name) . 'Id';
 		$trait->setMethod(PhpMethod::create('set' . $name . 'Id')
 			->setDescription(str_replace('{foreign}', $foreign->getPhpName(), 'Sets the {foreign} id'))
@@ -104,15 +101,17 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 				'model' => NameUtils::toCamelCase($model->getOriginCommonName()),
 				'class' => $model->getPhpName(),
 				'fk_id' => $localId,
-				'local' => $fk->getLocalColumn()->getPhpName()
+				'local' => $relationship->getForeignKey()->getLocalColumn()->getPhpName()
 			]))
 			->setType('PayloadInterface')
 		);
 	}
 	
-	protected function generateToManyRelationshipAdd(PhpTrait $trait, Table $model, Table $foreign, Table $middle) {
+	protected function generateToManyRelationshipAdd(PhpTrait $trait, ManyRelationship $relationship) {
+		$model = $relationship->getModel();
+		$foreign = $relationship->getForeign();
 		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
-		$trait->setMethod(PhpMethod::create('add' . $foreign->getPhpName())
+		$trait->setMethod(PhpMethod::create('add' . $relationship->getRelatedName())
 			->setDescription('Adds ' . $foreign->getPhpName() . ' to ' . $model->getPhpName())
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))
@@ -126,10 +125,13 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		);
 	}
 	
-	protected function generateToManyRelationshipUpdate(PhpTrait $trait, Table $model, Table $foreign, Table $middle) {
+	protected function generateToManyRelationshipUpdate(PhpTrait $trait, ManyRelationship $relationship) {
+		$model = $relationship->getModel();
+		$foreign = $relationship->getForeign();
+		$middle = $relationship->getMiddle();
 		$trait->addUseStatement($middle->getNamespace() . '\\' . $middle->getPhpName() . 'Query');
 		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
-		$trait->setMethod(PhpMethod::create('update' . $foreign->getPhpName())
+		$trait->setMethod(PhpMethod::create('update' . $relationship->getRelatedName())
 			->setDescription('Updates ' . $foreign->getPhpName() . ' on ' . $model->getPhpName())
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))
@@ -144,9 +146,11 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		);
 	}
 	
-	protected function generateToManyRelationshipRemove(PhpTrait $trait, Table $model, Table $foreign, Table $middle) {
+	protected function generateToManyRelationshipRemove(PhpTrait $trait, ManyRelationship $relationship) {
+		$model = $relationship->getModel();
+		$foreign = $relationship->getForeign();
 		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
-		$trait->setMethod(PhpMethod::create('remove' . $foreign->getPhpName())
+		$trait->setMethod(PhpMethod::create('remove' . $relationship->getRelatedName())
 			->setDescription('Removes ' . $foreign->getPhpName() . ' from ' . $model->getPhpName())
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))

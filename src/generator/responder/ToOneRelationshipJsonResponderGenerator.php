@@ -3,20 +3,17 @@ namespace keeko\tools\generator\responder;
 
 use gossi\codegen\model\PhpClass;
 use keeko\framework\schema\ActionSchema;
-use Propel\Generator\Model\Table;
+use keeko\tools\model\Relationship;
+use keeko\framework\utils\NameUtils;
 
 class ToOneRelationshipJsonResponderGenerator extends AbstractPayloadJsonResponderGenerator {
 	
-	/** @var Table */
-	private $model;
+	/** @var Relationship */
+	private $relationship;
 	
-	/** @var Table */
-	private $foreign;
-	
-	public function __construct($service, Table $model, Table $foreign) {
+	public function __construct($service, Relationship $relationship) {
 		parent::__construct($service);
-		$this->model = $model;
-		$this->foreign = $foreign;
+		$this->relationship = $relationship;
 	}
 
 	protected function addMethods(PhpClass $class, ActionSchema $action) {
@@ -24,12 +21,10 @@ class ToOneRelationshipJsonResponderGenerator extends AbstractPayloadJsonRespond
 		$this->generateNotFound($class);
 
 		// method: read(Request $request, Found $payload) : JsonResponse
-		$modelName = $this->modelService->getModelNameByAction($action);
-		$model = $this->modelService->getModel($modelName);
-		
+		$model = $this->relationship->getModel();
 		$read = $this->generatePayloadMethod('read', $this->twig->render('to-one/read.twig', [
 			'class' => $model->getPhpName(),
-			'related' => $this->foreign->getCamelCaseName()
+			'related' => NameUtils::toCamelCase($this->relationship->getRelatedName())
 		]), 'Found');
 		
 		$class->setMethod($read);

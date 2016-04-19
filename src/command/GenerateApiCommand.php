@@ -431,9 +431,8 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		$relationships = $this->modelService->getRelationships($model);
 		
 		// to-one
-		foreach ($relationships['one'] as $one) {
-			$fk = $one['fk'];
-			$typeName = NameUtils::dasherize($fk->getForeignTable()->getOriginCommonName());
+		foreach ($relationships->getOne() as $one) {
+			$typeName = $one->getRelatedTypeName();
 			$rel = $props->get($typeName)->setType('object')->getProperties();
 			
 			// links
@@ -447,10 +446,8 @@ class GenerateApiCommand extends AbstractGenerateCommand {
 		}
 		
 		// to-many
-		foreach ($relationships['many'] as $many) {
-			$fk = $many['fk'];
-			$foreignModel = $fk->getForeignTable();
-			$typeName = NameUtils::pluralize(NameUtils::dasherize($foreignModel->getOriginCommonName()));
+		foreach ($relationships->getMany() as $many) {
+			$typeName = $many->getRelatedTypeName();
 			$rel = $props->get($typeName)->setType('object')->getProperties();
 			
 			// links

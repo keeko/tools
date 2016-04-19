@@ -68,17 +68,13 @@ class AbstractPayloadJsonResponderGenerator extends AbstractJsonResponderGenerat
 		$relationships = $this->modelService->getRelationships($model);
 		$includes = [];
 	
-		foreach ($relationships['all'] as $rel) {
-			$fk = $rel['fk'];
-			$foreignModel = $fk->getForeignTable();
-			$processed[] = $foreignModel->getOriginCommonName();
+		foreach ($relationships->getAll() as $rel) {
+			$foreign = $rel->getForeign();
+			$processed[] = $foreign->getOriginCommonName();
 			
-			$typeName = NameUtils::dasherize($fk->getForeignTable()->getOriginCommonName());
-			if ($rel['type'] == 'many') {
-				$typeName = NameUtils::pluralize($typeName);
-			}
+			$typeName = $rel->getRelatedTypeName();
 			$includes[] = (!empty($root) ? $root . '.' : '') . $typeName;
-			$includes = array_merge($includes, $this->getRelationshipIncludes($foreignModel, $typeName, $processed));
+			$includes = array_merge($includes, $this->getRelationshipIncludes($foreign, $typeName, $processed));
 		}
 	
 		return $includes;
@@ -93,19 +89,15 @@ class AbstractPayloadJsonResponderGenerator extends AbstractJsonResponderGenerat
 		$relationships = $this->modelService->getRelationships($model);
 		$fields = [$typeName => $model];
 
-		foreach ($relationships['all'] as $rel) {
-			$fk = $rel['fk'];
-			$foreignModel = $fk->getForeignTable();
-			$processed[] = $foreignModel->getOriginCommonName();
+		foreach ($relationships->getAll() as $rel) {
+			$foreign = $rel->getForeign();
+			$processed[] = $foreign->getOriginCommonName();
 			
-			$typeName = NameUtils::dasherize($fk->getForeignTable()->getOriginCommonName());
-			if ($rel['type'] == 'many') {
-				$typeName = NameUtils::pluralize($typeName);
-			}
+			$typeName = $rel->getRelatedTypeName();
 			$name = (!empty($root) ? $root . '.' : '') . $typeName;
 			
-			$fields[$name] = $foreignModel;
-			$fields = array_merge($fields, $this->getModelFields($foreignModel, $name, $processed));
+			$fields[$name] = $foreign;
+			$fields = array_merge($fields, $this->getModelFields($foreign, $name, $processed));
 		}
 		
 		return $fields;

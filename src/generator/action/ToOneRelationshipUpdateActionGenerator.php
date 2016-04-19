@@ -2,8 +2,8 @@
 namespace keeko\tools\generator\action;
 
 use gossi\codegen\model\PhpClass;
-use Propel\Generator\Model\ForeignKey;
-use Propel\Generator\Model\Table;
+use keeko\tools\model\Relationship;
+use keeko\framework\schema\ActionSchema;
 
 class ToOneRelationshipUpdateActionGenerator extends AbstractActionGenerator {
 
@@ -12,7 +12,10 @@ class ToOneRelationshipUpdateActionGenerator extends AbstractActionGenerator {
 	 * 
 	 * @param PhpClass $class
 	 */
-	public function generate(PhpClass $class, Table $model, Table $foreign, ForeignKey $fk) {
+	public function generate(ActionSchema $action, Relationship $relationship) {
+		$model = $relationship->getModel();
+		$class = $this->generateClass($action);
+		
 		// add use statements
 		$this->ensureBasicSetup($class);
 		
@@ -20,10 +23,7 @@ class ToOneRelationshipUpdateActionGenerator extends AbstractActionGenerator {
 		$this->addConfigureParamsMethod($class, $this->twig->render('relationship-configureParams.twig'));
 
 		// method: run(Request $request) : Response
-		$name = $fk->getPhpName();
-		if (empty($name)) {
-			$name = $foreign->getPhpName();
-		}
+		$name = $relationship->getRelatedName();
 		$class->addUseStatement('phootwork\\json\\Json');
 		$class->addUseStatement('Tobscure\\JsonApi\\Exception\\InvalidParameterException');
 		$class->addUseStatement(str_replace('model', 'domain', $model->getNamespace()) . '\\' . $model->getPhpName() . 'Domain');

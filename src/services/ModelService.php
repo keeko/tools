@@ -9,6 +9,10 @@ use Propel\Generator\Model\Database;
 use Propel\Generator\Model\Table;
 use Propel\Generator\Util\QuickBuilder;
 use phootwork\collection\Set;
+use keeko\tools\model\Relationships;
+use keeko\tools\model\Relationship;
+use keeko\tools\model\ManyRelationship;
+use phootwork\collection\Map;
 
 class ModelService extends AbstractService {
 
@@ -17,6 +21,8 @@ class ModelService extends AbstractService {
 	
 	/** @var Database */
 	private $database = null;
+	
+	private $relationships = null;
 
 	/**
 	 * Returns the propel schema. The three locations, where the schema is looked up in:
@@ -286,44 +292,22 @@ class ModelService extends AbstractService {
 	/**
 	 * Returns all model relationships.
 	 * 
-	 * 
-	 * The returned array looks like:
-	 * [
-	 * 		'one' => [
-	 * 			[
-	 * 				'type' => 'one',
-	 * 				'fk' => $fk
-	 * 			],
-	 * 			[
-	 * 				'type' => 'one',
-	 * 				'fk' => $fk2
-	 * 			],
-	 * 			...
-	 * 		],
-	 * 		'many' => [
-	 * 			[
-	 * 				'type' => 'many',
-	 * 				'fk' => $fk3,
-	 * 				'cfk' => $cfk
-	 * 			],
-	 * 			[
-	 * 				'type' => 'many',
-	 * 				'fk' => $fk4,
-	 * 				'cfk' => $cfk2
-	 * 			],
-	 * 			...
-	 * 		],
-	 * 		'all' => [...] // both of above
-	 * ]
-	 * 
-	 * 
 	 * @param Table $model
-	 * @return array
+	 * @return Relationships
 	 */
 	public function getRelationships(Table $model) {
-		$all = [];
-		$blacklist = new Set();
+		if ($this->relationships === null) {
+			$this->relationships = new Map();
+		}
 		
+		if ($this->relationships->has($model->getName())) {
+			return $this->relationships->get($model->getName());
+		}
+		
+		$blacklist = new Set();
+		$relationships = new Relationships($model);
+		
+		// generate blacklist
 		// check if it's using concrete_inheritance behavior
 		foreach ($model->getBehaviors() as $behavior) {
 			if ($behavior->getName() == 'concrete_inheritance') {
@@ -332,57 +316,41 @@ class ModelService extends AbstractService {
 		}
 		
 		// to-one relationships
-		$one = [];
-		$fks = $model->getForeignKeys();
-		foreach ($fks as $fk) {
+		foreach ($model->getForeignKeys() as $fk) {
 			// skip, if fk is blacklisted 
 			if ($blacklist->contains($fk->getForeignTable()->getOriginCommonName())) {
 				continue;
 			}
 
-			$item = [
-				'type' => 'one',
-				'fk' => $fk
-			];
-			$one[] = $item;
-			$all[] = $item;
+			$relationships->add(new Relationship($model, $fk->getForeignTable(), $fk));
 		}
 	
 		// to-many relationships
-		$many = [];
-		$cfks = $model->getCrossFks();
-		foreach ($cfks as $cfk) {
-			$foreign = null;
-			$local = null;
-			foreach ($cfk->getMiddleTable()->getForeignKeys() as $fk) {
-				if ($fk->getForeignTable() != $model) {
-					$foreign = $fk;
-				} else if ($fk->getForeignTable() == $model) {
-					$local = $fk;
-				}
-			}
+		foreach ($model->getCrossFks() as $cfk) {
+			$relationship = new ManyRelationship($model, $cfk);
 			
 			// skip, if fk is blacklisted
-			if ($blacklist->contains($foreign->getForeignTable()->getOriginCommonName())) {
+			if ($blacklist->contains($relationship->getForeign()->getOriginCommonName())) {
 				continue;
 			}
 			
-			$item = [
-				'type' => 'many',
-				'lk' => $local,
-				'fk' => $foreign,
-				'cfk' => $cfk
-			];
-			$many[] = $item;
-			$all[] = $item;
-			break;
+			$relationships->add($relationship);
 		}
+		
+		$this->relationships->set($model->getName(), $relationships);
 	
-		return [
-			'one' => $one,
-			'many' => $many,
-			'all' => $all,
-			'count' => count($all)
-		];
+		return $relationships;
+	}
+	
+	/**
+	 * Returns a relationship for a given foreign name on a given model
+	 * 
+	 * @param Table $model
+	 * @param string $foreignName
+	 * @return Relationship
+	 */
+	public function getRelationship(Table $model, $foreignName) {
+		$relationships = $this->getRelationships($model);
+		return $relationships->get($foreignName);
 	}
 }

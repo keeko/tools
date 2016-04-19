@@ -202,10 +202,9 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 				'many' => ['read', 'add', 'update', 'remove']
 			];
 			$relationships = $this->modelService->getRelationships($model);
-			foreach ($relationships['all'] as $relationship) {
-				$fk = $relationship['fk'];
-				$foreignName = $fk->getForeignTable()->getOriginCommonName();
-				foreach ($types[$relationship['type']] as $type) {
+			foreach ($relationships->getAll() as $relationship) {
+				$foreignName = $relationship->getForeign()->getOriginCommonName();
+				foreach ($types[$relationship->getType()] as $type) {
 					$this->generateResponder($modelName . '-to-' . $foreignName . '-relationship-' . $type);
 				}
 			}
@@ -292,6 +291,7 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		preg_match('/([a-z_]+)-to-([a-z_]+)-relationship.*/i', $actionName, $matches);
 		$model = $this->modelService->getModel($matches[1]);
 		$foreign = $this->modelService->getModel($matches[2]);
+		$relationship = $this->modelService->getRelationship($model, $foreign->getOriginCommonName());
 
 		// response class name
 		$responder = sprintf('%s\\responder\\%s%sJsonResponder',
@@ -312,9 +312,9 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 		
 		$generator = null;
 		if ($many) {
-			$generator = new ToManyRelationshipJsonResponderGenerator($this->service, $model, $foreign);
+			$generator = new ToManyRelationshipJsonResponderGenerator($this->service, $relationship);
 		} else if ($single) {
-			$generator = new ToOneRelationshipJsonResponderGenerator($this->service, $model, $foreign);
+			$generator = new ToOneRelationshipJsonResponderGenerator($this->service, $relationship);
 		}
 		
 		if ($generator !== null) {

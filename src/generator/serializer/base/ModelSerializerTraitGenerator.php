@@ -7,6 +7,8 @@ use gossi\codegen\model\PhpTrait;
 use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\serializer\AbstractSerializerGenerator;
 use Propel\Generator\Model\Table;
+use keeko\tools\model\ManyRelationship;
+use keeko\tools\model\Relationship;
 
 class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 	
@@ -35,6 +37,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		$class->setMethod(PhpMethod::create('getId')
 			->addParameter(PhpParameter::create('model'))
 			->setBody($this->twig->render('getId.twig'))
+			->setType('string')
 		);
 		
 		$class->setMethod(PhpMethod::create('getType')
@@ -42,6 +45,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 			->setBody($this->twig->render('getType.twig', [
 				'type' => $type
 			]))
+			->setType('string')
 		);
 	}
 	
@@ -52,7 +56,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		foreach ($writeFields as $field) {
 			$col = $model->getColumn($field);
 			$param = $col->isTemporalType() ? '\DateTime::ISO8601' : '';
-			$attrs .= sprintf("\t'%s' => \$model->%s(%s),\n", $field, $col->getPhpName(), $param);
+			$attrs .= sprintf("\t'%s' => \$model->get%s(%s),\n", $field, $col->getPhpName(), $param);
 		}
 		
 		if (count($field) > 0) {
@@ -81,11 +85,11 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		);
 	}
 	
-	protected function generateHydrateMethod(PhpTrait $class, Table $model) {
+	protected function generateHydrateMethod(PhpTrait $trait, Table $model) {
 		if ($model->isReadOnly()) {
 			$body = $this->twig->render('hydrate-readonly.twig');
 		} else {
-			$class->addUseStatement('keeko\\framework\\utils\\HydrateUtils');
+			$trait->addUseStatement('keeko\\framework\\utils\\HydrateUtils');
 			$modelName = $model->getOriginCommonName();
 			$conversions = $this->codegenService->getCodegen()->getWriteConversion($modelName);
 			$fields = $this->codegenService->getWriteFields($modelName);
@@ -108,12 +112,20 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 			$body = $this->twig->render('hydrate.twig', [
 				'code' => $code
 			]);
+			
+			$trait->setMethod(PhpMethod::create('hydrateRelationships')
+				->addParameter(PhpParameter::create('model'))
+				->addParameter(PhpParameter::create('data'))
+				->setAbstract(true)
+				->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+			);
 		}
 		
-		$class->setMethod(PhpMethod::create('hydrate')
+		$trait->setMethod(PhpMethod::create('hydrate')
 			->addParameter(PhpParameter::create('model'))
 			->addParameter(PhpParameter::create('data'))
 			->setBody($body)
+			->setType('mixed', 'The model')
 		);
 	}
 	
@@ -125,54 +137,47 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		$rels = [];
 		$relationships = $this->modelService->getRelationships($model);
 		
-		if ($relationships['count'] > 0) {
+		if ($relationships->size() > 0) {
 			$class->addUseStatement('Tobscure\\JsonApi\\Relationship');
 		}
 		
-		foreach ($relationships['all'] as $rel) {
-			if ($rel['type'] == 'one') {
-				$fk = $rel['fk'];
-				$foreignModel = $fk->getForeignTable();
-				
-				$refPhpName = $fk->getPhpName();
-				if ($refPhpName === null) {
-					$refPhpName = $foreignModel->getPhpName();
-				}
-				
-				$name = NameUtils::dasherize($refPhpName);
-				$method = NameUtils::toCamelCase($refPhpName);
-				$rels[$name] = $foreignModel->getPhpName() . '::getSerializer()->getType(null)';
-				$class->addUseStatement($foreignModel->getNamespace() . '\\' . $foreignModel->getPhpName());
-				$class->addUseStatement('Tobscure\\JsonApi\\Resource');
-				
-				// read
-				$body = $this->twig->render('to-one-read.twig', [
-					'ref' => $refPhpName,
-					'class' => $foreignModel->getPhpName(),
-					'related' => $name
-				]);
-			}
+		foreach ($relationships->getAll() as $rel) {
 			
-			if ($rel['type'] == 'many') {
-				$fk = $rel['fk'];
-				$foreignModel = $fk->getForeignTable();
+			// to-many
+			if ($rel instanceof ManyRelationship) {
+				$foreign = $rel->getForeign();
+				$relatedName = $rel->getRelatedName();
 				
-				$refPhpName = $rel['lk']->getRefPhpName();
-				if ($refPhpName === null) {
-					$refPhpName = $foreignModel->getPhpName();
-				}
-				
-				$name = NameUtils::dasherize($refPhpName);
-				$method = NameUtils::toCamelCase($refPhpName);
-				$rels[$name] = $foreignModel->getPhpName() . '::getSerializer()->getType(null)';
-				$class->addUseStatement($foreignModel->getNamespace() . '\\' . $foreignModel->getPhpName());
+				$typeName = $rel->getRelatedTypeName();
+				$method = NameUtils::toCamelCase($typeName);
+				$rels[$typeName] = $foreign->getPhpName() . '::getSerializer()->getType(null)';
+				$class->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName());
 				$class->addUseStatement('Tobscure\\JsonApi\\Collection');
 				
 				// read
 				$body = $this->twig->render('to-many-read.twig', [
-					'getter' => NameUtils::pluralize($refPhpName),
-					'class' => $refPhpName,
-					'related' => $name
+					'getter' => NameUtils::pluralize($relatedName),
+					'class' => $relatedName,
+					'related' => $typeName
+				]);
+			}
+			
+			// to-one
+			else if ($rel instanceof Relationship) {
+				$foreign = $rel->getForeign();
+				$relatedName = $rel->getRelatedName();
+				
+				$typeName = $rel->getRelatedTypeName();
+				$method = NameUtils::toCamelCase($typeName);
+				$rels[$typeName] = $foreign->getPhpName() . '::getSerializer()->getType(null)';
+				$class->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName());
+				$class->addUseStatement('Tobscure\\JsonApi\\Resource');
+				
+				// read
+				$body = $this->twig->render('to-one-read.twig', [
+					'ref' => $relatedName,
+					'class' => $foreign->getPhpName(),
+					'related' => $typeName
 				]);
 			}
 			
@@ -180,6 +185,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 			$class->setMethod(PhpMethod::create($method)
 				->addParameter(PhpParameter::create('model'))
 				->setBody($body)
+				->setType('Relationship')
 			);
 		}
 		
