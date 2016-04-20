@@ -14,6 +14,9 @@ use keeko\tools\generator\responder\ModelListJsonResponderGenerator;
 use keeko\tools\generator\responder\ModelReadJsonResponderGenerator;
 use keeko\tools\generator\responder\ModelUpdateJsonResponderGenerator;
 use keeko\tools\services\CommandService;
+use keeko\tools\generator\package\AppPackageGenerator;
+use keeko\tools\generator\package\ModulePackageGenerator;
+use keeko\tools\generator\package\AbstractPackageGenerator;
 
 class GeneratorFactory {
 	
@@ -68,4 +71,20 @@ class GeneratorFactory {
 		}
 	}
 
+	/**
+	 * Creates a new package generator
+	 * 
+	 * @param string $type
+	 * @param CommandService $serivce
+	 * @return AbstractPackageGenerator
+	 */
+	public static function createPackageGenerator($type, CommandService $service) {
+		switch ($type) {
+			case 'app':
+				return new AppPackageGenerator($service);
+				
+			case 'module':
+				return new ModulePackageGenerator($service);
+		}
+	}
 }

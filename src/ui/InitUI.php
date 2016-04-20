@@ -1,7 +1,6 @@
 <?php
 namespace keeko\tools\ui;
 
-use keeko\framework\schema\PackageSchema;
 use keeko\tools\helpers\InitCommandHelperTrait;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Question\Question;
@@ -10,15 +9,12 @@ class InitUI extends AbstractUI {
 	
 	use InitCommandHelperTrait;
 	
-	/** @var PackageSchema */
-	private $package;
-
-	
 	public function show() {
 		$input = $this->io->getInput();
 		$output = $this->io->getOutput();
-		$force = $input->getOption('force');
 		$formatter = $this->command->getHelperSet()->get('formatter');
+		
+		// send welcome
 		$output->writeln([
 			'',
 			$formatter->formatBlock('Welcome to the Keeko initializer', 'bg=blue;fg=white', true),
@@ -30,13 +26,39 @@ class InitUI extends AbstractUI {
 			'',
 		]);
 		
+		// asking for a options
+		$type = $this->getType();
+		$name = $this->getName();
+		$package = $this->getService()->getPackageService()->getPackage();
+		$package->setFullName($name);
+		
+		$input->setOption('name', $name);
+		$input->setOption('description', $this->getDescription());
+		$input->setOption('author', $this->getAuthor());
+		$input->setOption('type', $type);
+		$input->setOption('license', $this->getLicense());
+
+		// KEEKO values
+		$output->writeln([
+			'',
+			'Information for Keeko ' . ucfirst($type),
+			''
+		]);
+		
+		$input->setOption('title', $this->getTitle());
+		$input->setOption('classname', $this->getClass());
+	}
+	
+	private function getName() {
+		$input = $this->io->getInput();
+		$force = $input->getOption('force');
 		$package = $this->getService()->getPackageService()->getPackage();
 		
 		$name = $this->getPackageName();
 		$askName = $name === null;
 		if ($name === null) {
 			$git = $this->getGitConfig();
-			$cwd = realpath(".");
+			$cwd = realpath('.');
 			$name = basename($cwd);
 			$name = preg_replace('{(?:([a-z])([A-Z])|([A-Z])([A-Z][a-z]))}', '\\1\\3-\\2\\4', $name);
 			$name = strtolower($name);
@@ -61,18 +83,26 @@ class InitUI extends AbstractUI {
 		if ($askName || $force) {
 			$name = $this->askQuestion(new Question('Package name (<vendor>/<name>)', $name));
 			$this->validateName($name);
-			$input->setOption('name', $name);
-			$package->setFullName($name);
 		}
 		
-		// asking for a description
+		return $name;
+	}
+	
+	private function getDescription() {
+		$force = $this->io->getInput()->getOption('force');
 		$desc = $this->getPackageDescription();
 		if ($desc === null || $force) {
 			$desc = $this->askQuestion(new Question('Description', $desc));
-			$input->setOption('description', $desc);
 		}
-		
-		// asking for the author
+		return $desc;
+	}
+	
+	private function getAuthor() {
+		$input = $this->io->getInput();
+		$force = $input->getOption('force');
+		$package = $this->getService()->getPackageService()->getPackage();
+		$git = $this->getGitConfig();
+		$author = null;
 		if ($package->getAuthors()->isEmpty() || $force) {
 			$author = $input->getOption('author');
 			if ($author === null && isset($git['user.name'])) {
@@ -84,10 +114,12 @@ class InitUI extends AbstractUI {
 			}
 		
 			$author = $this->askQuestion(new Question('Author', $author));
-			$input->setOption('author', $author);
 		}
-		
-		// asking for the package type
+		return $author;
+	}
+	
+	private function getType() {
+		$force = $this->io->getInput()->getOption('force');
 		$type = $this->getPackageType();
 		if ($type === null || $force) {
 			$types = ['module', 'app'];
@@ -103,34 +135,33 @@ class InitUI extends AbstractUI {
 			$question->setMaxAttempts(2);
 			$type = $this->askQuestion($question);
 		}
-		$input->setOption('type', $type);
-		
-		// asking for the license
+		return $type;
+	}
+	
+	private function getLicense() {
+		$force = $this->io->getInput()->getOption('force');
 		$license = $this->getPackageLicense();
 		if ($license === null || $force) {
 			$license = $this->askQuestion(new Question('License', $license));
-			$input->setOption('license', $license);
 		}
-
-		// KEEKO values
-		$output->writeln([
-			'',
-			'Information for Keeko ' . ucfirst($type),
-			''
-		]);
-		
-		// ask for the title
+		return $license;
+	}
+	
+	private function getTitle() {
+		$force = $this->io->getInput()->getOption('force');
 		$title = $this->getPackageTitle();
 		if ($title === null || $force) {
-			$title = $this->askQuestion(new Question('Title', $title));
-			$input->setOption('title', $title);
+			$title = $this->askQuestion(new Question('Title', $title));		
 		}
-		
-		// ask for the class
+		return $title;
+	}
+	
+	private function getClass() {
+		$force = $this->io->getInput()->getOption('force');
 		$classname = $this->getPackageClass();
 		if ($classname === null || $force) {
 			$classname = $this->askQuestion(new Question('Class', $classname));
-			$input->setOption('classname', $classname);
 		}
+		return $classname;
 	}
 }

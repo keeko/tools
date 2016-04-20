@@ -1,11 +1,8 @@
 <?php
 namespace keeko\tools\command;
 
-use gossi\codegen\model\PhpClass;
-use gossi\codegen\model\PhpMethod;
-use gossi\codegen\model\PhpParameter;
-use gossi\docblock\tags\LicenseTag;
 use keeko\framework\schema\AuthorSchema;
+use keeko\tools\generator\GeneratorFactory;
 use keeko\tools\helpers\InitCommandHelperTrait;
 use keeko\tools\services\IOService;
 use keeko\tools\ui\InitUI;
@@ -212,81 +209,11 @@ class InitCommand extends AbstractKeekoCommand {
 	}
 
 	private function generateCode() {
-		$class = $this->generateClass();
-		$type = $this->getPackageType();
-
-		switch ($type) {
-			case 'app':
-				$this->handleAppClass($class);
-				break;
-				
-			case 'module':
-				$this->handleModuleClass($class);
-				break;
-		}
-
-		$this->codegenService->dumpStruct($class, true);
-	}
-
-	private function generateClass() {
-		$input = $this->io->getInput();
 		$type = $this->getPackageType();
 		$package = $this->package->getKeeko()->getKeekoPackage($type);
-		$fqcn = str_replace(['\\', 'keeko-', '-module', '-app'], ['/', '', '', ''], $package->getClass());
-		$classname = basename($fqcn);
-		$filename = $this->project->getRootPath() . '/src/' . $classname . '.php';
-		$fqcn = str_replace('/', '\\', $fqcn);
-		
-		if (!file_exists($filename) || $input->getOption('force')) {
-			$class = PhpClass::create($fqcn);
-			$class->setDescription($package->getTitle());
-			
-			$docblock = $class->getDocblock();
-			$docblock->appendTag(new LicenseTag($this->package->getLicense()));
-			$this->codegenService->addAuthors($class, $this->package);
-		} else {
-			$class = PhpClass::fromFile($filename);
-		}
-		
-		return $class;
-	}
+		$generator = GeneratorFactory::createPackageGenerator($type, $this->service);
+		$class = $generator->generate($package);
 
-	private function handleAppClass(PhpClass $class) {
-		// set parent
-		$class->setParentClassName('AbstractApplication');
-		$class->addUseStatement('keeko\\framework\\foundation\\AbstractApplication');
-
-		// method: run(Request $request, $path)
-		if (!$class->hasMethod('run')) {
-			$class->setMethod(PhpMethod::create('run')
-				->addParameter(PhpParameter::create('request')->setType('Request'))
-				->addParameter(PhpParameter::create('path')->setType('string'))
-			);
-			$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
-		}
-	}
-	
-	private function handleModuleClass(PhpClass $class) {
-		// set parent
-		$class->setParentClassName('AbstractModule');
-		$class->addUseStatement('keeko\\framework\\foundation\\AbstractModule');
-		
-		// method: install()
-		if (!$class->hasMethod('install')) {
-			$class->setMethod(PhpMethod::create('install'));
-		}
-		
-		// method: uninstall()
-		if (!$class->hasMethod('uninstall')) {
-			$class->setMethod(PhpMethod::create('uninstall'));
-		}
-		
-		// method: update($from, $to)
-		if (!$class->hasMethod('update')) {
-			$class->setMethod(PhpMethod::create('update')
-				->addParameter(PhpParameter::create('from')->setType('mixed'))
-				->addParameter(PhpParameter::create('to')->setType('mixed'))
-			);
-		}
+		$this->codegenService->dumpStruct($class, true);
 	}
 }

@@ -32,7 +32,7 @@ abstract class AbstractCodeGenerator {
 	}
 
 	protected function loadClass(PhpClass $class) {
-		$file = new File($this->codegenService->getFilename($class));
+		$file = $this->codegenService->getFile($class);
 		
 		// load from file, if exists
 		if ($file->exists()) {
