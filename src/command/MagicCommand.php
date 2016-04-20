@@ -1,11 +1,10 @@
 <?php
 namespace keeko\tools\command;
 
-use keeko\tools\command\AbstractGenerateCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class MagicCommand extends AbstractGenerateCommand {
+class MagicCommand extends AbstractKeekoCommand {
 	
 	protected function configure() {
 		$this

@@ -11,9 +11,10 @@ use keeko\tools\generator\action\ToManyRelationshipUpdateActionGenerator;
 use keeko\tools\generator\action\ToOneRelationshipReadActionGenerator;
 use keeko\tools\generator\action\ToOneRelationshipUpdateActionGenerator;
 use keeko\tools\generator\GeneratorFactory;
-use keeko\tools\helpers\QuestionHelperTrait;
+use keeko\tools\helpers\ActionCommandHelperTrait;
 use keeko\tools\model\ManyRelationship;
 use keeko\tools\model\Relationship;
+use keeko\tools\ui\ActionUI;
 use keeko\tools\utils\NamespaceResolver;
 use phootwork\lang\Text;
 use Propel\Generator\Model\Table;
@@ -21,12 +22,10 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
-use Symfony\Component\Console\Question\Question;
 
-class GenerateActionCommand extends AbstractGenerateCommand {
+class GenerateActionCommand extends AbstractKeekoCommand {
 
-	use QuestionHelperTrait;
+	use ActionCommandHelperTrait;
 
 	protected function configure() {
 		$this
@@ -92,68 +91,8 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	protected function interact(InputInterface $input, OutputInterface $output) {
 		$this->preCheck();
 		
-		// check if the dialog can be skipped
-		$name = $input->getArgument('name');
-		$model = $input->getOption('model');
-		
-		if ($model !== null) {
-			return;
-		} else if ($name !== null) {
-			$generateModel = false;
-		} else {
-			$modelQuestion = new ConfirmationQuestion('Do you want to generate an action based off a model?');
-			$generateModel = $this->askConfirmation($modelQuestion);
-		}
-		
-		// ask questions for a model
-		if ($generateModel !== false) {
-			$schema = str_replace(getcwd(), '', $this->modelService->getSchema());
-			$allQuestion = new ConfirmationQuestion(sprintf('For all models in the schema (%s)?', $schema));
-			$allModels = $this->askConfirmation($allQuestion);
-
-			if (!$allModels) {
-				$modelQuestion = new Question('Which model');
-				$modelQuestion->setAutocompleterValues($this->modelService->getModelNames());
-				$model = $this->askQuestion($modelQuestion);
-				$input->setOption('model', $model);
-			}
-		} else {
-			if ($name === null) {
-				$nameQuestion = new Question('What\'s the name for your action (must be a unique identifier)?', '');
-				$name = $this->askQuestion($nameQuestion);
-				$input->setArgument('name', $name);
-			}
-			$action = $this->getAction($name);
-			
-			// ask for title
-			$pkgTitle = $action->getTitle();
-			$title = $input->getOption('title');
-			if ($title === null && !empty($pkgTitle)) {
-				$title = $pkgTitle;
-			}
-			$titleQuestion = new Question('What\'s the title for your action?', $title);
-			$title = $this->askQuestion($titleQuestion);
-			$input->setOption('title', $title);
-			
-			// ask for classname
-			$pkgClass = $action->getClass();
-			$classname = $input->getOption('classname');
-			if ($classname === null) {
-				if (!empty($pkgClass)) {
-					$classname = $pkgClass;
-				} else {
-					$classname = $this->guessClassname($name);
-				}
-			}
-			$classname = $this->askQuestion(new Question('Classname', $classname));
-			$input->setOption('classname', $classname);
-			
-			// ask for acl
-			$acls = $this->getAcl($action);
-			$aclQuestion = new Question('ACL (comma separated list, with these options: guest, user, admin)', implode(', ', $acls));
-			$acls = $this->askQuestion($aclQuestion);
-			$input->setOption('acl', $acls);
-		}
+		$ui = new ActionUI($this);
+		$ui->show();
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
@@ -348,50 +287,6 @@ class GenerateActionCommand extends AbstractGenerateCommand {
 	private function guessClassname($name) {
 		$namespace = NamespaceResolver::getNamespace('src/action', $this->package);
 		return $namespace . '\\' . NameUtils::toStudlyCase($name) . 'Action';
-	}
-	
-	/**
-	 * 
-	 * @param string $actionName
-	 * @return ActionSchema
-	 */
-	private function getAction($actionName) {
-		$action = $this->packageService->getAction($actionName);
-		if ($action === null) {
-			$action = new ActionSchema($actionName);
-			$module = $this->packageService->getModule();
-			$module->addAction($action);
-		}
-		return $action;
-	}
-	
-	private function getAcl(ActionSchema $action) {
-		$acls = [];
-		$acl = $this->io->getInput()->getOption('acl');
-		if ($acl !== null && count($acl) > 0) {
-			if (!is_array($acl)) {
-				$acl = [$acl];
-			}
-			foreach ($acl as $group) {
-				if (strpos($group, ',') !== false) {
-					$groups = explode(',', $group);
-					foreach ($groups as $g) {
-						$acls[] = trim($g);
-					}
-				} else {
-					$acls[] = $group;
-				}
-			}
-			
-			return $acls;
-		}
-		
-		// read default from package
-		if (!$action->getAcl()->isEmpty()) {
-			return $action->getAcl()->toArray();
-		}
-
-		return $acls;
 	}
 	
 	private function generateToOneRelationshipActions(Relationship $relationship) {

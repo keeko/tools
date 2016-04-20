@@ -14,7 +14,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
 
-abstract class AbstractGenerateCommand extends Command {
+abstract class AbstractKeekoCommand extends Command {
 
 	use ServiceLoaderTrait;
 	
@@ -50,7 +50,11 @@ abstract class AbstractGenerateCommand extends Command {
 	/**
 	 * @return CommandService
 	 */
-	protected function getService() {
+	public function getService() {
+		// this is BULLSHIT!!
+		// this should never be public
+		// this is only because of the UI classes, some need access to the model service
+		// see https://github.com/keeko/tools/issues/5 how this could be made more useful
 		return $this->service;
 	}
 

@@ -8,14 +8,13 @@ use gossi\swagger\collections\Paths;
 use gossi\swagger\Swagger;
 use gossi\swagger\Tag;
 use keeko\framework\utils\NameUtils;
-use keeko\tools\command\AbstractGenerateCommand;
 use phootwork\file\File;
 use phootwork\lang\Text;
 use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class GenerateApiCommand extends AbstractGenerateCommand {
+class GenerateApiCommand extends AbstractKeekoCommand {
 
 	protected function configure() {
 		$this

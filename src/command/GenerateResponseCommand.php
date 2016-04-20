@@ -2,7 +2,6 @@
 namespace keeko\tools\command;
 
 use gossi\codegen\model\PhpClass;
-use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\GeneratorFactory;
 use keeko\tools\generator\responder\ApiJsonResponderGenerator;
 use keeko\tools\generator\responder\SkeletonHtmlResponderGenerator;
@@ -11,6 +10,7 @@ use keeko\tools\generator\responder\ToManyRelationshipJsonResponderGenerator;
 use keeko\tools\generator\responder\ToOneRelationshipJsonResponderGenerator;
 use keeko\tools\generator\responder\TwigHtmlResponderGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
+use keeko\tools\ui\ResponseUI;
 use keeko\tools\utils\NamespaceResolver;
 use phootwork\collection\Set;
 use phootwork\file\File;
@@ -19,10 +19,8 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
-use Symfony\Component\Console\Question\Question;
 
-class GenerateResponseCommand extends AbstractGenerateCommand {
+class GenerateResponseCommand extends AbstractKeekoCommand {
 
 	use QuestionHelperTrait;
 	
@@ -86,76 +84,8 @@ class GenerateResponseCommand extends AbstractGenerateCommand {
 	protected function interact(InputInterface $input, OutputInterface $output) {
 		$this->preCheck();
 		
-		// check if the dialog can be skipped
-		$name = $input->getArgument('name');
-		$model = $input->getOption('model');
-		
-		if ($model !== null) {
-			return;
-		} else if ($name !== null) {
-			$generateModel = false;
-		} else {
-			$modelQuestion = new ConfirmationQuestion('Do you want to generate an action based off a model?');
-			$generateModel = $this->askConfirmation($modelQuestion);
-		}
-		
-		// ask questions for a model
-		if ($generateModel !== false) {
-			$schema = str_replace(getcwd(), '', $this->modelService->getSchema());
-			$allQuestion = new ConfirmationQuestion(sprintf('For all models in the schema (%s)?', $schema));
-			$allModels = $this->askConfirmation($allQuestion);
-			
-			if (!$allModels) {
-				$modelQuestion = new Question('Which model');
-				$modelQuestion->setAutocompleterValues($this->modelService->getModelNames());
-				$model = $this->askQuestion($modelQuestion);
-				$input->setOption('model', $model);
-			}
-		}
-		
-		// ask questions for a skeleton
-		else {
-			$names = [];
-			$module = $this->packageService->getModule();
-			foreach ($module->getActionNames() as $name) {
-				$names[] = $name;
-			}
-				
-			$actionQuestion = new Question('Which action');
-			$actionQuestion->setAutocompleterValues($names);
-			$name = $this->askQuestion($actionQuestion);
-			$input->setArgument('name', $name);
-			
-			// ask which format
-			$formatQuestion = new Question('Which format', 'json');
-			$formatQuestion->setAutocompleterValues(['json', 'html']);
-			$format = $this->askQuestion($formatQuestion);
-			$input->setOption('format', $format);
-			
-			// ask which template
-			$action = $this->packageService->getAction($name);
-			if (!($format == 'json' && $this->modelService->isModelAction($action))) {
-				$templates = [
-					'html' => ['twig', 'blank'],
-					'json' => ['api', 'blank']
-				];
-				
-				$suggestions = isset($templates[$format]) ? $templates[$format] : [];
-				$default = count($suggestions) ? $suggestions[0] : '';
-				$templateQuestion = new Question('Which template', $default);
-				$templateQuestion->setAutocompleterValues($suggestions);
-				$template = $this->askQuestion($templateQuestion);
-				$input->setOption('template', $template);
-				
-				// aks for serializer
-				if ($format == 'json' && $template == 'api') {
-					$guessedSerializer = NameUtils::toStudlyCase($name) . 'Serializer';
-					$serializerQuestion = new Question('Which format', $guessedSerializer);
-					$serializer = $this->askQuestion($serializerQuestion);
-					$input->setOption('serializer', $serializer);
-				}
-			}
-		}
+		$ui = new ResponseUI($this);
+		$ui->show();
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {

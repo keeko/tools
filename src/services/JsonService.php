@@ -48,7 +48,9 @@ class JsonService extends AbstractService {
 		$json = str_replace('    ', "\t", $json);
 
 		$file = new File($filename);
-		$file->setMode(0755);
+		if ($file->exists()) {
+			$file->setMode(0755);
+		}
 		$file->write($json);
 	}
 }

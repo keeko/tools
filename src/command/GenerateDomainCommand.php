@@ -6,16 +6,15 @@ use keeko\tools\generator\domain\base\ReadOnlyModelDomainTraitGenerator;
 use keeko\tools\generator\domain\ModelDomainGenerator;
 use keeko\tools\generator\domain\SkeletonDomainGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
+use keeko\tools\ui\DomainUI;
 use keeko\tools\utils\NamespaceResolver;
 use phootwork\lang\Text;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
-use Symfony\Component\Console\Question\Question;
 
-class GenerateDomainCommand extends AbstractGenerateCommand {
+class GenerateDomainCommand extends AbstractKeekoCommand {
 
 	use QuestionHelperTrait;
 	
@@ -64,38 +63,8 @@ class GenerateDomainCommand extends AbstractGenerateCommand {
 	protected function interact(InputInterface $input, OutputInterface $output) {
 		$this->preCheck();
 		
-		// check if the dialog can be skipped
-		$name = $input->getArgument('name');
-		$model = $input->getOption('model');
-		
-		if ($model !== null) {
-			return;
-		} else if ($name !== null) {
-			$generateModel = false;
-		} else {
-			$modelQuestion = new ConfirmationQuestion('Do you want to generate a domain object based off a model?');
-			$generateModel = $this->askConfirmation($modelQuestion);
-		}
-		
-		// ask questions for a model
-		if ($generateModel !== false) {
-			$schema = str_replace(getcwd(), '', $this->modelService->getSchema());
-			$allQuestion = new ConfirmationQuestion(sprintf('For all models in the schema (%s)?', $schema));
-			$allModels = $this->askConfirmation($allQuestion);
-
-			if (!$allModels) {
-				$modelQuestion = new Question('Which model');
-				$modelQuestion->setAutocompleterValues($this->modelService->getModelNames());
-				$model = $this->askQuestion($modelQuestion);
-				$input->setOption('model', $model);
-			}
-			
-		// ask question for a skeleton
-		} else if (empty($name)) {
-			// ask for classname
-			$name = $this->askQuestion(new Question('Classname', $name));
-			$input->setArgument('name', $name);
-		}
+		$ui = new DomainUI($this);
+		$ui->show();
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
