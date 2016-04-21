@@ -27,7 +27,6 @@ class InitUI extends AbstractUI {
 		]);
 		
 		// asking for a options
-		$type = $this->getType();
 		$name = $this->getName();
 		$package = $this->getService()->getPackageService()->getPackage();
 		$package->setFullName($name);
@@ -35,8 +34,10 @@ class InitUI extends AbstractUI {
 		$input->setOption('name', $name);
 		$input->setOption('description', $this->getDescription());
 		$input->setOption('author', $this->getAuthor());
-		$input->setOption('type', $type);
 		$input->setOption('license', $this->getLicense());
+		
+		$type = $this->getType();
+		$input->setOption('type', $type);
 
 		// KEEKO values
 		$output->writeln([

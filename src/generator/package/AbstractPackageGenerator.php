@@ -12,21 +12,30 @@ abstract class AbstractPackageGenerator extends AbstractCodeGenerator {
 		return 'package';
 	}
 	
+	/**
+	 * Generates the class based on the package
+	 * 
+	 * @param KeekoPackageSchema $pkg
+	 * @return PhpClass
+	 */
 	public function generate(KeekoPackageSchema $pkg) {
 		$class = $this->generateClass($pkg);
 		$class = $this->loadClass($class);
 		
 		$this->ensureBasicSetup($class);
 		$this->addMethods($class);
+		
+		return $class;
 	}
 	
 	protected function generateClass(KeekoPackageSchema $pkg) {
 		$class = PhpClass::create($pkg->getClass());
 		$class->setDescription($pkg->getTitle());
-			
+		
+		$package = $this->packageService->getPackage();
 		$docblock = $class->getDocblock();
-		$docblock->appendTag(new LicenseTag($this->package->getLicense()));
-		$this->codegenService->addAuthors($class, $this->package);
+		$docblock->appendTag(new LicenseTag($package->getLicense()));
+		$this->codegenService->addAuthors($class, $package);
 		
 		return $class;
 	}
