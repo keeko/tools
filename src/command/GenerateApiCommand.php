@@ -71,34 +71,34 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		$this->io->writeln(sprintf('API for <info>%s</info> written at <info>%s</info>', $this->package->getFullName(), $api->getPathname()));
 	}
 	
-	/**
-	 * Adds the APIModelInterface to package models
-	 * 
-	 */
-	protected function prepareModels() {
-		$models = $this->modelService->getPackageModelNames();
+// 	/**
+// 	 * Adds the APIModelInterface to package models
+// 	 * 
+// 	 */
+// 	protected function prepareModels() {
+// 		$models = $this->modelService->getPackageModelNames();
 		
-		foreach ($models as $modelName) {
-			$tableName = $this->modelService->getTableName($modelName);
-			$model = $this->modelService->getModel($tableName);
-			$class = new PhpClass(str_replace('\\\\', '\\', $model->getNamespace() . '\\' . $model->getPhpName()));
-			$file = new File($this->codegenService->getFilename($class));
+// 		foreach ($models as $modelName) {
+// 			$tableName = $this->modelService->getTableName($modelName);
+// 			$model = $this->modelService->getModel($tableName);
+// 			$class = new PhpClass(str_replace('\\\\', '\\', $model->getNamespace() . '\\' . $model->getPhpName()));
+// 			$file = new File($this->codegenService->getFilename($class));
 			
-			if ($file->exists()) {
-				$class = PhpClass::fromFile($this->codegenService->getFilename($class));
-				if (!$class->hasInterface('APIModelInterface')) {
-					$class->addUseStatement('keeko\\core\\model\\types\\APIModelInterface');
-					$class->addInterface('APIModelInterface');
-// 					$typeName =  $this->package->getCanonicalName() . '.' . NameUtils::dasherize($modelName);
-// 					$class->setMethod(PhpMethod::create('getAPIType')
-// 						->setBody('return \''.$typeName . '\';')
-// 					);
+// 			if ($file->exists()) {
+// 				$class = PhpClass::fromFile($this->codegenService->getFilename($class));
+// 				if (!$class->hasInterface('APIModelInterface')) {
+// 					$class->addUseStatement('keeko\\core\\model\\types\\APIModelInterface');
+// 					$class->addInterface('APIModelInterface');
+// // 					$typeName =  $this->package->getCanonicalName() . '.' . NameUtils::dasherize($modelName);
+// // 					$class->setMethod(PhpMethod::create('getAPIType')
+// // 						->setBody('return \''.$typeName . '\';')
+// // 					);
 	
-					$this->codegenService->dumpStruct($class, true);
-				}
-			}
-		}
-	}
+// 					$this->codegenService->dumpStruct($class, true);
+// 				}
+// 			}
+// 		}
+// 	}
 
 	protected function generatePaths(Swagger $swagger) {
 		$paths = $swagger->getPaths();
@@ -143,17 +143,13 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		$modelName = substr($actionName, 0, strpos($actionName, 'to') - 1);
 		$start = strpos($actionName, 'to') + 3;
 		$foreignModelName = substr($actionName, $start, strpos($actionName, 'relationship') - 1 - $start);
-
-		// find relationship objects
-// 		$model = $this->modelService->getModel(NameUtils::toSnakeCase($modelName));
-// 		$foreignModel = $this->modelService->getModel(NameUtils::toSnakeCase($foreignModelName));
-// 		$fk = null;
-// 		foreach ($model->getForeignKeys() as $key) {
-// 			if ($key->getForeignTable() == $foreignModel) {
-// 				$fk = $key;
-// 			}
-// 		}
-// 		$fkName = $fk->getLocalColumn()->getName();
+		
+		// stop, if one of the models is excluded from api
+		$codegen = $this->codegenService->getCodegen();
+		$excluded = $codegen->getExcludedModels();
+		if ($excluded->contains($modelName) || $excluded->contains($foreignModelName)) {
+			return;
+		}
 		
 		$action = $this->packageService->getAction($actionName);
 		$type = substr($actionName, strrpos($actionName, '-') + 1);
@@ -194,9 +190,14 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		$action = $this->packageService->getAction($actionName);
 		$modelName = $this->modelService->getModelNameByAction($action);
 		$tableName = $this->modelService->getTableName($modelName);
+		$codegen = $this->codegenService->getCodegen();
 	
 		if (!$database->hasTable($tableName)) {
-			return $paths;
+			return;
+		}
+		
+		if ($codegen->getExcludedModels()->contains($modelName)) {
+			return;
 		}
 	
 		$type = $this->packageService->getActionType($actionName, $modelName);
@@ -353,6 +354,12 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 	protected function generateDefinition(Definitions $definitions, Table $model) {
 		$this->logger->notice('Generating Definition for: ' . $model->getOriginCommonName());
 		$modelObjectName = $model->getPhpName();
+		$codegen = $this->codegenService->getCodegen();
+		
+		// stop if model is excluded
+		if ($codegen->getExcludedModels()->contains($model->getOriginCommonName())) {
+			return;
+		}
 		
 		// paged model
 		$pagedModel = 'Paged' . NameUtils::pluralize($modelObjectName);
