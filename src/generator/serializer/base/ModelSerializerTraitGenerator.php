@@ -50,10 +50,10 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 	}
 	
 	protected function generateAttributeMethods(PhpTrait $class, Table $model) {
-		$writeFields = $this->codegenService->getWriteFields($model->getOriginCommonName());
+		$readFields = $this->codegenService->getReadFields($model->getOriginCommonName());
 		$attrs = '';
 		
-		foreach ($writeFields as $field) {
+		foreach ($readFields as $field) {
 			$col = $model->getColumn($field);
 			$param = $col->isTemporalType() ? '\DateTime::ISO8601' : '';
 			$attrs .= sprintf("\t'%s' => \$model->get%s(%s),\n", $field, $col->getPhpName(), $param);
@@ -73,7 +73,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		
 		$class->setMethod(PhpMethod::create('getSortFields')
 			->setBody($this->twig->render('getFields.twig', [
-				'fields' => $this->codegenService->arrayToCode($writeFields)
+				'fields' => $this->codegenService->arrayToCode($readFields)
 			]))
 		);
 		

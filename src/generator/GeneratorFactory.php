@@ -7,18 +7,18 @@ use keeko\tools\generator\action\ModelDeleteActionGenerator;
 use keeko\tools\generator\action\ModelListActionGenerator;
 use keeko\tools\generator\action\ModelReadActionGenerator;
 use keeko\tools\generator\action\ModelUpdateActionGenerator;
-use keeko\tools\generator\responder\AbstractPayloadJsonResponderGenerator;
+use keeko\tools\generator\package\AbstractPackageGenerator;
+use keeko\tools\generator\package\AppPackageGenerator;
+use keeko\tools\generator\package\ModulePackageGenerator;
+use keeko\tools\generator\responder\AbstractModelJsonResponderGenerator;
 use keeko\tools\generator\responder\ModelCreateJsonResponderGenerator;
 use keeko\tools\generator\responder\ModelDeleteJsonResponderGenerator;
 use keeko\tools\generator\responder\ModelListJsonResponderGenerator;
 use keeko\tools\generator\responder\ModelReadJsonResponderGenerator;
 use keeko\tools\generator\responder\ModelUpdateJsonResponderGenerator;
-use keeko\tools\services\CommandService;
-use keeko\tools\generator\package\AppPackageGenerator;
-use keeko\tools\generator\package\ModulePackageGenerator;
-use keeko\tools\generator\package\AbstractPackageGenerator;
-use keeko\tools\generator\responder\PayloadJsonResponderGenerator;
 use keeko\tools\generator\responder\PayloadHtmlResponderGenerator;
+use keeko\tools\generator\responder\PayloadJsonResponderGenerator;
+use keeko\tools\services\CommandService;
 
 class GeneratorFactory {
 	
@@ -52,7 +52,7 @@ class GeneratorFactory {
 	 * 
 	 * @param string $type
 	 * @param CommandService $service
-	 * @return AbstractPayloadJsonResponderGenerator
+	 * @return AbstractModelJsonResponderGenerator
 	 */
 	public static function createModelJsonResponderGenerator($type, CommandService $service) {
 		switch ($type) {
