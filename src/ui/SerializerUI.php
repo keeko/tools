@@ -5,6 +5,10 @@ use keeko\tools\ui\ModelSkeletonUI;
 use Symfony\Component\Console\Question\Question;
 
 class SerializerUI extends ModelSkeletonUI {
+	
+	protected function getLabel() {
+		return 'serializer';
+	}
 
 	protected function showSkeleton() {
 		$input = $this->io->getInput();

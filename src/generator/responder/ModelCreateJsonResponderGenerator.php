@@ -4,7 +4,7 @@ namespace keeko\tools\generator\responder;
 use gossi\codegen\model\PhpClass;
 use keeko\framework\schema\ActionSchema;
 
-class ModelCreateJsonResponderGenerator extends AbstractPayloadJsonResponderGenerator {
+class ModelCreateJsonResponderGenerator extends AbstractModelJsonResponderGenerator {
 
 	protected function addMethods(PhpClass $class, ActionSchema $action) {
 		$this->generateGetPayloadMethods($class, $this->twig->render('model/getPayloadMethods-create.twig'));

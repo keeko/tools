@@ -6,7 +6,7 @@ use keeko\framework\schema\ActionSchema;
 use keeko\tools\model\Relationship;
 use keeko\framework\utils\NameUtils;
 
-class ToOneRelationshipJsonResponderGenerator extends AbstractPayloadJsonResponderGenerator {
+class ToOneRelationshipJsonResponderGenerator extends AbstractModelJsonResponderGenerator {
 	
 	/** @var Relationship */
 	private $relationship;

@@ -177,6 +177,11 @@ class GenerateResponseCommand extends AbstractKeekoCommand {
 			$generator = GeneratorFactory::createModelJsonResponderGenerator($type, $this->service);
 		}
 		
+		// payload
+		else if ($template == 'payload') {
+			$generator = GeneratorFactory::createPayloadGenerator($format, $this->service);
+		}
+		
 		// json + dump
 		else if ($format == 'json' && $template == 'api') {
 			$generator = new ApiJsonResponderGenerator($this->service);

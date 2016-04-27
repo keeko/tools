@@ -7,7 +7,7 @@ use keeko\framework\utils\NameUtils;
 use keeko\tools\model\ManyRelationship;
 use keeko\tools\services\CommandService;
 
-class ToManyRelationshipJsonResponderGenerator extends AbstractPayloadJsonResponderGenerator {
+class ToManyRelationshipJsonResponderGenerator extends AbstractModelJsonResponderGenerator {
 	
 	/** @var ManyRelationship */
 	private $relationship;

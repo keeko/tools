@@ -17,6 +17,8 @@ use keeko\tools\services\CommandService;
 use keeko\tools\generator\package\AppPackageGenerator;
 use keeko\tools\generator\package\ModulePackageGenerator;
 use keeko\tools\generator\package\AbstractPackageGenerator;
+use keeko\tools\generator\responder\PayloadJsonResponderGenerator;
+use keeko\tools\generator\responder\PayloadHtmlResponderGenerator;
 
 class GeneratorFactory {
 	
@@ -85,6 +87,16 @@ class GeneratorFactory {
 				
 			case 'module':
 				return new ModulePackageGenerator($service);
+		}
+	}
+	
+	public static function createPayloadGenerator($format, CommandService $service) {
+		switch ($format) {
+			case 'json':
+				return new PayloadJsonResponderGenerator($service);
+				
+			case 'html':
+				return new PayloadHtmlResponderGenerator($service);
 		}
 	}
 }

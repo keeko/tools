@@ -38,10 +38,10 @@ class ResponseUI extends ModelSkeletonUI {
 		$action = $packageService->getAction($name);
 		if (!($format == 'json' && $modelService->isModelAction($action))) {
 			$templates = [
-				'html' => ['twig', 'blank'],
-				'json' => ['api', 'blank']
+				'html' => ['twig', 'payload', 'blank'],
+				'json' => ['api', 'payload', 'blank']
 			];
-			
+
 			$suggestions = isset($templates[$format]) ? $templates[$format] : [];
 			$default = count($suggestions) ? $suggestions[0] : '';
 			$templateQuestion = new Question('Which template', $default);
