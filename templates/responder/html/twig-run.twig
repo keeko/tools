@@ -1,1 +1,1 @@
-return new Response($this->render('{{ name }}.twig', $payload->get()));
+return new Response($this->render('/{{ package_name }}/templates/{{ name }}.twig', $payload->get()));

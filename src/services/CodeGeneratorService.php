@@ -195,7 +195,7 @@ class CodeGeneratorService extends AbstractService {
 		$filename = $this->getFilename($struct);
 		$file = new File($filename);
 
-		if ($filename !== null && $file->exists() ? $overwrite : true) {
+		if ($filename !== null && ($file->exists() ? $overwrite : true)) {
 			// generate code
 			$generator = new CodeFileGenerator();
 			$code = $generator->generate($struct);

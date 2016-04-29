@@ -15,7 +15,6 @@ use keeko\tools\helpers\ActionCommandHelperTrait;
 use keeko\tools\model\ManyRelationship;
 use keeko\tools\model\Relationship;
 use keeko\tools\ui\ActionUI;
-use keeko\tools\utils\NamespaceResolver;
 use phootwork\lang\Text;
 use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputArgument;
@@ -103,12 +102,12 @@ class GenerateActionCommand extends AbstractKeekoCommand {
 
 		// generate a skeleton action (or model, if action name belongs to a model)
 		if ($name) {
-			$action = $this->getAction($name);
-			if ($this->modelService->isModelAction($action)) {
-				$this->generateModel($this->modelService->getModelNameByAction($action));
-			} else {
+// 			$action = $this->getAction($name);
+// 			if ($this->modelService->isModelAction($action)) {
+// 				$this->generateModel($this->modelService->getModelNameByAction($action));
+// 			} else {
 				$this->generateSkeleton($name);
-			}
+// 			}
 		}
 
 		// generate an action for a specific model
@@ -282,11 +281,6 @@ class GenerateActionCommand extends AbstractKeekoCommand {
 		$action->setAcl($this->getAcl($action));
 		
 		return $action;
-	}
-	
-	private function guessClassname($name) {
-		$namespace = NamespaceResolver::getNamespace('src/action', $this->package);
-		return $namespace . '\\' . NameUtils::toStudlyCase($name) . 'Action';
 	}
 	
 	private function generateToOneRelationshipActions(Relationship $relationship) {

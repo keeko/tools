@@ -3,6 +3,8 @@ namespace keeko\tools\helpers;
 
 use keeko\framework\schema\ActionSchema;
 use keeko\tools\services\CommandService;
+use keeko\tools\utils\NamespaceResolver;
+use keeko\framework\utils\NameUtils;
 
 trait ActionCommandHelperTrait {
 	
@@ -55,5 +57,11 @@ trait ActionCommandHelperTrait {
 		}
 	
 		return $acls;
+	}
+	
+	private function guessClassname($name) {
+		$package = $this->getService()->getPackageService()->getPackage();
+		$namespace = NamespaceResolver::getNamespace('src/action', $package);
+		return $namespace . '\\' . NameUtils::toStudlyCase($name) . 'Action';
 	}
 }

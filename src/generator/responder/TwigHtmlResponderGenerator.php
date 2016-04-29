@@ -9,6 +9,7 @@ class TwigHtmlResponderGenerator extends AbstractHtmlResponderGenerator {
 	protected function addMethods(PhpClass $class, ActionSchema $action) {
 		// method: run(Request $request, $data = null)
 		$class->setMethod($this->generateRunMethod($this->twig->render('twig-run.twig', [
+			'package_name' => $this->packageService->getPackage()->getFullName(),
 			'name' => $action->getName()
 		])));
 	}
