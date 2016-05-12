@@ -58,7 +58,9 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		$class = new PhpClass();
 		$class->setNamespace(str_replace('model', 'event', $model->getNamespace()));
 		$class->setName($model->getPhpName() . 'Event');
+		$class->setParentClassName('Event');
 		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName());
+		$class->addUseStatement('Symfony\Component\EventDispatcher\Event');
 		
 		// constants
 		$class->setConstant('PRE_CREATE', sprintf('%s.%s.pre_create', $slug, $modelName));
@@ -105,7 +107,7 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		// constructor
 		$class->setMethod(PhpMethod::create('__construct')
 			->addParameter(PhpParameter::create($modelVariableName)->setType($model->getPhpName()))
-			->setBody('$this->' . $modelVariableName . ' = ' . $modelVariableName .';')
+			->setBody('$this->' . $modelVariableName . ' = $' . $modelVariableName .';')
 		);
 		
 		// getModel()
