@@ -16,15 +16,15 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 	public function generate(Table $model) {
 		$trait = parent::generate($model);
 		
+		// generate event
 		$event = $this->generateEvent($model);
 		$trait->addUseStatement($event->getQualifiedName());
 
+		// generate CUD methods
 		$this->generateCreate($trait, $model);
 		$this->generateUpdate($trait, $model);
 		$this->generateDelete($trait, $model);
-		
-		
-		
+
 		// generate relationship methods
 		if (!$model->isReadOnly()) {
 			$relationships = $this->modelService->getRelationships($model);
@@ -124,17 +124,13 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 	protected function generateCreate(PhpTrait $trait, Table $model) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\Created');
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotFound');
-		
-		if ($model->hasBehavior('validate')) {
-			$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
-		}
+		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
 	
 		$trait->setMethod(PhpMethod::create('create')
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('create.twig', [
 				'model' => NameUtils::toCamelCase($model->getOriginCommonName()),
-				'class' => $model->getPhpName(),
-				'validate' => $model->hasBehavior('validate')
+				'class' => $model->getPhpName()
 			]))
 			->setDescription('Creates a new ' . $model->getPhpName() . ' with the provided data')
 			->setType('PayloadInterface')
@@ -145,18 +141,14 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\Updated');
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotUpdated');
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotFound');
-		
-		if ($model->hasBehavior('validate')) {
-			$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
-		}
+		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
 		
 		$trait->setMethod(PhpMethod::create('update')
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('update.twig', [
 				'model' => NameUtils::toCamelCase($model->getOriginCommonName()),
-				'class' => $model->getPhpName(),
-				'validate' => $model->hasBehavior('validate')
+				'class' => $model->getPhpName()
 			]))
 			->setDescription('Updates a ' . $model->getPhpName() . ' with the given id' .
 				'and the provided data')

@@ -8,16 +8,14 @@ if (${{ model }} === null) {
 // hydrate
 $serializer = {{ class }}::getSerializer();
 ${{ model }} = $serializer->hydrate(${{ model }}, $data);
-{% if validate %}
 
 // validate
-if (!${{ model }}->validate()) {
+$validator = $this->getValidator();
+if ($validator !== null && !$validator->validate(${{ model }})) {
 	return new NotValid([
-		'errors' => ${{ model }}->getValidationFailures()
+		'errors' => $validator->getValidationFailures()
 	]);
 }
-
-{% endif %}
 
 // dispatch
 $event = new {{ class }}Event(${{ model }});
