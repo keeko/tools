@@ -25,7 +25,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		$this->generateIdentifyingMethods($class, $model);
 		$this->generateAttributeMethods($class, $model);
 		$this->generateHydrateMethod($class, $model);
-		$this->generateRelationshipMethods($class, $model);
+// 		$this->generateRelationshipMethods($class, $model);
 		
 		return $class;
 	}
@@ -56,7 +56,9 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		foreach ($readFields as $field) {
 			$col = $model->getColumn($field);
 			$param = $col->isTemporalType() ? '\DateTime::ISO8601' : '';
-			$attrs .= sprintf("\t'%s' => \$model->get%s(%s),\n", $field, $col->getPhpName(), $param);
+			$attrs .= sprintf("\t'%s' => \$model->get%s(%s),\n", 
+				NameUtils::dasherize($field), $col->getPhpName(), $param
+			);
 		}
 		
 		if (count($field) > 0) {
@@ -73,14 +75,18 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		
 		$class->setMethod(PhpMethod::create('getSortFields')
 			->setBody($this->twig->render('getFields.twig', [
-				'fields' => $this->codegenService->arrayToCode($readFields)
+				'fields' => $this->codegenService->arrayToCode(array_map(function ($field) {
+					return NameUtils::dasherize($field);
+				}, $readFields))
 			]))
 		);
 		
 		$readFields = $this->codegenService->getReadFields($model->getOriginCommonName());
 		$class->setMethod(PhpMethod::create('getFields')
 			->setBody($this->twig->render('getFields.twig', [
-				'fields' => $this->codegenService->arrayToCode($readFields)
+				'fields' => $this->codegenService->arrayToCode(array_map(function ($field) {
+					return NameUtils::dasherize($field);
+				}, $readFields))
 			]))
 		);
 	}
@@ -96,7 +102,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 			$code = '';
 			
 			foreach ($fields as $field) {
-				$code .= "'$field'";
+				$code .= sprintf("'%s'", NameUtils::dasherize($field));
 				if (isset($conversions[$field])) {
 					$code .= ' => function($v) {' . "\n\t" . 'return ' . $conversions[$field] . ';' . "\n" . '}';
 				}

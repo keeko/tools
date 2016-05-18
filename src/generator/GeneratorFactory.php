@@ -19,8 +19,55 @@ use keeko\tools\generator\responder\ModelUpdateJsonResponderGenerator;
 use keeko\tools\generator\responder\PayloadHtmlResponderGenerator;
 use keeko\tools\generator\responder\PayloadJsonResponderGenerator;
 use keeko\tools\services\CommandService;
+use keeko\tools\model\Relationship;
+use keeko\tools\generator\action\AbstractActionGenerator;
+use keeko\tools\generator\action\ToOneRelationshipReadActionGenerator;
+use keeko\tools\generator\action\ToOneRelationshipUpdateActionGenerator;
+use keeko\tools\generator\action\ToManyRelationshipReadActionGenerator;
+use keeko\tools\generator\action\ToManyRelationshipUpdateActionGenerator;
+use keeko\tools\generator\action\ToManyRelationshipAddActionGenerator;
+use keeko\tools\generator\action\ToManyRelationshipRemoveActionGenerator;
 
 class GeneratorFactory {
+	
+	private $service;
+	
+	public function __construct(CommandService $service) {
+		$this->service = $service;
+	}
+	
+	/**
+	 * Creates a generator for a relationship action
+	 * 
+	 * @param string $type
+	 * @param Relationship $relationship
+	 * @return AbstractActionGenerator
+	 */
+	public function createActionRelationshipGenerator($type, Relationship $relationship) {
+		if ($relationship->getType() == Relationship::ONE_TO_ONE) {
+			switch ($type) {
+				case 'read':
+					return new ToOneRelationshipReadActionGenerator($this->service);
+					
+				case 'update':
+					return new ToOneRelationshipUpdateActionGenerator($this->service);
+			}
+		} else {
+			switch ($type) {
+				case 'read':
+					return new ToManyRelationshipReadActionGenerator($this->service);
+					
+				case 'update':
+					return new ToManyRelationshipUpdateActionGenerator($this->service);
+					
+				case 'add':
+					return new ToManyRelationshipAddActionGenerator($this->service);
+					
+				case 'remove':
+					return new ToManyRelationshipRemoveActionGenerator($this->service);
+			}
+		}
+	}
 	
 	/**
 	 * Creates a generator for the given trait type
@@ -28,22 +75,22 @@ class GeneratorFactory {
 	 * @param string $type
 	 * @return AbstractModelActionGenerator
 	 */
-	public static function createModelActionGenerator($type, CommandService $service) {
+	public function createModelActionGenerator($type) {
 		switch ($type) {
 			case 'list':
-				return new ModelListActionGenerator($service);
+				return new ModelListActionGenerator($this->service);
 				
 			case 'create':
-				return new ModelCreateActionGenerator($service);
+				return new ModelCreateActionGenerator($this->service);
 				
 			case 'update':
-				return new ModelUpdateActionGenerator($service);
+				return new ModelUpdateActionGenerator($this->service);
 				
 			case 'read':
-				return new ModelReadActionGenerator($service);
+				return new ModelReadActionGenerator($this->service);
 				
 			case 'delete':
-				return new ModelDeleteActionGenerator($service);
+				return new ModelDeleteActionGenerator($this->service);
 		}
 	}
 	
@@ -51,25 +98,25 @@ class GeneratorFactory {
 	 * Creates a generator for the given json respose
 	 * 
 	 * @param string $type
-	 * @param CommandService $service
+	 * @param CommandService $this->service
 	 * @return AbstractModelJsonResponderGenerator
 	 */
-	public static function createModelJsonResponderGenerator($type, CommandService $service) {
+	public function createModelJsonResponderGenerator($type) {
 		switch ($type) {
 			case 'list':
-				return new ModelListJsonResponderGenerator($service);
+				return new ModelListJsonResponderGenerator($this->service);
 
 			case 'create':
-				return new ModelCreateJsonResponderGenerator($service);
+				return new ModelCreateJsonResponderGenerator($this->service);
 		
 			case 'update':
-				return new ModelUpdateJsonResponderGenerator($service);
+				return new ModelUpdateJsonResponderGenerator($this->service);
 		
 			case 'read':
-				return new ModelReadJsonResponderGenerator($service);
+				return new ModelReadJsonResponderGenerator($this->service);
 		
 			case 'delete':
-				return new ModelDeleteJsonResponderGenerator($service);
+				return new ModelDeleteJsonResponderGenerator($this->service);
 		}
 	}
 
@@ -77,26 +124,27 @@ class GeneratorFactory {
 	 * Creates a new package generator
 	 * 
 	 * @param string $type
-	 * @param CommandService $serivce
+	 * @param CommandService $this->serivce
 	 * @return AbstractPackageGenerator
 	 */
-	public static function createPackageGenerator($type, CommandService $service) {
+	public function createPackageGenerator($type) {
 		switch ($type) {
 			case 'app':
-				return new AppPackageGenerator($service);
+				return new AppPackageGenerator($this->service);
 				
 			case 'module':
-				return new ModulePackageGenerator($service);
+				return new ModulePackageGenerator($this->service);
 		}
 	}
 	
-	public static function createPayloadGenerator($format, CommandService $service) {
+	public function createPayloadGenerator($format) {
 		switch ($format) {
 			case 'json':
-				return new PayloadJsonResponderGenerator($service);
+				return new PayloadJsonResponderGenerator($this->service);
 				
 			case 'html':
-				return new PayloadHtmlResponderGenerator($service);
+				return new PayloadHtmlResponderGenerator($this->service);
 		}
 	}
+	
 }

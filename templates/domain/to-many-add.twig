@@ -12,13 +12,14 @@ foreach ($data as $entry) {
 		$errors[] = 'Missing id for {{ foreign_class }}';
 	}
 	${{ foreign_model }} = {{ foreign_class }}Query::create()->findOneById($entry['id']);
-	${{ model }}->add{{ foreign_class }}(${{ foreign_model }});
+	${{ model }}->add{{ related }}(${{ foreign_model }});
 }
 
 if (count($errors) > 0) {
 	return new NotValid(['errors' => $errors]);
 }
 
+// save and dispatch events
 $event = new {{ class }}Event(${{ model }});
 $dispatcher = $this->getServiceContainer()->getDispatcher();
 $dispatcher->dispatch({{ class }}Event::PRE_{{ const }}_ADD, $event);

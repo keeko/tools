@@ -1,15 +1,16 @@
 <?php
 namespace keeko\tools\generator\domain\base;
 
+use gossi\codegen\model\PhpClass;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
+use gossi\codegen\model\PhpProperty;
 use gossi\codegen\model\PhpTrait;
 use keeko\framework\utils\NameUtils;
-use keeko\tools\model\ManyRelationship;
 use keeko\tools\model\Relationship;
 use Propel\Generator\Model\Table;
-use gossi\codegen\model\PhpClass;
-use gossi\codegen\model\PhpProperty;
+use keeko\tools\model\ManyToManyRelationship;
+use keeko\tools\model\OneToManyRelationship;
 
 class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 	
@@ -29,16 +30,24 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		if (!$model->isReadOnly()) {
 			$relationships = $this->modelService->getRelationships($model);
 			
-			// to-one relationships
-			foreach ($relationships->getOne() as $one) {
-				$this->generateToOneRelationshipSet($trait, $one);
-			}
-
-			// to-many relationships
-			foreach ($relationships->getMany() as $many) {
-				$this->generateToManyRelationshipAdd($trait, $many);
-				$this->generateToManyRelationshipUpdate($trait, $many);
-				$this->generateToManyRelationshipRemove($trait, $many);
+			foreach ($relationships->getAll() as $relationship) {
+				switch ($relationship->getType()) {
+					case Relationship::ONE_TO_ONE:
+						$this->generateToOneRelationshipSet($trait, $relationship);
+						break;
+						
+					case Relationship::ONE_TO_MANY:
+						$this->generateToManyRelationshipAdd($trait, $relationship);
+						$this->generateToManyRelationshipRemove($trait, $relationship);
+						$this->generateOneToManyRelationshipUpdate($trait, $relationship);
+						break;
+					
+					case Relationship::MANY_TO_MANY:
+						$this->generateToManyRelationshipAdd($trait, $relationship);
+						$this->generateToManyRelationshipRemove($trait, $relationship);
+						$this->generateManyToManyRelationshipUpdate($trait, $relationship);
+						break;
+				}
 			}
 		}
 
@@ -75,25 +84,27 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		// generate relationship constants
 		if (!$model->isReadOnly()) {
 			$relationships = $this->modelService->getRelationships($model);
+			
+			foreach ($relationships->getAll() as $relationship) {
+				// one-to-one relationships
+				if ($relationship->getType() == Relationship::ONE_TO_ONE) {
+					$snake = NameUtils::toSnakeCase($relationship->getRelatedName());
+					$name = strtoupper($snake);
+					$class->setConstant('PRE_' . $name . '_UPDATE', sprintf('%s.%s.pre_%s_update', $slug, $modelName, $snake));
+					$class->setConstant('POST_' . $name . '_UPDATE', sprintf('%s.%s.post_%s_update', $slug, $modelName, $snake));
+				}
 				
-			// to-one relationships
-			foreach ($relationships->getOne() as $one) {
-				$snake = NameUtils::toSnakeCase($one->getRelatedName());
-				$name = strtoupper($snake);
-				$class->setConstant('PRE_' . $name . '_UPDATE', sprintf('%s.%s.pre_%s_update', $slug, $modelName, $snake));
-				$class->setConstant('POST_' . $name . '_UPDATE', sprintf('%s.%s.post_%s_update', $slug, $modelName, $snake));
-			}
-		
-			// to-many relationships
-			foreach ($relationships->getMany() as $many) {
-				$snake = NameUtils::toSnakeCase($many->getRelatedName());
-				$name = strtoupper($snake);
-				$class->setConstant('PRE_' . $name . '_ADD', sprintf('%s.%s.pre_%s_add', $slug, $modelName, $snake));
-				$class->setConstant('POST_' . $name . '_ADD', sprintf('%s.%s.post_%s_add', $slug, $modelName, $snake));
-				$class->setConstant('PRE_' . $name . '_UPDATE', sprintf('%s.%s.pre_%s_update', $slug, $modelName, $snake));
-				$class->setConstant('POST_' . $name . '_UPDATE', sprintf('%s.%s.post_%s_update', $slug, $modelName, $snake));
-				$class->setConstant('PRE_' . $name . '_REMOVE', sprintf('%s.%s.pre_%s_add', $slug, $modelName, $snake));
-				$class->setConstant('POST_' . $name . '_REMOVE', sprintf('%s.%s.post_%s_add', $slug, $modelName, $snake));
+				// others
+				else {
+					$snake = NameUtils::toSnakeCase($relationship->getRelatedPluralName());
+					$name = strtoupper($snake);
+					$class->setConstant('PRE_' . $name . '_ADD', sprintf('%s.%s.pre_%s_add', $slug, $modelName, $snake));
+					$class->setConstant('POST_' . $name . '_ADD', sprintf('%s.%s.post_%s_add', $slug, $modelName, $snake));
+					$class->setConstant('PRE_' . $name . '_REMOVE', sprintf('%s.%s.pre_%s_add', $slug, $modelName, $snake));
+					$class->setConstant('POST_' . $name . '_REMOVE', sprintf('%s.%s.post_%s_add', $slug, $modelName, $snake));
+					$class->setConstant('PRE_' . $name . '_UPDATE', sprintf('%s.%s.pre_%s_update', $slug, $modelName, $snake));
+					$class->setConstant('POST_' . $name . '_UPDATE', sprintf('%s.%s.post_%s_update', $slug, $modelName, $snake));
+				}
 			}
 		}
 		
@@ -174,11 +185,10 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 	
 	protected function generateToOneRelationshipSet(PhpTrait $trait, Relationship $relationship) {
 		$model = $relationship->getModel();
-		$foreign = $relationship->getForeign();
 		$name = $relationship->getRelatedName();
 		$localId = NameUtils::toCamelCase($name) . 'Id';
 		$trait->setMethod(PhpMethod::create('set' . $name . 'Id')
-			->setDescription(str_replace('{foreign}', $foreign->getPhpName(), 'Sets the {foreign} id'))
+			->setDescription(str_replace('{foreign}', $relationship->getRelatedName(), 'Sets the {foreign} id'))
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create($localId))
 			->setBody($this->twig->render('to-one-set.twig', [
@@ -192,67 +202,94 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		);
 	}
 	
-	protected function generateToManyRelationshipAdd(PhpTrait $trait, ManyRelationship $relationship) {
+	protected function generateToManyRelationshipAdd(PhpTrait $trait, Relationship $relationship) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
 		
 		$model = $relationship->getModel();
 		$foreign = $relationship->getForeign();
 		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
-		$trait->setMethod(PhpMethod::create('add' . $relationship->getRelatedName())
-			->setDescription('Adds ' . $foreign->getPhpName() . ' to ' . $model->getPhpName())
+		$trait->setMethod(PhpMethod::create('add' . $relationship->getRelatedPluralName())
+			->setDescription('Adds ' . $relationship->getRelatedPluralName() . ' to ' . $model->getPhpName())
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('to-many-add.twig', [
 				'model' => $model->getCamelCaseName(),
-				'class' => $model->getPhpName(),				
+				'class' => $model->getPhpName(),			
+				'related' => $relationship->getRelatedName(),
 				'foreign_model' => $foreign->getCamelCaseName(),
 				'foreign_class' => $foreign->getPhpName(),
-				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedName()))
+				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
 			]))
 			->setType('PayloadInterface')
 		);
 	}
 	
-	protected function generateToManyRelationshipUpdate(PhpTrait $trait, ManyRelationship $relationship) {
-		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
-		
-		$model = $relationship->getModel();
-		$foreign = $relationship->getForeign();
-		$middle = $relationship->getMiddle();
-		$trait->addUseStatement($middle->getNamespace() . '\\' . $middle->getPhpName() . 'Query');
-		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
-		$trait->setMethod(PhpMethod::create('update' . $relationship->getRelatedName())
-			->setDescription('Updates ' . $foreign->getPhpName() . ' on ' . $model->getPhpName())
-			->addParameter(PhpParameter::create('id'))
-			->addParameter(PhpParameter::create('data'))
-			->setBody($this->twig->render('to-many-update.twig', [
-				'model' => $model->getCamelCaseName(),
-				'class' => $model->getPhpName(),
-				'foreign_model' => $foreign->getCamelCaseName(),
-				'foreign_class' => $foreign->getPhpName(),
-				'middle_class' => $middle->getPhpName(),
-				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedName()))
-			]))
-			->setType('PayloadInterface')
-		);
-	}
-	
-	protected function generateToManyRelationshipRemove(PhpTrait $trait, ManyRelationship $relationship) {
+	protected function generateToManyRelationshipRemove(PhpTrait $trait, Relationship $relationship) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
 		
 		$model = $relationship->getModel();
 		$foreign = $relationship->getForeign();
 		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
-		$trait->setMethod(PhpMethod::create('remove' . $relationship->getRelatedName())
-			->setDescription('Removes ' . $foreign->getPhpName() . ' from ' . $model->getPhpName())
+		$trait->setMethod(PhpMethod::create('remove' . $relationship->getRelatedPluralName())
+			->setDescription('Removes ' . $relationship->getRelatedPluralName() . ' from ' . $model->getPhpName())
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('to-many-remove.twig', [
 				'model' => $model->getCamelCaseName(),
 				'class' => $model->getPhpName(),
+				'related' => $relationship->getRelatedName(),
 				'foreign_model' => $foreign->getCamelCaseName(),
 				'foreign_class' => $foreign->getPhpName(),
-				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedName()))
+				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
+			]))
+			->setType('PayloadInterface')
+		);
+	}
+	
+	protected function generateOneToManyRelationshipUpdate(PhpTrait $trait, OneToManyRelationship $relationship) {
+		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
+	
+		$model = $relationship->getModel();
+		$foreign = $relationship->getForeign();
+		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
+		$trait->setMethod(PhpMethod::create('update' . $relationship->getRelatedPluralName())
+			->setDescription('Updates ' . $relationship->getRelatedPluralName() . ' on ' . $model->getPhpName())
+			->addParameter(PhpParameter::create('id'))
+			->addParameter(PhpParameter::create('data'))
+			->setBody($this->twig->render('one-to-many-update.twig', [
+				'model' => $model->getCamelCaseName(),
+				'class' => $model->getPhpName(),
+				'related' => $relationship->getRelatedName(),
+				'reverse_related' => $relationship->getReverseRelatedName(),
+				'foreign_model' => $foreign->getCamelCaseName(),
+				'foreign_class' => $foreign->getPhpName(),
+				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
+			]))
+			->setType('PayloadInterface')
+		);
+	}
+	
+	protected function generateManyToManyRelationshipUpdate(PhpTrait $trait, ManyToManyRelationship $relationship) {
+		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
+	
+		$model = $relationship->getModel();
+		$foreign = $relationship->getForeign();
+		$middle = $relationship->getMiddle();
+		$trait->addUseStatement($middle->getNamespace() . '\\' . $middle->getPhpName() . 'Query');
+		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
+		$trait->setMethod(PhpMethod::create('update' . $relationship->getRelatedPluralName())
+			->setDescription('Updates ' . $relationship->getRelatedPluralName() . ' on ' . $model->getPhpName())
+			->addParameter(PhpParameter::create('id'))
+			->addParameter(PhpParameter::create('data'))
+			->setBody($this->twig->render('many-to-many-update.twig', [
+				'model' => $model->getCamelCaseName(),
+				'class' => $model->getPhpName(),
+				'related' => $relationship->getRelatedName(),
+				'reverse_related' => $relationship->getReverseRelatedName(),
+				'foreign_model' => $foreign->getCamelCaseName(),
+				'foreign_class' => $foreign->getPhpName(),
+				'middle_class' => $middle->getPhpName(),
+				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
 			]))
 			->setType('PayloadInterface')
 		);

@@ -1,38 +1,35 @@
 <?php
 namespace keeko\tools\model;
 
-use Propel\Generator\Model\Table;
 use Propel\Generator\Model\ForeignKey;
+use Propel\Generator\Model\Table;
 use keeko\framework\utils\NameUtils;
 
-class Relationship {
+abstract class Relationship {
 	
+	const ONE_TO_ONE = 'one-to-one';
+	const ONE_TO_MANY = 'one-to-many';
+	const MANY_TO_MANY = 'many-to-many';
+
 	/** @var Table */
 	protected $model;
-	
+
 	/** @var Table */
 	protected $foreign;
-	
+
 	/** @var ForeignKey */
 	protected $fk;
-	
-	public function __construct(Table $model, Table $foreign, ForeignKey $fk) {
-		$this->model = $model;
-		$this->foreign = $foreign;
-		$this->fk = $fk;
-	}
 	
 	/**
 	 * Returns the type of this relationship
 	 * 
 	 * @return string
 	 */
-	public function getType() {
-		return 'one';
-	}
+	abstract public function getType();
 
 	/**
-	 *
+	 * Returns the model
+	 * 
 	 * @return Table
 	 */
 	public function getModel() {
@@ -40,7 +37,8 @@ class Relationship {
 	}
 
 	/**
-	 *
+	 * Returns the foreign model
+	 * 
 	 * @return Table
 	 */
 	public function getForeign() {
@@ -48,7 +46,8 @@ class Relationship {
 	}
 
 	/**
-	 *
+	 * Returns the foreign key
+	 * 
 	 * @return ForeignKey
 	 */
 	public function getForeignKey() {
@@ -57,24 +56,40 @@ class Relationship {
 	
 	/**
 	 * Returns the related name in studly case
-	 * 
+	 *
 	 * @return string
 	 */
-	public function getRelatedName() {
-		$relatedName = $this->fk->getPhpName();
-		if ($relatedName === null) {
-			$relatedName = $this->foreign->getPhpName();
-		}
-		
-		return $relatedName;
+	abstract public function getRelatedName();
+
+	/**
+	 * Returns the pluralized related name in studly case
+	 *
+	 * @return string
+	 */
+	public function getRelatedPluralName() {
+		return NameUtils::pluralize($this->getRelatedName());
 	}
 	
 	/**
-	 * Returns the related name for using in api environment (slug, type-name, etc)
-	 * 
+	 * Returns the related type name for usage in api environment (slug, type-name, etc)
+	 *
 	 * @return string
 	 */
 	public function getRelatedTypeName() {
 		return NameUtils::dasherize($this->getRelatedName());
 	}
+	
+	/**
+	 * Returns the pluralized related type name for usage in api environment (slug, type-name, etc)
+	 * 
+	 * @return string
+	 */
+	public function getRelatedPluralTypeName() {
+		return NameUtils::pluralize($this->getRelatedTypeName());
+	}
+	
+	/**
+	 * Returns the reverse related name in studly case
+	 */
+	abstract public function getReverseRelatedName();
 }

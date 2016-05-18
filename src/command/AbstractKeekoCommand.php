@@ -13,6 +13,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Logger\ConsoleLogger;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Application;
 
 abstract class AbstractKeekoCommand extends Command {
 
@@ -69,7 +70,7 @@ abstract class AbstractKeekoCommand extends Command {
 				'schema',
 				's',
 				InputOption::VALUE_OPTIONAL,
-				'Path to the database schema (if ommited, database/schema.xml is used)',
+				'Path to the database schema (if ommited, res/database/schema.xml is used)',
 				null
 			)
 			->addOption(
@@ -93,9 +94,11 @@ abstract class AbstractKeekoCommand extends Command {
 		;
 	}
 	
-	protected function runCommand($name, array $input = []) {
+	protected function runCommand($name, array $input = [], Application $app = null) {
 		// return whether command has already executed
-		$app = $this->getApplication();
+		if ($app === null) {
+			$app = $this->getApplication();
+		}
 		$cmd = $app->find($name);
 
 		$input = new ArrayInput($this->sanitizeInput($input));
@@ -111,6 +114,11 @@ abstract class AbstractKeekoCommand extends Command {
 	 * @return array
 	 */
 	private function sanitizeInput(array $input) {
+		// add verbose level
+		if (!isset($input['--verbose'])) {
+			$input['--verbose'] = $this->io->getInput()->getOption('verbose');
+		}
+
 		// check if at least one argument is present and if not add a blank one
 		$hasArgs = false;
 		foreach (array_keys($input) as $key) {

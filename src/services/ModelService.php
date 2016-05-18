@@ -3,16 +3,14 @@ namespace keeko\tools\services;
 
 use keeko\framework\schema\ActionSchema;
 use keeko\framework\schema\PackageSchema;
-use phootwork\collection\ArrayList;
-use phootwork\lang\Text;
+use keeko\tools\model\Project;
+use keeko\tools\model\Relationship;
+use keeko\tools\model\Relationships;
+use phootwork\collection\Map;
+use phootwork\collection\Set;
+use phootwork\file\Path;
 use Propel\Generator\Model\Database;
 use Propel\Generator\Model\Table;
-use Propel\Generator\Util\QuickBuilder;
-use phootwork\collection\Set;
-use keeko\tools\model\Relationships;
-use keeko\tools\model\Relationship;
-use keeko\tools\model\ManyRelationship;
-use phootwork\collection\Map;
 
 class ModelService extends AbstractService {
 
@@ -23,68 +21,58 @@ class ModelService extends AbstractService {
 	private $database = null;
 	
 	private $relationships = null;
+	
+	private $reader = null;
+	
+	public function read(Project $project = null) {
+		if ($project === null) {
+			if ($this->project->hasSchemaFile()) {
+				$project = $this->project;
+			} else {
+				$project = new Project($this->project->getRootPath() . '/vendor/keeko/core');
+			}
+		}
+		$this->reader = new ModelReader($project, $this->service);
+	}
+	
+	/**
+	 * @return ModelReader
+	 */
+	private function getReader() {
+		if ($this->reader === null) {
+			$this->read();
+		}
+		return $this->reader;
+	}
 
 	/**
 	 * Returns the propel schema. The three locations, where the schema is looked up in:
 	 *
-	 * 1. --schema option (if available)
-	 * 2. res/database/schema.xml
-	 * 3. <keeko/core>/res/database/schema.xml
-	 *
-	 * @throws \RuntimeException
-	 * @return string the path to the schema
+	 * @return string|null the path to the schema
 	 */
 	public function getSchema() {
-		$input = $this->io->getInput();
-		if ($this->schema === null) {
-			$workDir = $this->service->getProject()->getRootPath();
-			$schema = null;
-			$schemas = [
-				$input->hasOption('schema') ? $input->getOption('schema') : '',
-				$workDir . '/database/schema.xml',
-				$workDir . '/res/database/schema.xml',
-				$workDir . '/vendor/keeko/core/database/schema.xml',
-				$workDir . '/vendor/keeko/core/res/database/schema.xml'
-			];
-			foreach ($schemas as $path) {
-				if (file_exists($path)) {
-					$schema = $path;
-					break;
-				}
-			}
-			$this->schema = $schema;
-				
-			if ($schema === null) {
-				$locations = implode(', ', $schemas);
-				throw new \RuntimeException(sprintf('Can\'t find schema in these locations: %s', $locations));
-			}
+		if ($this->getReader()->getProject()->hasSchemaFile()) {
+			return $this->getReader()->getProject()->getSchemaFileName();
 		}
 
-		return $this->schema;
+		return null;
 	}
 	
 	public function isCoreSchema() {
-		return strpos($this->getSchema(), 'core') !== false;
+		return $this->getReader()->getProject()->getPackage()->getFullName() == 'keeko/core';
 	}
 	
 	public function hasSchema() {
-		$vendorName = $this->packageService->getPackage()->getVendor();
-		return $this->getSchema() !== null && ($this->isCoreSchema() ? $vendorName == 'keeko' : true);
+		return $this->getReader()->getProject()->hasSchemaFile();
 	}
-	
+
 	/**
 	 * Returns the propel database
 	 *
 	 * @return Database
 	 */
 	public function getDatabase() {
-		if ($this->database === null) {
-			$builder = new QuickBuilder();
-			$builder->setSchema(file_get_contents($this->getSchema()));
-			$this->database = $builder->getDatabase();
-		}
-	
-		return $this->database;
+		return $this->getReader()->getDatabase();
 	}
 	
 	/**
@@ -94,49 +82,25 @@ class ModelService extends AbstractService {
 	 * @return String tableName
 	 */
 	public function getTableName($name) {
-		$db = $this->getDatabase();
-		if (!Text::create($name)->startsWith($db->getTablePrefix())) {
-			$name = $db->getTablePrefix() . $name;
-		}
-	
-		return $name;
+		return $this->getReader()->getTableName($name);
 	}
 	
 	/**
 	 * Returns all model names
 	 *
-	 * @return String[] an array of modelName
+	 * @return Set
 	 */
 	public function getModelNames() {
-		$names = [];
-		$database = $this->getDatabase();
-		foreach ($database->getTables() as $table) {
-			$names[] = $table->getOriginCommonName();
-		}
-	
-		return $names;
+		return $this->getReader()->getModelNames();
 	}
 	
 	/**
 	 * Returns the propel models from the database, where table namespace matches package namespace
 	 *
-	 * @return ArrayList<Table>
+	 * @return Map
 	 */
 	public function getModels() {
-		if ($this->models === null) {
-			$namespace = $this->packageService->getNamespace() . '\\model';
-			$propel = $this->getDatabase();
-	
-			$this->models = new ArrayList();
-	
-			foreach ($propel->getTables() as $table) {
-				if (!$table->isCrossRef() && $table->getNamespace() == $namespace) {
-					$this->models->add($table);
-				}
-			}
-		}
-	
-		return $this->models;
+		return $this->getReader()->getModels();
 	}
 
 	/**
@@ -146,42 +110,38 @@ class ModelService extends AbstractService {
 	 * @return Table
 	 */
 	public function getModel($name) {
-		$tableName = $this->getTableName($name);
-		$db = $this->getDatabase();
-		$table = $db->getTable($tableName);
-	
-		return $table;
+		return $this->getReader()->getModel($name);
 	}
-	
-	/**
-	 * Returns the model names for a given package
-	 * 
-	 * @param PackageSchema $package a package to search models for, if omitted global package is used
-	 * @return array array with string of model names
-	 */
-	public function getPackageModelNames(PackageSchema $package = null) {
-		if ($package === null) {
-			$package = $this->packageService->getPackage();
-		}
+
+// 	/**
+// 	 * Returns the model names for a given package
+// 	 * 
+// 	 * @param PackageSchema $package a package to search models for, if omitted global package is used
+// 	 * @return array array with string of model names
+// 	 */
+// 	public function getPackageModelNames(PackageSchema $package = null) {
+// 		if ($package === null) {
+// 			$package = $this->packageService->getPackage();
+// 		}
 		
-		$models = [];
-		// if this is a core-module, find the related model
-		if ($package->getVendor() == 'keeko' && $this->isCoreSchema()) {
-			$model = $package->getName();
-			if ($this->hasModel($model)) {
-				$models [] = $model;
-			}
-		}
+// 		$models = [];
+// 		// if this is a core-module, find the related model
+// 		if ($package->getVendor() == 'keeko' && $this->isCoreSchema()) {
+// 			$model = $package->getName();
+// 			if ($this->hasModel($model)) {
+// 				$models [] = $model;
+// 			}
+// 		}
 		
-		// anyway, generate all
-		else {
-			foreach ($this->getModels() as $model) {
-				$models [] = $model->getOriginCommonName();
-			}
-		}
+// 		// anyway, generate all
+// 		else {
+// 			foreach ($this->getModels() as $model) {
+// 				$models [] = $model->getOriginCommonName();
+// 			}
+// 		}
 		
-		return $models;
-	}
+// 		return $models;
+// 	}
 	
 	/**
 	 * Checks whether the given model exists
@@ -190,29 +150,7 @@ class ModelService extends AbstractService {
 	 * @return boolean
 	 */
 	public function hasModel($name) {
-		return $this->getDatabase()->hasTable($this->getTableName($name), true);
-	}
-
-	/**
-	 * Retrieves the model name for the given package in two steps:
-	 * 
-	 * 1. Check if it is passed as cli parameter
-	 * 2. Retrieve it from the package name
-	 *
-	 * @return String
-	 */
-	public function getModelName() {
-		$input = $this->io->getInput();
-		$modelName = $input->hasOption('model') ? $input->getOption('model') : null;
-		if ($modelName === null && $this->isCoreSchema()) {
-			$package = $this->service->getPackageService()->getPackage();
-			$packageName = $package->getName();
-
-			if ($this->hasModel($packageName)) {
-				$modelName = $packageName;
-			}
-		}
-		return $modelName;
+		return $this->getReader()->hasModel($name);
 	}
 	
 	/**
@@ -246,21 +184,6 @@ class ModelService extends AbstractService {
 	}
 	
 	/**
-	 * Returns the operation (verb) of the action (if existent)
-	 * 
-	 * @param ActionSchema $action
-	 * @return string|null
-	 */
-	public function getOperationByAction(ActionSchema $action) {
-		$actionName = $action->getName();
-		$operation = null;
-		if (($pos = strpos($actionName, '-')) !== false) {
-			$operation = substr($actionName, $pos + 1);
-		}
-		return $operation;
-	}
-	
-	/**
 	 * Returns wether the given action refers to a model.
 	 * 
 	 * Examples:
@@ -275,20 +198,7 @@ class ModelService extends AbstractService {
 		$modelName = $this->getModelNameByAction($action);
 		return $this->hasModel($modelName);
 	}
-	
-	/**
-	 * Returns whether this is a crud operation action
-	 * (create, read, update, delete, list)
-	 * 
-	 * @param ActionSchema $action
-	 * @return boolean
-	 */
-	public function isCrudAction(ActionSchema $action) {
-		$operation = $this->getOperationByAction($action);
-		
-		return in_array($operation, ['create', 'read', 'update', 'delete', 'list']);
-	}
-	
+
 	/**
 	 * Returns all model relationships.
 	 * 
@@ -296,61 +206,18 @@ class ModelService extends AbstractService {
 	 * @return Relationships
 	 */
 	public function getRelationships(Table $model) {
-		if ($this->relationships === null) {
-			$this->relationships = new Map();
-		}
-		
-		if ($this->relationships->has($model->getName())) {
-			return $this->relationships->get($model->getName());
-		}
-		
-		$blacklist = new Set();
-		$relationships = new Relationships($model);
-		
-		// generate blacklist
-		// check if it's using concrete_inheritance behavior
-		foreach ($model->getBehaviors() as $behavior) {
-			if ($behavior->getName() == 'concrete_inheritance') {
-				$blacklist->add($behavior->getParameter('extends'));
-			}
-		}
-		
-		// to-one relationships
-		foreach ($model->getForeignKeys() as $fk) {
-			// skip, if fk is blacklisted 
-			if ($blacklist->contains($fk->getForeignTable()->getOriginCommonName())) {
-				continue;
-			}
-
-			$relationships->add(new Relationship($model, $fk->getForeignTable(), $fk));
-		}
-	
-		// to-many relationships
-		foreach ($model->getCrossFks() as $cfk) {
-			$relationship = new ManyRelationship($model, $cfk);
-			
-			// skip, if fk is blacklisted
-			if ($blacklist->contains($relationship->getForeign()->getOriginCommonName())) {
-				continue;
-			}
-			
-			$relationships->add($relationship);
-		}
-		
-		$this->relationships->set($model->getName(), $relationships);
-	
-		return $relationships;
+		return $this->getReader()->getRelationships($model);
 	}
 	
 	/**
-	 * Returns a relationship for a given foreign name on a given model
+	 * Returns a relationship for a given related type name on a given model
 	 * 
 	 * @param Table $model
-	 * @param string $foreignName
+	 * @param string $relatedTypeName
 	 * @return Relationship
 	 */
-	public function getRelationship(Table $model, $foreignName) {
+	public function getRelationship(Table $model, $relatedTypeName) {
 		$relationships = $this->getRelationships($model);
-		return $relationships->get($foreignName);
+		return $relationships->get($relatedTypeName);
 	}
 }

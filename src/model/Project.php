@@ -2,10 +2,12 @@
 namespace keeko\tools\model;
 
 use phootwork\file\File;
+use keeko\framework\schema\PackageSchema;
 
 class Project {
 	
 	private $root;
+	private $package;
 	
 	public function __construct($workdir) {
 		$this->root = $workdir;
@@ -31,6 +33,10 @@ class Project {
 		return $this->root . '/api.json';
 	}
 	
+	public function getSchemaFileName() {
+		return $this->root . '/res/database/schema.xml';
+	}
+	
 	public function hasApiFile() {
 		$file = new File($this->getApiFileName());
 		return $file->exists();
@@ -43,5 +49,19 @@ class Project {
 	public function hasCodegenFile() {
 		$file = new File($this->getCodegenFileName());
 		return $file->exists();
+	}
+	
+	public function hasSchemaFile() {
+		$file = new File($this->getSchemaFileName());
+		return $file->exists();
+	}
+	
+	public function getPackage() {
+		if ($this->package === null) {
+			if ($this->hasComposerFile()) {
+				$this->package = PackageSchema::fromFile($this->getComposerFileName());
+			}
+		}
+		return $this->package;
 	}
 }

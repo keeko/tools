@@ -1,8 +1,6 @@
 <?php
 namespace keeko\tools\command;
 
-use gossi\codegen\model\PhpClass;
-use gossi\codegen\model\PhpMethod;
 use gossi\swagger\collections\Definitions;
 use gossi\swagger\collections\Paths;
 use gossi\swagger\Swagger;
@@ -12,6 +10,7 @@ use phootwork\file\File;
 use phootwork\lang\Text;
 use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class GenerateApiCommand extends AbstractKeekoCommand {
@@ -20,6 +19,12 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		$this
 			->setName('generate:api')
 			->setDescription('Generates the api for the module')
+			->addOption(
+				'model',
+				'm',
+				InputOption::VALUE_OPTIONAL,
+				'The model for which the actions should be generated, when there is no name argument (if ommited all models will be generated)'
+			)
 		;
 		
 		$this->configureGenerateOptions();
@@ -70,35 +75,6 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		$this->jsonService->write($api->getPathname(), $swagger->toArray());
 		$this->io->writeln(sprintf('API for <info>%s</info> written at <info>%s</info>', $this->package->getFullName(), $api->getPathname()));
 	}
-	
-// 	/**
-// 	 * Adds the APIModelInterface to package models
-// 	 * 
-// 	 */
-// 	protected function prepareModels() {
-// 		$models = $this->modelService->getPackageModelNames();
-		
-// 		foreach ($models as $modelName) {
-// 			$tableName = $this->modelService->getTableName($modelName);
-// 			$model = $this->modelService->getModel($tableName);
-// 			$class = new PhpClass(str_replace('\\\\', '\\', $model->getNamespace() . '\\' . $model->getPhpName()));
-// 			$file = new File($this->codegenService->getFilename($class));
-			
-// 			if ($file->exists()) {
-// 				$class = PhpClass::fromFile($this->codegenService->getFilename($class));
-// 				if (!$class->hasInterface('APIModelInterface')) {
-// 					$class->addUseStatement('keeko\\core\\model\\types\\APIModelInterface');
-// 					$class->addInterface('APIModelInterface');
-// // 					$typeName =  $this->package->getCanonicalName() . '.' . NameUtils::dasherize($modelName);
-// // 					$class->setMethod(PhpMethod::create('getAPIType')
-// // 						->setBody('return \''.$typeName . '\';')
-// // 					);
-	
-// 					$this->codegenService->dumpStruct($class, true);
-// 				}
-// 			}
-// 		}
-// 	}
 
 	protected function generatePaths(Swagger $swagger) {
 		$paths = $swagger->getPaths();
@@ -142,7 +118,10 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		// find model names
 		$modelName = substr($actionName, 0, strpos($actionName, 'to') - 1);
 		$start = strpos($actionName, 'to') + 3;
-		$foreignModelName = substr($actionName, $start, strpos($actionName, 'relationship') - 1 - $start);
+		$relatedName = NameUtils::dasherize(substr($actionName, $start, strpos($actionName, 'relationship') - 1 - $start));
+		$model = $this->modelService->getModel($modelName);
+		$relationship = $this->modelService->getRelationship($model, $relatedName);
+		$foreignModelName = $relationship->getForeign()->getOriginCommonName();
 		
 		// stop, if one of the models is excluded from api
 		$codegen = $this->codegenService->getCodegen();
@@ -154,9 +133,11 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		$action = $this->packageService->getAction($actionName);
 		$type = substr($actionName, strrpos($actionName, '-') + 1);
 		$method = $this->getMethod($type);
-		$endpoint = '/' . NameUtils::pluralize($modelName) . '/{id}/relationship/' . ($single ?
-			$foreignModelName : NameUtils::pluralize($foreignModelName));
-		
+		$endpoint = '/' . NameUtils::pluralize(NameUtils::dasherize($modelName)) . '/{id}/relationship/' . 
+			($single 
+				? NameUtils::dasherize($relatedName) 
+				: NameUtils::pluralize(NameUtils::dasherize($relatedName)));
+
 		$path = $paths->get($endpoint);
 		$method = $this->getMethod($type);
 		$operation = $path->getOperation($method);
@@ -318,7 +299,8 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		// models
 		$modelName = $this->modelService->getModelName();
 		if ($modelName !== null) {
-			$this->generateDefinition($definitions, $modelName);
+			$model = $this->modelService->getModel($modelName);
+			$this->generateDefinition($definitions, $model);
 		} else {
 			foreach ($this->modelService->getModels() as $model) {
 				$this->generateDefinition($definitions, $model);

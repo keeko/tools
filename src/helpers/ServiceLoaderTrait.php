@@ -10,6 +10,7 @@ use keeko\tools\services\PackageService;
 use keeko\tools\services\ModelService;
 use keeko\tools\services\JsonService;
 use keeko\tools\services\CodeGeneratorService;
+use keeko\tools\generator\GeneratorFactory;
 
 trait ServiceLoaderTrait {
 	
@@ -28,6 +29,9 @@ trait ServiceLoaderTrait {
 	/** @var Project */
 	protected $project;
 	
+	/** @var GeneratorFactory */
+	protected $factory;
+	
 	/** @var PackageService */
 	protected $packageService;
 	
@@ -42,6 +46,7 @@ trait ServiceLoaderTrait {
 	
 	protected function loadServices(CommandService $service) {
 		$this->service = $service;
+		$this->factory = $service->getFactory();
 
 		$this->io = $service->getIOService();
 		$this->config = $service->getConfig();

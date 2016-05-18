@@ -10,10 +10,13 @@ class Relationships {
 	private $all;
 	
 	/** @var Map */
-	private $one;
+	private $oneToOne;
 	
 	/** @var Map */
-	private $many;
+	private $oneToMany;
+	
+	/** @var Map */
+	private $manyToMany;
 	
 	/** @var Table */
 	private $model;
@@ -21,8 +24,9 @@ class Relationships {
 	public function __construct(Table $model) {
 		$this->model = $model;
 		$this->all = new Map();
-		$this->one = new Map();
-		$this->many = new Map();
+		$this->oneToOne = new Map();
+		$this->oneToMany = new Map();
+		$this->manyToMany = new Map();
 	}
 	
 	/**
@@ -38,16 +42,26 @@ class Relationships {
 	 * @param Relationship $relationship
 	 */
 	public function add(Relationship $relationship) {
-		if ($relationship instanceof ManyRelationship) {
-			$this->many->set($relationship->getForeign()->getOriginCommonName(), $relationship);
-		} else {
-			$this->one->set($relationship->getForeign()->getOriginCommonName(), $relationship);
+		switch ($relationship->getType()) {
+			case Relationship::ONE_TO_ONE:
+				$this->oneToOne->set($relationship->getRelatedTypeName(), $relationship);
+				break;
+				
+			case Relationship::ONE_TO_MANY:
+				$this->oneToMany->set($relationship->getRelatedTypeName(), $relationship);
+				break;
+				
+			case Relationship::MANY_TO_MANY:
+				$this->manyToMany->set($relationship->getRelatedTypeName(), $relationship);
+				break;
 		}
 		
-		$this->all->set($relationship->getForeign()->getOriginCommonName(), $relationship);
+		$this->all->set($relationship->getRelatedTypeName(), $relationship);
 	}
 	
 	/**
+	 * Return all relationships
+	 * 
 	 * @return Map
 	 */
 	public function getAll() {
@@ -55,21 +69,34 @@ class Relationships {
 	}
 	
 	/**
+	 * Return one-to-one relationships
+	 * 
 	 * @return Map
 	 */
-	public function getOne() {
-		return $this->one;
+	public function getOneToOne() {
+		return $this->oneToOne;
 	}
 	
 	/**
+	 * Return one-to-many relationships
+	 * 
 	 * @return Map
 	 */
-	public function getMany() {
-		return $this->many;
+	public function getOneToMany() {
+		return $this->oneToMany;
 	}
 	
 	/**
-	 * The number of relationships
+	 * Return many-to-many relationships
+	 * 
+	 * @return Map
+	 */
+	public function getManyToMany() {
+		return $this->manyToMany;
+	}
+	
+	/**
+	 * The number of all relationships
 	 * 
 	 * @return int
 	 */
@@ -78,22 +105,22 @@ class Relationships {
 	}
 	
 	/**
-	 * Checks whether a relationship with the given foreign name exists
+	 * Checks whether a relationship with the given related type name exists
 	 * 
-	 * @param string $foreignName
+	 * @param string $relatedTypeName
 	 * @return boolean
 	 */
-	public function has($foreignName) {
-		return $this->all->has($foreignName);
+	public function has($relatedTypeName) {
+		return $this->all->has($relatedTypeName);
 	}
 	
 	/**
-	 * Returns a relationship with the given foreign name
+	 * Returns a relationship with the given related type name
 	 * 
-	 * @param string $foreignName
+	 * @param string $relatedTypeName
 	 * @return Relationship
 	 */
-	public function get($foreignName) {
-		return $this->all->get($foreignName);
+	public function get($relatedTypeName) {
+		return $this->all->get($relatedTypeName);
 	}
 }

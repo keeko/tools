@@ -1,12 +1,11 @@
 <?php
 namespace keeko\tools\model;
 
-use Propel\Generator\Model\Table;
 use Propel\Generator\Model\CrossForeignKeys;
 use Propel\Generator\Model\ForeignKey;
-use keeko\framework\utils\NameUtils;
+use Propel\Generator\Model\Table;
 
-class ManyRelationship extends Relationship {
+class ManyToManyRelationship extends Relationship {
 	
 	/** @var ForeignKey */
 	protected $lk;
@@ -35,10 +34,12 @@ class ManyRelationship extends Relationship {
 	 * @return string
 	 */
 	public function getType() {
-		return 'many';
+		return self::MANY_TO_MANY;
 	}
 	
 	/**
+	 * Returns the middle table
+	 * 
 	 * @return Table
 	 */
 	public function getMiddle() {
@@ -46,6 +47,8 @@ class ManyRelationship extends Relationship {
 	}
 	
 	/**
+	 * Returns the cross foreign keys
+	 * 
 	 * @return CrossForeignKeys
 	 */
 	public function getCrossForeignKeys() {
@@ -53,6 +56,8 @@ class ManyRelationship extends Relationship {
 	}
 	
 	/**
+	 * Returns the local key
+	 * 
 	 * @return ForeignKey
 	 */
 	public function getLocalKey() {
@@ -61,15 +66,20 @@ class ManyRelationship extends Relationship {
 	
 	public function getRelatedName() {
 		$relatedName = $this->lk->getRefPhpName();
-		if ($relatedName === null) {
+		if (empty($relatedName)) {
 			$relatedName = $this->foreign->getPhpName();
 		}
 		
 		return $relatedName;
 	}
-
-	public function getRelatedTypeName() {
-		return NameUtils::dasherize(NameUtils::pluralize($this->getRelatedName()));
-	}
 	
+	public function getReverseRelatedName() {
+		$reverseRelatedName = $this->lk->getPhpName();
+		if (empty($reverseRelatedName)) {
+			$reverseRelatedName = $this->model->getPhpName();
+		}
+	
+		return $reverseRelatedName;
+	}
+
 }

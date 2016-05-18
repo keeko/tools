@@ -89,9 +89,7 @@ class GenerateDomainCommand extends AbstractKeekoCommand {
 
 		// generate domain for all models
 		else {
-			foreach ($this->modelService->getModels() as $model) {
-				$modelName = $model->getOriginCommonName();
-				$input->setOption('model', $modelName);
+			foreach ($this->modelService->getModelNames() as $modelName) {
 				$this->generateModel($modelName);
 			}
 		}

@@ -5,6 +5,7 @@ use keeko\framework\schema\PackageSchema;
 use phootwork\file\exception\FileException;
 use phootwork\file\File;
 use keeko\tools\utils\NamespaceResolver;
+use keeko\framework\schema\ActionSchema;
 
 class PackageService extends AbstractService {
 
@@ -133,5 +134,35 @@ class PackageService extends AbstractService {
 		$filename = $this->service->getProject()->getComposerFileName();
 		$this->service->getJsonService()->write($filename, $package->toArray());
 		$this->io->writeln(sprintf('Package <info>%s</info> written at <info>%s</info>', $package->getFullName(), $filename));
+	}
+	
+	// --- from model service ----
+	
+	/**
+	 * Returns the operation (verb) of the action (if existent)
+	 *
+	 * @param ActionSchema $action
+	 * @return string|null
+	 */
+	public function getOperationByAction(ActionSchema $action) {
+		$actionName = $action->getName();
+		$operation = null;
+		if (($pos = strpos($actionName, '-')) !== false) {
+			$operation = substr($actionName, $pos + 1);
+		}
+		return $operation;
+	}
+	
+	/**
+	 * Returns whether this is a crud operation action
+	 * (create, read, update, delete, list)
+	 *
+	 * @param ActionSchema $action
+	 * @return boolean
+	 */
+	public function isCrudAction(ActionSchema $action) {
+		$operation = $this->getOperationByAction($action);
+	
+		return in_array($operation, ['create', 'read', 'update', 'delete', 'list']);
 	}
 }

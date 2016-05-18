@@ -4,15 +4,15 @@ namespace keeko\tools\generator\responder;
 use gossi\codegen\model\PhpClass;
 use keeko\framework\schema\ActionSchema;
 use keeko\framework\utils\NameUtils;
-use keeko\tools\model\ManyRelationship;
+use keeko\tools\model\Relationship;
 use keeko\tools\services\CommandService;
 
 class ToManyRelationshipJsonResponderGenerator extends AbstractModelJsonResponderGenerator {
 	
-	/** @var ManyRelationship */
+	/** @var Relationship */
 	private $relationship;
 	
-	public function __construct(CommandService $service, ManyRelationship $relationship) {
+	public function __construct(CommandService $service, Relationship $relationship) {
 		parent::__construct($service);
 		$this->relationship = $relationship;
 	}
@@ -26,7 +26,7 @@ class ToManyRelationshipJsonResponderGenerator extends AbstractModelJsonResponde
 		$model = $this->relationship->getModel();
 		$updated = $this->generatePayloadMethod('updated', $this->twig->render('to-many/updated.twig', [
 			'class' => $model->getPhpName(),
-			'related' => NameUtils::pluralize(NameUtils::toCamelCase($this->relationship->getRelatedName()))
+			'related' => NameUtils::toCamelCase($this->relationship->getRelatedPluralName())
 		]), 'Updated');
 		
 		$class->setMethod($updated);

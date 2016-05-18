@@ -2,7 +2,7 @@
 namespace keeko\tools\command;
 
 use gossi\codegen\model\PhpClass;
-use keeko\tools\generator\GeneratorFactory;
+use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\responder\ApiJsonResponderGenerator;
 use keeko\tools\generator\responder\SkeletonHtmlResponderGenerator;
 use keeko\tools\generator\responder\SkeletonJsonResponderGenerator;
@@ -10,6 +10,7 @@ use keeko\tools\generator\responder\ToManyRelationshipJsonResponderGenerator;
 use keeko\tools\generator\responder\ToOneRelationshipJsonResponderGenerator;
 use keeko\tools\generator\responder\TwigHtmlResponderGenerator;
 use keeko\tools\helpers\QuestionHelperTrait;
+use keeko\tools\model\Relationship;
 use keeko\tools\ui\ResponseUI;
 use keeko\tools\utils\NamespaceResolver;
 use phootwork\collection\Set;
@@ -128,14 +129,15 @@ class GenerateResponseCommand extends AbstractKeekoCommand {
 		// generate responders for relationships
 		if (!$model->isReadOnly()) {
 			$types = [
-				'one' => ['read', 'update'],
-				'many' => ['read', 'add', 'update', 'remove']
+				Relationship::ONE_TO_ONE => ['read', 'update'],
+				Relationship::ONE_TO_MANY => ['read', 'add', 'update', 'remove'],
+				Relationship::MANY_TO_MANY => ['read', 'add', 'update', 'remove'] 
 			];
 			$relationships = $this->modelService->getRelationships($model);
 			foreach ($relationships->getAll() as $relationship) {
-				$foreignName = $relationship->getForeign()->getOriginCommonName();
+				$relatedName = NameUtils::toSnakeCase($relationship->getRelatedTypeName());
 				foreach ($types[$relationship->getType()] as $type) {
-					$this->generateResponder($modelName . '-to-' . $foreignName . '-relationship-' . $type);
+					$this->generateResponder($modelName . '-to-' . $relatedName . '-relationship-' . $type);
 				}
 			}
 		}
@@ -174,12 +176,12 @@ class GenerateResponseCommand extends AbstractKeekoCommand {
 
 		// model given and format is json
 		if ($isModel && $format == 'json') {
-			$generator = GeneratorFactory::createModelJsonResponderGenerator($type, $this->service);
+			$generator = $this->factory->createModelJsonResponderGenerator($type);
 		}
 		
 		// payload
 		else if ($template == 'payload') {
-			$generator = GeneratorFactory::createPayloadGenerator($format, $this->service);
+			$generator = $this->factory->createPayloadGenerator($format);
 		}
 		
 		// json + dump
@@ -225,14 +227,14 @@ class GenerateResponseCommand extends AbstractKeekoCommand {
 		$matches = [];
 		preg_match('/([a-z_]+)-to-([a-z_]+)-relationship.*/i', $actionName, $matches);
 		$model = $this->modelService->getModel($matches[1]);
-		$foreign = $this->modelService->getModel($matches[2]);
-		$relationship = $this->modelService->getRelationship($model, $foreign->getOriginCommonName());
+		$relatedName = NameUtils::dasherize($matches[2]);
+		$relationship = $this->modelService->getRelationship($model, $relatedName);
 
 		// response class name
 		$responder = sprintf('%s\\responder\\%s%sJsonResponder',
 			$this->packageService->getNamespace(),
 			$model->getPhpName(),
-			$foreign->getPhpName()
+			$relationship->getRelatedName()
 		);
 		
 		$many = $module->hasAction($prefix . '-read')
