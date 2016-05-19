@@ -51,7 +51,7 @@ class GenerateEmberModelsCommand extends AbstractKeekoCommand {
 		foreach ($models as $model) {
 			$contents = $generator->generate($model);
 			$filename = sprintf('%s/ember/app/models/%s/%s.js', $this->project->getRootPath(), 
-				$module->getSlug(), NameUtils::dasherize($model->getPhpName()));
+				str_replace('.', '/', $module->getSlug()), NameUtils::dasherize($model->getPhpName()));
 			$file = new File($filename);
 			$file->write($contents);
 			$output->writeln(sprintf('Model <info>%s</info> written at <info>%s</info>', 

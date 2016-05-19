@@ -41,7 +41,7 @@ class EmberModelGenerator extends AbstractCodeGenerator {
 				continue;
 			}
 			
-			if ($col->isForeignKey()) {
+			if ($col->isForeignKey() || $col->isPrimaryKey()) {
 				continue;
 			}
 				
