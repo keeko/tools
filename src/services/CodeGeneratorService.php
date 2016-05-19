@@ -16,26 +16,18 @@ class CodeGeneratorService extends AbstractService {
 	private $codegen;
 	
 	public function getCodegenFile() {
-		$basepath = dirname($this->project->getComposerFileName());
-		return $basepath . '/codegen.json';
+		return $this->project->getCodegenFileName();
 	}
 	
 	/**
-	 * Loads the contents from codegen.json into a collection
+	 * Returns codegen from project
 	 *
 	 * @throws JsonEmptyException
 	 * @throws \RuntimeException
 	 * @return CodegenSchema
 	 */
 	public function getCodegen() {
-		if ($this->codegen === null) {
-			$file = new File($this->getCodegenFile());
-			$this->codegen = $file->exists() 
-				? CodegenSchema::fromFile($this->getCodegenFile())
-				: new CodegenSchema();
-		}
-		
-		return $this->codegen;
+		return $this->project->getCodegen();
 	}
 	
 	/**

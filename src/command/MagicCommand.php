@@ -51,6 +51,8 @@ class MagicCommand extends AbstractKeekoCommand {
 		}
 		
 		if ($package->getType() === 'keeko-module') {
+			$this->runCommand('generate:serializer', $args);
+			$this->runCommand('generate:domain', $args);
 			$this->runCommand('generate:action', $args);
 			$this->runCommand('generate:response', $args);
 			$this->runCommand('generate:api', $args);

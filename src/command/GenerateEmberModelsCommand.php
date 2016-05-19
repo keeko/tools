@@ -43,7 +43,8 @@ class GenerateEmberModelsCommand extends AbstractKeekoCommand {
 			throw new \RuntimeException('Package must be of type `keeko-module`');
 		}
 		$module = $project->getPackage()->getKeeko()->getModule();
-		$models = $this->getModels();
+		$this->modelService->read($project);
+		$models = $this->modelService->getModels();
 		$generator = new EmberModelGenerator($this->service, $project);
 		$output = $this->io->getOutput();
 		
@@ -56,24 +57,6 @@ class GenerateEmberModelsCommand extends AbstractKeekoCommand {
 			$output->writeln(sprintf('Model <info>%s</info> written at <info>%s</info>', 
 				$model->getOriginCommonName(), $filename));
 		}
-	}
-	
-	private function getModels() {
-		$input = $this->io->getInput();
-		$project = $this->getProject();
-		if ($project->hasSchemaFile()) {
-			$input->setOption('schema', $project->getSchemaFileName());
-		}
-		
-		$models = [];
-		$database = $this->modelService->getDatabase();
-		foreach ($database->getTables() as $table) {
-			if ($table->getNamespace() == $database->getNamespace() && !$table->isCrossRef()) {
-				$models[] = $table;
-			}
-		}
-		
-		return $models;
 	}
 	
 	private function getProject($packageName = null) {

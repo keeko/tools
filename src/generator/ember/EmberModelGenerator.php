@@ -8,6 +8,7 @@ use keeko\tools\model\Project;
 use keeko\framework\schema\CodegenSchema;
 use keeko\framework\utils\NameUtils;
 use phootwork\collection\Set;
+use keeko\tools\model\Relationship;
 
 class EmberModelGenerator extends AbstractCodeGenerator {
 	
@@ -37,6 +38,10 @@ class EmberModelGenerator extends AbstractCodeGenerator {
 		$filter = $this->getColumnFilter($codegen, $model);
 		foreach ($model->getColumns() as $col) {
 			if (in_array($col, $filter)) {
+				continue;
+			}
+			
+			if ($col->isForeignKey()) {
 				continue;
 			}
 				
@@ -77,18 +82,11 @@ class EmberModelGenerator extends AbstractCodeGenerator {
 		
 		foreach ($relationships->getAll() as $relationship) {
 			$prop = NameUtils::toCamelCase($relationship->getRelatedTypeName());
-			$type = NameUtils::dasherize($relationship->getForeign()->getOriginCommonName());
+			$type = $relationship->getRelatedPluralTypeName();
 			$slug = $this->getSlug($relationship->getForeign());
 			
 			// check one-to-one
-			$oneToOne = false;
-			if ($relationship->getType() == 'one') {
-				$foreign = $relationship->getForeign();
-				$rel = $this->modelService->getRelationship($foreign, $model->getOriginCommonName());
-				$oneToOne = $rel != null;
-			}
-			
-			if ($oneToOne) {
+			if ($relationship->getType() == Relationship::ONE_TO_ONE) {
 				$value = sprintf('belongsTo(\'%s/%s\')', $slug, $type);
 				$imports->add('belongsTo');
 			} else {

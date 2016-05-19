@@ -1,2 +1,2 @@
-$relationship = new Relationship(new Collection($model->get{{ getter }}(), {{ class }}::getSerializer()));
-return $this->addRelationshipSelfLink($relationship, $model, '{{ related }}');
+$relationship = new Relationship(new Collection($model->get{{ related }}(), {{ class }}::getSerializer()));
+return $this->addRelationshipSelfLink($relationship, $model, '{{ related_type }}');

@@ -1,6 +1,6 @@
 $serializer = {{ class }}::getSerializer();
-$relationship = new Relationship(new Resource($model->get{{ ref }}(), $serializer));
+$relationship = new Relationship(new Resource($model->get{{ related }}(), $serializer));
 $relationship->setLinks([
 	'related' => '%apiurl%' . $serializer->getType(null) . '/' . $serializer->getId($model)
 ]);
-return $this->addRelationshipSelfLink($relationship, $model, '{{ related }}');
+return $this->addRelationshipSelfLink($relationship, $model, '{{ related_type }}');

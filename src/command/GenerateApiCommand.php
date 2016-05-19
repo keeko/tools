@@ -12,8 +12,12 @@ use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use keeko\tools\model\Relationship;
 
 class GenerateApiCommand extends AbstractKeekoCommand {
+	
+	private $needsResourceIdentifier = false;
+	private $needsPagedMeta = false;
 
 	protected function configure() {
 		$this
@@ -97,6 +101,7 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 	protected function generateRelationshipOperation(Paths $paths, $actionName) {
 		$this->logger->notice('Generating Relationship Operation for: ' . $actionName);
 		$prefix = substr($actionName, 0, strrpos($actionName, 'relationship') + 12);
+		$suffix = substr($actionName, strrpos($actionName, 'relationship') + 13);
 		$module = $this->packageService->getModule();
 
 		// test for to-many relationship:
@@ -115,28 +120,33 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 			return;
 		}
 		
-		// find model names
+		// find model name
+		$codegen = $this->codegenService->getCodegen();
+		$excluded = $codegen->getExcludedApi();
 		$modelName = substr($actionName, 0, strpos($actionName, 'to') - 1);
+		if ($excluded->contains($modelName)) {
+			return;
+		}
+		
+		// find related name
 		$start = strpos($actionName, 'to') + 3;
 		$relatedName = NameUtils::dasherize(substr($actionName, $start, strpos($actionName, 'relationship') - 1 - $start));
 		$model = $this->modelService->getModel($modelName);
 		$relationship = $this->modelService->getRelationship($model, $relatedName);
+		if ($relationship === null) {
+			return;
+		}
 		$foreignModelName = $relationship->getForeign()->getOriginCommonName();
-		
-		// stop, if one of the models is excluded from api
-		$codegen = $this->codegenService->getCodegen();
-		$excluded = $codegen->getExcludedModels();
-		if ($excluded->contains($modelName) || $excluded->contains($foreignModelName)) {
+		if ($excluded->contains($foreignModelName)) {
 			return;
 		}
 		
+		// continue if neither model nor related model is excluded
 		$action = $this->packageService->getAction($actionName);
 		$type = substr($actionName, strrpos($actionName, '-') + 1);
 		$method = $this->getMethod($type);
 		$endpoint = '/' . NameUtils::pluralize(NameUtils::dasherize($modelName)) . '/{id}/relationship/' . 
-			($single 
-				? NameUtils::dasherize($relatedName) 
-				: NameUtils::pluralize(NameUtils::dasherize($relatedName)));
+			NameUtils::dasherize($single ? $relatedName : NameUtils::pluralize($relatedName));
 
 		$path = $paths->get($endpoint);
 		$method = $this->getMethod($type);
@@ -157,12 +167,50 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		$id->setRequired(true);
 		$id->setType('integer');
 		
+		if ($suffix == 'add' || $suffix == 'update') {
+			$body = $params->getByName('body');
+			$body->setName('body');
+			$body->setIn('body');
+			$body->setDescription(sprintf('%ss %s', ucfirst($suffix), $relatedName));
+			$body->setRequired(true);
+			
+			$props = $body->getSchema()->setType('object')->getProperties();
+			$data = $props->get('data');
+			
+			if ($single) {
+				$data->setRef('#/definitions/ResourceIdentifier');
+			} else if ($many) {
+				$data
+					->setType('array')
+					->getItems()->setRef('#/definitions/ResourceIdentifier');
+			}
+		}
+		
 		// response
+		$ok = $responses->get('200');
+		$ok->setDescription('Retrieve ' . $relatedName . ' from ' . $modelName);
+		$props = $ok->getSchema()->setType('object')->getProperties();
+		$links = $props->get('links')->setType('object')->getProperties();
+		$links->get('self')->setType('string');
+		if ($single) {
+			$links->get('related')->setType('string');
+		}
+		$data = $props->get('data');
+		if ($single) {
+			$data->setType('object')->setRef('#/definitions/ResourceIdentifier');
+		} else if ($many) {
+			$data
+				->setType('array')
+				->getItems()->setRef('#/definitions/ResourceIdentifier');
+		}
+		
 		$invalid = $responses->get('400');
 		$invalid->setDescription('Invalid ID supplied');
+		$invalid->getSchema()->setRef('#/definitions/Errors');
 		
 		$notfound = $responses->get('404');
 		$notfound->setDescription(sprintf('No %s found', $modelName));
+		$notfound->getSchema()->setRef('#/definitions/Errors');
 	}
 	
 	protected function generateCRUDOperation(Paths $paths, $actionName) {
@@ -177,7 +225,7 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 			return;
 		}
 		
-		if ($codegen->getExcludedModels()->contains($modelName)) {
+		if ($codegen->getExcludedApi()->contains($modelName)) {
 			return;
 		}
 	
@@ -189,13 +237,13 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		switch ($type) {
 			case 'list':
 			case 'create':
-				$endpoint = '/' . $modelPluralName;
+				$endpoint = '/' . NameUtils::dasherize($modelPluralName);
 				break;
 	
 			case 'read':
 			case 'update':
 			case 'delete':
-				$endpoint = '/' . $modelPluralName . '/{id}';
+				$endpoint = '/' . NameUtils::dasherize($modelPluralName) . '/{id}';
 				break;
 	
 			default:
@@ -267,12 +315,12 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 			// response
 			$invalid = $responses->get('400');
 			$invalid->setDescription('Invalid ID supplied');
+			$invalid->getSchema()->setRef('#/definitions/Errors');
 				
 			$notfound = $responses->get('404');
 			$notfound->setDescription(sprintf('No %s found', $modelName));
+			$notfound->getSchema()->setRef('#/definitions/Errors');
 		}
-	
-		// response - @TODO Error model
 	}
 	
 	private function getMethod($type) {
@@ -292,12 +340,8 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 	protected function generateDefinitions(Swagger $swagger) {
 		$definitions = $swagger->getDefinitions();
 		
-		// general definitions
-		$this->generatePagedMeta($definitions);
-		$this->generateResourceIdentifier($definitions); 
-
 		// models
-		$modelName = $this->modelService->getModelName();
+		$modelName = $this->io->getInput()->getOption('model');
 		if ($modelName !== null) {
 			$model = $this->modelService->getModel($modelName);
 			$this->generateDefinition($definitions, $model);
@@ -306,20 +350,41 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 				$this->generateDefinition($definitions, $model);
 			}
 		}
+		
+		// general definitions
+		$this->generateErrorDefinition($definitions);
+		$this->generatePagedMeta($definitions);
+		$this->generateResourceIdentifier($definitions);
+	}
+	
+	protected function generateErrorDefinition(Definitions $definitions) {
+		$definitions->get('Errors')->setType('array')->getItems()->setRef('#/definitions/Error');
+		
+		$error = $definitions->get('Error')->setType('object')->getProperties();
+		$error->get('id')->setType('string');
+		$error->get('status')->setType('string');
+		$error->get('code')->setType('string');
+		$error->get('title')->setType('string');
+		$error->get('detail')->setType('string');
+		$error->get('meta')->setType('object');
 	}
 	
 	protected function generatePagedMeta(Definitions $definitions) {
-		$props = $definitions->get('PagedMeta')->setType('object')->getProperties();
-		$names = ['total', 'first', 'next', 'previous', 'last'];
-		
-		foreach ($names as $name) {
-			$props->get($name)->setType('integer');
+		if ($this->needsPagedMeta) {
+			$props = $definitions->get('PagedMeta')->setType('object')->getProperties();
+			$names = ['total', 'first', 'next', 'previous', 'last'];
+			
+			foreach ($names as $name) {
+				$props->get($name)->setType('integer');
+			}
 		}
 	}
 	
 	protected function generateResourceIdentifier(Definitions $definitions) {
-		$props = $definitions->get('ResourceIdentifier')->setType('object')->getProperties();
-		$this->generateIdentifier($props);
+		if ($this->needsResourceIdentifier) {
+			$props = $definitions->get('ResourceIdentifier')->setType('object')->getProperties();
+			$this->generateIdentifier($props);
+		}
 	}
 	
 	protected function generateIdentifier(Definitions $props) {
@@ -339,11 +404,12 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		$codegen = $this->codegenService->getCodegen();
 		
 		// stop if model is excluded
-		if ($codegen->getExcludedModels()->contains($model->getOriginCommonName())) {
+		if ($codegen->getExcludedApi()->contains($model->getOriginCommonName())) {
 			return;
 		}
 		
 		// paged model
+		$this->needsPagedMeta = true;
 		$pagedModel = 'Paged' . NameUtils::pluralize($modelObjectName);
 		$paged = $definitions->get($pagedModel)->setType('object')->getProperties();
 		$paged->get('data')
@@ -412,42 +478,46 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 	}
 	
 	protected function hasRelationships(Table $model) {
-		return (count($model->getForeignKeys()) + count($model->getCrossFks())) > 0;
+		$relationships = $this->modelService->getRelationships($model);
+		return $relationships->size() > 0;
 	}
 	
 	protected function generateModelRelationships(Definitions $props, Table $model, $write = false) {
 		$relationships = $this->modelService->getRelationships($model);
 		
-		// to-one
-		foreach ($relationships->getOne() as $one) {
-			$typeName = $one->getRelatedTypeName();
-			$rel = $props->get($typeName)->setType('object')->getProperties();
-			
-			// links
-			if (!$write) {
-				$links = $rel->get('links')->setType('object')->getProperties();
-				$links->get('self')->setType('string');
+		foreach ($relationships->getAll() as $relationship) {
+			// one-to-one
+			if ($relationship->getType() == Relationship::ONE_TO_ONE) {
+				$typeName = $relationship->getRelatedTypeName();
+				$rel = $props->get($typeName)->setType('object')->getProperties();
+				
+				// links
+				if (!$write) {
+					$links = $rel->get('links')->setType('object')->getProperties();
+					$links->get('self')->setType('string');
+				}
+				
+				// data
+				$this->generateResourceData($rel);
 			}
-			
-			// data
-			$this->generateResourceData($rel);
-		}
 		
-		// to-many
-		foreach ($relationships->getMany() as $many) {
-			$typeName = $many->getRelatedTypeName();
-			$rel = $props->get($typeName)->setType('object')->getProperties();
-			
-			// links
-			if (!$write) {
-				$links = $rel->get('links')->setType('object')->getProperties();
-				$links->get('self')->setType('string');
+			// ?-to-many
+			else {
+				$typeName = $relationship->getRelatedPluralTypeName();
+				$rel = $props->get($typeName)->setType('object')->getProperties();
+				
+				// links
+				if (!$write) {
+					$links = $rel->get('links')->setType('object')->getProperties();
+					$links->get('self')->setType('string');
+				}
+				
+				// data
+				$this->needsResourceIdentifier = true;
+				$rel->get('data')
+					->setType('array')
+					->getItems()->setRef('#/definitions/ResourceIdentifier');
 			}
-			
-			// data
-			$rel->get('data')
-				->setType('array')
-				->getItems()->setRef('#/definitions/ResourceIdentifier');
 		}
 	}
 

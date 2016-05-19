@@ -1,6 +1,0 @@
-foreach ($data as $item) {
-	${{ ref_var }} = {{ ref }}Query::create()->findOneById($item['id']);
-	if (${{ ref_var }} !== null) {
-		$model->remove{{ ref }}(${{ ref_var }});
-	}
-}

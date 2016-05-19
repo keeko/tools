@@ -7,7 +7,6 @@ use gossi\codegen\model\PhpTrait;
 use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\serializer\AbstractSerializerGenerator;
 use Propel\Generator\Model\Table;
-use keeko\tools\model\ManyRelationship;
 use keeko\tools\model\Relationship;
 
 class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
@@ -25,7 +24,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		$this->generateIdentifyingMethods($class, $model);
 		$this->generateAttributeMethods($class, $model);
 		$this->generateHydrateMethod($class, $model);
-// 		$this->generateRelationshipMethods($class, $model);
+		$this->generateRelationshipMethods($class, $model);
 		
 		return $class;
 	}
@@ -163,46 +162,42 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		}
 		
 		foreach ($relationships->getAll() as $rel) {
-			
-			// to-many
-			if ($rel instanceof ManyRelationship) {
+			// one-to-one
+			if ($rel->getType() == Relationship::ONE_TO_ONE) {
 				$foreign = $rel->getForeign();
 				$relatedName = $rel->getRelatedName();
-				
 				$typeName = $rel->getRelatedTypeName();
-				$method = NameUtils::toCamelCase($typeName);
+				$method = NameUtils::toCamelCase($relatedName);
+				$fields[$typeName] = $foreign->getPhpName() . '::getSerializer()->getType(null)';
+				$class->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName());
+				$class->addUseStatement('Tobscure\\JsonApi\\Resource');
+			
+				// read
+				$body = $this->twig->render('to-one-read.twig', [
+					'class' => $foreign->getPhpName(),
+					'related' => $relatedName,
+					'related_type' => $typeName
+				]);
+			}
+		
+			// ?-to-many
+			else {
+				$foreign = $rel->getForeign();
+				$typeName = $rel->getRelatedPluralTypeName();
+				$method = NameUtils::toCamelCase($rel->getRelatedPluralName());
 				$fields[$typeName] = $foreign->getPhpName() . '::getSerializer()->getType(null)';
 				$class->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName());
 				$class->addUseStatement('Tobscure\\JsonApi\\Collection');
 				
 				// read
 				$body = $this->twig->render('to-many-read.twig', [
-					'getter' => NameUtils::pluralize($relatedName),
-					'class' => $relatedName,
-					'related' => $typeName
-				]);
-			}
-			
-			// to-one
-			else if ($rel instanceof Relationship) {
-				$foreign = $rel->getForeign();
-				$relatedName = $rel->getRelatedName();
-				
-				$typeName = $rel->getRelatedTypeName();
-				$method = NameUtils::toCamelCase($typeName);
-				$fields[$typeName] = $foreign->getPhpName() . '::getSerializer()->getType(null)';
-				$class->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName());
-				$class->addUseStatement('Tobscure\\JsonApi\\Resource');
-				
-				// read
-				$body = $this->twig->render('to-one-read.twig', [
-					'ref' => $relatedName,
 					'class' => $foreign->getPhpName(),
-					'related' => $typeName
+					'related' => $rel->getRelatedPluralName(),
+					'related_type' => $rel->getRelatedTypeName()
 				]);
 			}
 			
-			// needs to go down
+			// set read method on class
 			$class->setMethod(PhpMethod::create($method)
 				->addParameter(PhpParameter::create('model'))
 				->setBody($body)
