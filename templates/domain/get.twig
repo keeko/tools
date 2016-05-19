@@ -4,7 +4,7 @@ if ($this->pool === null) {
 	return $this->pool->get($id);
 }
 
-${{ model }} = {{ class }}Query::create()->findOneById($id);
-$this->pool->set($id, ${{ model }});
+$model = {{ class }}Query::create()->findOneById($id);
+$this->pool->set($id, $model);
 
-return ${{ model }};
+return $model;

@@ -31,7 +31,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 	
 	protected function generateIdentifyingMethods(PhpTrait $class, Table $model) {
 		$package = $this->packageService->getPackage();
-		$type = sprintf('%s/%s', $package->getCleanName(), NameUtils::dasherize($model->getOriginCommonName()));
+		$type = sprintf('%s/%s', $package->getKeeko()->getModule()->getSlug(), NameUtils::dasherize($model->getOriginCommonName()));
 		
 		$class->setMethod(PhpMethod::create('getId')
 			->addParameter(PhpParameter::create('model'))

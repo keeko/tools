@@ -68,7 +68,11 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		$class->setNamespace(str_replace('model', 'event', $model->getNamespace()));
 		$class->setName($model->getPhpName() . 'Event');
 		$class->setParentClassName('Event');
-		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName());
+		if ($model->getPhpName() == 'Event') {
+			$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName(), 'Model');
+		} else {
+			$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName());
+		}
 		$class->addUseStatement('Symfony\Component\EventDispatcher\Event');
 		
 		// constants
@@ -116,8 +120,9 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		);
 		
 		// constructor
+		$type = $model->getPhpName() == 'Event' ? 'Model' : $model->getPhpName();
 		$class->setMethod(PhpMethod::create('__construct')
-			->addParameter(PhpParameter::create($modelVariableName)->setType($model->getPhpName()))
+			->addParameter(PhpParameter::create($modelVariableName)->setType($type))
 			->setBody('$this->' . $modelVariableName . ' = $' . $modelVariableName .';')
 		);
 		
@@ -140,7 +145,6 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		$trait->setMethod(PhpMethod::create('create')
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('create.twig', [
-				'model' => NameUtils::toCamelCase($model->getOriginCommonName()),
 				'class' => $model->getPhpName()
 			]))
 			->setDescription('Creates a new ' . $model->getPhpName() . ' with the provided data')
@@ -158,7 +162,6 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('update.twig', [
-				'model' => NameUtils::toCamelCase($model->getOriginCommonName()),
 				'class' => $model->getPhpName()
 			]))
 			->setDescription('Updates a ' . $model->getPhpName() . ' with the given id' .
@@ -175,7 +178,6 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		$trait->setMethod(PhpMethod::create('delete')
 			->addParameter(PhpParameter::create('id'))
 			->setBody($this->twig->render('delete.twig', [
-				'model' => NameUtils::toCamelCase($model->getOriginCommonName()),
 				'class' => $model->getPhpName()
 			]))
 			->setDescription('Deletes a ' . $model->getPhpName() . ' with the given id')
@@ -186,15 +188,12 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 	protected function generateToOneRelationshipSet(PhpTrait $trait, Relationship $relationship) {
 		$model = $relationship->getModel();
 		$name = $relationship->getRelatedName();
-		$localId = NameUtils::toCamelCase($name) . 'Id';
 		$trait->setMethod(PhpMethod::create('set' . $name . 'Id')
 			->setDescription(str_replace('{foreign}', $relationship->getRelatedName(), 'Sets the {foreign} id'))
 			->addParameter(PhpParameter::create('id'))
-			->addParameter(PhpParameter::create($localId))
+			->addParameter(PhpParameter::create('relatedId'))
 			->setBody($this->twig->render('to-one-set.twig', [
-				'model' => NameUtils::toCamelCase($model->getOriginCommonName()),
 				'class' => $model->getPhpName(),
-				'fk_id' => $localId,
 				'local' => $relationship->getForeignKey()->getLocalColumn()->getPhpName(),
 				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedName()))
 			]))
@@ -213,10 +212,8 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('to-many-add.twig', [
-				'model' => $model->getCamelCaseName(),
 				'class' => $model->getPhpName(),			
 				'related' => $relationship->getRelatedName(),
-				'foreign_model' => $foreign->getCamelCaseName(),
 				'foreign_class' => $foreign->getPhpName(),
 				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
 			]))
@@ -235,10 +232,8 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('to-many-remove.twig', [
-				'model' => $model->getCamelCaseName(),
 				'class' => $model->getPhpName(),
 				'related' => $relationship->getRelatedName(),
-				'foreign_model' => $foreign->getCamelCaseName(),
 				'foreign_class' => $foreign->getPhpName(),
 				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
 			]))
@@ -257,11 +252,9 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('one-to-many-update.twig', [
-				'model' => $model->getCamelCaseName(),
 				'class' => $model->getPhpName(),
 				'related' => $relationship->getRelatedName(),
 				'reverse_related' => $relationship->getReverseRelatedName(),
-				'foreign_model' => $foreign->getCamelCaseName(),
 				'foreign_class' => $foreign->getPhpName(),
 				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
 			]))
@@ -282,11 +275,9 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('many-to-many-update.twig', [
-				'model' => $model->getCamelCaseName(),
 				'class' => $model->getPhpName(),
 				'related' => $relationship->getRelatedName(),
 				'reverse_related' => $relationship->getReverseRelatedName(),
-				'foreign_model' => $foreign->getCamelCaseName(),
 				'foreign_class' => $foreign->getPhpName(),
 				'middle_class' => $middle->getPhpName(),
 				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))

@@ -1,9 +1,9 @@
 // read
-${{ model }} = $this->get($id);
+$model = $this->get($id);
 
 // check existence
-if (${{ model }} === null) {
+if ($model === null) {
 	return new NotFound(['message' => '{{ class }} not found.']);
 }
 
-return new Found(['model' => ${{ model }}]);
+return new Found(['model' => $model]);

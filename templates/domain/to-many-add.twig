@@ -1,7 +1,7 @@
 // find
-${{ model }} = $this->get($id);
+$model = $this->get($id);
 
-if (${{ model }} === null) {
+if ($model === null) {
 	return new NotFound(['message' => '{{ class }} not found.']);
 }
  
@@ -11,8 +11,8 @@ foreach ($data as $entry) {
 	if (!isset($entry['id'])) {
 		$errors[] = 'Missing id for {{ foreign_class }}';
 	}
-	${{ foreign_model }} = {{ foreign_class }}Query::create()->findOneById($entry['id']);
-	${{ model }}->add{{ related }}(${{ foreign_model }});
+	$related = {{ foreign_class }}Query::create()->findOneById($entry['id']);
+	$model->add{{ related }}($related);
 }
 
 if (count($errors) > 0) {
@@ -20,16 +20,16 @@ if (count($errors) > 0) {
 }
 
 // save and dispatch events
-$event = new {{ class }}Event(${{ model }});
+$event = new {{ class }}Event($model);
 $dispatcher = $this->getServiceContainer()->getDispatcher();
 $dispatcher->dispatch({{ class }}Event::PRE_{{ const }}_ADD, $event);
 $dispatcher->dispatch({{ class }}Event::PRE_SAVE, $event);
-$rows = ${{ model }}->save();
+$rows = $model->save();
 $dispatcher->dispatch({{ class }}Event::POST_{{ const }}_ADD, $event);
 $dispatcher->dispatch({{ class }}Event::POST_SAVE, $event);
 
 if ($rows > 0) {
-	return Updated(['model' => ${{ model }}]);
+	return Updated(['model' => $model]);
 }
 
-return NotUpdated(['model' => ${{ model }}]);
+return NotUpdated(['model' => $model]);

@@ -19,7 +19,7 @@ if (!empty($filter)) {
 }
 
 // paginate
-${{ model }} = $query->paginate($page, $size);
+$model = $query->paginate($page, $size);
 
 // run response
-return new Found(['model' => ${{ model }}]);
+return new Found(['model' => $model]);

@@ -1,19 +1,19 @@
 // find
-${{ model }} = $this->get($id);
+$model = $this->get($id);
 
-if (${{ model }} === null) {
+if ($model === null) {
 	return new NotFound(['message' => '{{ class }} not found.']);
 }
 
 // delete
-$event = new {{ class }}Event(${{ model }});
+$event = new {{ class }}Event($model);
 $dispatcher = $this->getServiceContainer()->getDispatcher();
 $dispatcher->dispatch({{ class }}Event::PRE_DELETE, $event);
-${{ model }}->delete();
+$model->delete();
 
-if (${{ model }}->isDeleted()) {
+if ($model->isDeleted()) {
 	$dispatcher->dispatch({{ class }}Event::POST_DELETE, $event);
-	return new Deleted(['model' => ${{ model }}]);
+	return new Deleted(['model' => $model]);
 }
 
 return new NotDeleted(['message' => 'Could not delete {{ class }}']);

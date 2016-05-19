@@ -65,7 +65,6 @@ class ReadOnlyModelDomainTraitGenerator extends AbstractDomainGenerator {
 		$trait->setMethod(PhpMethod::create('read')
 			->addParameter(PhpParameter::create('id'))
 			->setBody($this->twig->render('read.twig', [
-				'model' => NameUtils::toCamelCase($model->getOriginCommonName()),
 				'class' => $model->getPhpName()
 			]))
 			->setDescription('Returns one ' . $model->getPhpName() . ' with the given id')
@@ -83,7 +82,6 @@ class ReadOnlyModelDomainTraitGenerator extends AbstractDomainGenerator {
 				->setType('Parameters')
 			)
 			->setBody($this->twig->render('paginate.twig', [
-				'model' => NameUtils::toCamelCase($model->getOriginCommonName()),
 				'class' => $model->getPhpName()
 			]))
 			->setDescription('Returns a paginated result')

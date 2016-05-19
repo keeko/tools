@@ -1,32 +1,32 @@
 // find
-${{ model }} = $this->get($id);
+$model = $this->get($id);
 
-if (${{ model }} === null) {
+if ($model === null) {
 	return new NotFound(['message' => '{{ class }} not found.']);
 }
 
 // hydrate
 $serializer = {{ class }}::getSerializer();
-${{ model }} = $serializer->hydrate(${{ model }}, $data);
+$model = $serializer->hydrate($model, $data);
 
 // validate
 $validator = $this->getValidator();
-if ($validator !== null && !$validator->validate(${{ model }})) {
+if ($validator !== null && !$validator->validate($model)) {
 	return new NotValid([
 		'errors' => $validator->getValidationFailures()
 	]);
 }
 
 // dispatch
-$event = new {{ class }}Event(${{ model }});
+$event = new {{ class }}Event($model);
 $dispatcher = $this->getServiceContainer()->getDispatcher();
 $dispatcher->dispatch({{ class }}Event::PRE_UPDATE, $event);
 $dispatcher->dispatch({{ class }}Event::PRE_SAVE, $event);
-$rows = ${{ model }}->save();
+$rows = $model->save();
 $dispatcher->dispatch({{ class }}Event::POST_UPDATE, $event);
 $dispatcher->dispatch({{ class }}Event::POST_SAVE, $event);
 
-$payload = ['model' => ${{ model }}];
+$payload = ['model' => $model];
 
 if ($rows === 0) {
 	return new NotUpdated($payload);
