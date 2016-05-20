@@ -1,0 +1,8 @@
+ => function ($value) use ($service) {
+	if (class_exists('{{ class }}')) {
+		$normalizer = new {{ class }}();
+		$normalizer->setServiceContainer($service);
+		return $normalizer->normalize($value);
+	}
+	return $value;
+}

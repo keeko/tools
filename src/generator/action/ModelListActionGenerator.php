@@ -12,6 +12,9 @@ class ModelListActionGenerator extends AbstractModelActionGenerator {
 	protected function addMethods(PhpClass $class, ActionSchema $action) {
 		$modelName = $this->modelService->getModelNameByAction($action);
 		$model = $this->modelService->getModel($modelName);
+		
+		// method: configureParams(OptionsResolver $resolver)
+		$this->addConfigureParamsMethod($class, $this->twig->render('list-configureParams.twig'));
 
 		// method: run(Request $request)
 		$class->addUseStatement('keeko\\framework\\utils\\Parameters');

@@ -4,7 +4,7 @@ namespace keeko\tools\ui;
 use keeko\tools\ui\AbstractUI;
 use Symfony\Component\Console\Question\Question;
 
-class EmberModelsUI extends AbstractUI {
+class EmberUI extends AbstractUI {
 	
 	public function show() {
 		$input = $this->io->getInput();

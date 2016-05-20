@@ -1,23 +1,13 @@
 <?php
 namespace keeko\tools\generator\ember;
 
-use keeko\tools\generator\AbstractCodeGenerator;
-use Propel\Generator\Model\Table;
-use keeko\tools\services\CommandService;
-use keeko\tools\model\Project;
 use keeko\framework\schema\CodegenSchema;
 use keeko\framework\utils\NameUtils;
-use phootwork\collection\Set;
 use keeko\tools\model\Relationship;
+use phootwork\collection\Set;
+use Propel\Generator\Model\Table;
 
-class EmberModelGenerator extends AbstractCodeGenerator {
-	
-	private $prj;
-	
-	public function __construct(CommandService $service, Project $project) {
-		parent::__construct($service);
-		$this->prj = $project;
-	}
+class EmberModelGenerator extends AbstractEmberGenerator {
 	
 	public function generate(Table $model) {
 		$class = new EmberClassGenerator('Model');
@@ -64,7 +54,7 @@ class EmberModelGenerator extends AbstractCodeGenerator {
 					$value = 'attr(\'boolean\')';
 					break;
 						
-				case 'DATE':
+				case 'TIMESTAMP':
 					$value = 'attr(\'date\')';
 					break;
 						
@@ -101,28 +91,6 @@ class EmberModelGenerator extends AbstractCodeGenerator {
 			$import = sprintf('{ %s }', implode(', ', $imports->toArray()));
 			$class->addImport($import, 'ember-data/relationships');
 		}
-	}
-	
-	protected function getSlug(Table $model) {
-		$namespace = $model->getNamespace();
-		$parts = explode('\\', $namespace);
-		
-		if ($parts[0] == 'keeko') {
-			return $parts[1];
-		}
-		
-		return $parts[0] . '.' . $parts[1];
-	}
-	
-	/**
-	 * @return CodegenSchema
-	 */
-	private function getCodegen() {
-		if ($this->prj->hasCodegenFile()) {
-			return CodegenSchema::fromFile($this->prj->getCodegenFileName());
-		}
-		
-		return new CodegenSchema();
 	}
 	
 	private function getColumnFilter(CodegenSchema $codegen, Table $model) {

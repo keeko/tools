@@ -89,21 +89,23 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 			]))
 		);
 	}
-	
+
 	protected function generateHydrateMethod(PhpTrait $trait, Table $model) {
 		if ($model->isReadOnly()) {
 			$body = $this->twig->render('hydrate-readonly.twig');
 		} else {
 			$trait->addUseStatement('keeko\\framework\\utils\\HydrateUtils');
 			$modelName = $model->getOriginCommonName();
-			$conversions = $this->codegenService->getCodegen()->getWriteConversion($modelName);
+			$normalizer = $this->codegenService->getCodegen()->getNormalizer($modelName);
 			$fields = $this->codegenService->getWriteFields($modelName);
 			$code = '';
 			
 			foreach ($fields as $field) {
 				$code .= sprintf("'%s'", NameUtils::dasherize($field));
-				if (isset($conversions[$field])) {
-					$code .= ' => function($v) {' . "\n\t" . 'return ' . $conversions[$field] . ';' . "\n" . '}';
+				if ($normalizer->has($field)) {
+					$code .= $this->twig->render('normalizer.twig', [
+						'class' => $normalizer->get($field)
+					]);
 				}
 		
 				$code .= ', ';
@@ -115,7 +117,8 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 			
 			$code = sprintf('[%s]', $code);
 			$body = $this->twig->render('hydrate.twig', [
-				'code' => $code
+				'code' => $code,
+				'normalizer' => $normalizer->size() > 0
 			]);
 			
 			$trait->setMethod(PhpMethod::create('hydrateRelationships')

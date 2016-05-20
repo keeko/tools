@@ -2,19 +2,19 @@
 namespace keeko\tools\command;
 
 use keeko\framework\utils\NameUtils;
-use keeko\tools\generator\ember\EmberModelGenerator;
+use keeko\tools\generator\ember\EmberAbilitiesGenerator;
 use keeko\tools\model\Project;
 use keeko\tools\ui\EmberUI;
 use phootwork\file\File;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class GenerateEmberModelsCommand extends AbstractEmberCommand {
-
+class GenerateEmberAbilitiesCommand extends AbstractEmberCommand {
+	
 	protected function configure() {
 		$this
-			->setName('generate:ember:models')
-			->setDescription('Generates ember models');
+			->setName('generate:ember:abilities')
+			->setDescription('Generates ember abilities');
 	
 		parent::configure();
 	}
@@ -33,12 +33,12 @@ class GenerateEmberModelsCommand extends AbstractEmberCommand {
 		$module = $project->getPackage()->getKeeko()->getModule();
 		$this->modelService->read($project);
 		$models = $this->modelService->getModels();
-		$generator = new EmberModelGenerator($this->service, $project);
+		$generator = new EmberAbilitiesGenerator($this->service, $project);
 		$output = $this->io->getOutput();
 		
 		foreach ($models as $model) {
 			$contents = $generator->generate($model);
-			$filename = sprintf('%s/ember/app/models/%s/%s.js', $this->project->getRootPath(), 
+			$filename = sprintf('%s/ember/app/abilities/%s/%s.js', $this->project->getRootPath(), 
 				str_replace('.', '/', $module->getSlug()), NameUtils::dasherize($model->getPhpName()));
 			$file = new File($filename);
 			$file->write($contents);
@@ -46,4 +46,5 @@ class GenerateEmberModelsCommand extends AbstractEmberCommand {
 				$model->getOriginCommonName(), $filename));
 		}
 	}
+
 }

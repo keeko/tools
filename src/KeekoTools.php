@@ -14,6 +14,7 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use keeko\tools\command\GenerateEmberAbilitiesCommand;
 
 class KeekoTools extends Application {
 
@@ -47,6 +48,7 @@ class KeekoTools extends Application {
 		$cmds[] = new GenerateResponseCommand();
 		$cmds[] = new GenerateApiCommand();
 		$cmds[] = new GenerateEmberModelsCommand();
+		$cmds[] = new GenerateEmberAbilitiesCommand();
 		$cmds[] = new MagicCommand();
 
 		return $cmds;
