@@ -4,10 +4,10 @@ namespace keeko\tools\generator\responder;
 use gossi\codegen\model\PhpClass;
 use keeko\framework\schema\ActionSchema;
 
-class ModelListJsonResponderGenerator extends AbstractModelJsonResponderGenerator {
+class ModelPaginateJsonResponderGenerator extends AbstractModelJsonResponderGenerator {
 
 	protected function addMethods(PhpClass $class, ActionSchema $action) {
-		$this->generateGetPayloadMethods($class, $this->twig->render('model/getPayloadMethods-list.twig'));
+		$this->generateGetPayloadMethods($class, $this->twig->render('model/getPayloadMethods-paginate.twig'));
 
 		// method: found(Request $request, Found $payload) : JsonResponse
 		$modelName = $this->modelService->getModelNameByAction($action);
@@ -17,9 +17,10 @@ class ModelListJsonResponderGenerator extends AbstractModelJsonResponderGenerato
 			$class->addUseStatement($field->getNamespace() . '\\' . $field->getPhpName());
 		}
 		
+		$includes = $this->codegenService->arrayToCode($this->getRelationshipIncludes($model));
 		$found = $this->generatePayloadMethod('found', $this->twig->render('model/paginate.twig', [
 			'class' => $model->getPhpName(),
-			'includes' => $this->codegenService->arrayToCode($this->getRelationshipIncludes($model)),
+			'includes' => $includes,
 			'fields' => $this->getFieldsCode($fields)
 		]), 'Found');
 		
@@ -29,7 +30,6 @@ class ModelListJsonResponderGenerator extends AbstractModelJsonResponderGenerato
 		$class->addUseStatement('Tobscure\\JsonApi\\Collection');
 		$class->addUseStatement('Tobscure\\JsonApi\\Parameters');
 		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName());
-		
 	}
 
 }

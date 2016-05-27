@@ -13,6 +13,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use keeko\tools\model\Relationship;
+use keeko\tools\generator\Types;
 
 class GenerateApiCommand extends AbstractKeekoCommand {
 	
@@ -40,7 +41,7 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 	 * Checks whether api can be generated at all by reading composer.json and verify
 	 * all required information are available
 	 */
-	private function preCheck() {
+	private function check() {
 		$module = $this->packageService->getModule();
 		if ($module === null) {
 			throw new \DomainException('No module definition found in composer.json - please run `keeko init`.');
@@ -48,7 +49,7 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
-		$this->preCheck();
+		$this->check();
 		
 		// generate api
 		$api = new File($this->project->getApiFileName());
@@ -100,61 +101,40 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 
 	protected function generateRelationshipOperation(Paths $paths, $actionName) {
 		$this->logger->notice('Generating Relationship Operation for: ' . $actionName);
-		$prefix = substr($actionName, 0, strrpos($actionName, 'relationship') + 12);
-		$suffix = substr($actionName, strrpos($actionName, 'relationship') + 13);
-		$module = $this->packageService->getModule();
-
-		// test for to-many relationship:
-		$many = $module->hasAction($prefix . '-read') 
-			&& $module->hasAction($prefix . '-update')
-			&& $module->hasAction($prefix . '-add')
-			&& $module->hasAction($prefix . '-remove')
-		;
-		$single = $module->hasAction($prefix . '-read') 
-			&& $module->hasAction($prefix . '-update')
-			&& !$many
-		;
-		
-		if (!$many && !$single) {
-			$this->io->writeln(sprintf('<comment>Couldn\'t detect whether %s is a to-one or to-many relationship, skin generating endpoints</comment>', $actionName));
-			return;
-		}
-		
-		// find model name
-		$codegen = $this->codegenService->getCodegen();
-		$excluded = $codegen->getExcludedApi();
-		$modelName = substr($actionName, 0, strpos($actionName, 'to') - 1);
-		if ($excluded->contains($modelName)) {
-			return;
-		}
-		
-		// find related name
-		$start = strpos($actionName, 'to') + 3;
-		$relatedName = NameUtils::dasherize(substr($actionName, $start, strpos($actionName, 'relationship') - 1 - $start));
+		$parsed = $this->factory->getActionNameGenerator()->parseRelationship($actionName);
+		$type = $parsed['type'];
+		$modelName = $parsed['modelName'];
 		$model = $this->modelService->getModel($modelName);
-		$relationship = $this->modelService->getRelationship($model, $relatedName);
+		$relatedTypeName = NameUtils::dasherize($parsed['relatedName']);
+		$relationship = $this->modelService->getRelationship($model, $relatedTypeName);
+		
 		if ($relationship === null) {
 			return;
 		}
+
+		// see if either one of them is excluded
+		$relatedName = $relationship->getRelatedName();
 		$foreignModelName = $relationship->getForeign()->getOriginCommonName();
-		if ($excluded->contains($foreignModelName)) {
+		$excluded = $this->codegenService->getCodegen()->getExcludedApi();
+		if ($excluded->contains($modelName) || $excluded->contains($foreignModelName)) {
 			return;
 		}
 		
 		// continue if neither model nor related model is excluded
 		$action = $this->packageService->getAction($actionName);
-		$type = substr($actionName, strrpos($actionName, '-') + 1);
 		$method = $this->getMethod($type);
 		$endpoint = '/' . NameUtils::pluralize(NameUtils::dasherize($modelName)) . '/{id}/relationship/' . 
-			NameUtils::dasherize($single ? $relatedName : NameUtils::pluralize($relatedName));
+			NameUtils::dasherize($relationship->isOneToOne() 
+				? $relatedTypeName 
+				: NameUtils::pluralize($relatedTypeName));
 
 		$path = $paths->get($endpoint);
 		$method = $this->getMethod($type);
 		$operation = $path->getOperation($method);
 		$operation->setDescription($action->getTitle());
 		$operation->setOperationId($action->getName());
-		$operation->getTags()->clear();
-		$operation->getTags()->add(new Tag($this->package->getKeeko()->getModule()->getSlug()));
+// 		$operation->getTags()->clear();
+// 		$operation->getTags()->add(new Tag($this->package->getKeeko()->getModule()->getSlug()));
 		
 		$params = $operation->getParameters();
 		$responses = $operation->getResponses();
@@ -167,19 +147,19 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		$id->setRequired(true);
 		$id->setType('integer');
 		
-		if ($suffix == 'add' || $suffix == 'update') {
+		if ($type == Types::ADD || $type == Types::UPDATE) {
 			$body = $params->getByName('body');
 			$body->setName('body');
 			$body->setIn('body');
-			$body->setDescription(sprintf('%ss %s', ucfirst($suffix), $relatedName));
+			$body->setDescription(sprintf('%ss %s', ucfirst($type), $relatedName));
 			$body->setRequired(true);
 			
 			$props = $body->getSchema()->setType('object')->getProperties();
 			$data = $props->get('data');
 			
-			if ($single) {
+			if ($relationship->isOneToOne()) {
 				$data->setRef('#/definitions/ResourceIdentifier');
-			} else if ($many) {
+			} else {
 				$data
 					->setType('array')
 					->getItems()->setRef('#/definitions/ResourceIdentifier');
@@ -192,13 +172,13 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		$props = $ok->getSchema()->setType('object')->getProperties();
 		$links = $props->get('links')->setType('object')->getProperties();
 		$links->get('self')->setType('string');
-		if ($single) {
+		if ($relationship->isOneToOne()) {
 			$links->get('related')->setType('string');
 		}
 		$data = $props->get('data');
-		if ($single) {
+		if ($relationship->isOneToOne()) {
 			$data->setType('object')->setRef('#/definitions/ResourceIdentifier');
-		} else if ($many) {
+		} else {
 			$data
 				->setType('array')
 				->getItems()->setRef('#/definitions/ResourceIdentifier');
@@ -235,14 +215,14 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 	
 		// find path branch
 		switch ($type) {
-			case 'list':
-			case 'create':
+			case Types::PAGINATE:
+			case Types::CREATE:
 				$endpoint = '/' . NameUtils::dasherize($modelPluralName);
 				break;
 	
-			case 'read':
-			case 'update':
-			case 'delete':
+			case Types::READ:
+			case Types::UPDATE:
+			case Types::DELETE:
 				$endpoint = '/' . NameUtils::dasherize($modelPluralName) . '/{id}';
 				break;
 	
@@ -256,20 +236,20 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 		$operation = $path->getOperation($method);
 		$operation->setDescription($action->getTitle());
 		$operation->setOperationId($action->getName());
-		$operation->getTags()->clear();
-		$operation->getTags()->add(new Tag($this->package->getKeeko()->getModule()->getSlug()));
+// 		$operation->getTags()->clear();
+// 		$operation->getTags()->add(new Tag($this->package->getKeeko()->getModule()->getSlug()));
 	
 		$params = $operation->getParameters();
 		$responses = $operation->getResponses();
 	
 		switch ($type) {
-			case 'list':
+			case Types::PAGINATE:
 				$ok = $responses->get('200');
 				$ok->setDescription(sprintf('Array of %s', $modelPluralName));
 				$ok->getSchema()->setRef('#/definitions/' . 'Paged' . NameUtils::pluralize($modelObjectName));
 				break;
 	
-			case 'create':
+			case Types::CREATE:
 				// params
 				$body = $params->getByName('body');
 				$body->setName('body');
@@ -283,28 +263,28 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 				$ok->setDescription(sprintf('%s created', $modelName));
 				break;
 	
-			case 'read':
+			case Types::READ:
 				// response
 				$ok = $responses->get('200');
 				$ok->setDescription(sprintf('gets the %s', $modelName));
 				$ok->getSchema()->setRef('#/definitions/' . $modelObjectName);
 				break;
 	
-			case 'update':
+			case Types::UPDATE:
 				// response
 				$ok = $responses->get('200');
 				$ok->setDescription(sprintf('%s updated', $modelName));
 				$ok->getSchema()->setRef('#/definitions/' . $modelObjectName);
 				break;
 	
-			case 'delete':
+			case Types::DELETE:
 				// response
 				$ok = $responses->get('204');
 				$ok->setDescription(sprintf('%s deleted', $modelName));
 				break;
 		}
 	
-		if ($type == 'read' || $type == 'update' || $type == 'delete') {
+		if ($type == Types::READ || $type == Types::UPDATE || $type == Types::DELETE) {
 			// params
 			$id = $params->getByName('id');
 			$id->setIn('path');
@@ -325,13 +305,13 @@ class GenerateApiCommand extends AbstractKeekoCommand {
 	
 	private function getMethod($type) {
 		$methods = [
-			'list' => 'get',
-			'create' => 'post',
-			'read' => 'get',
-			'update' => 'patch',
-			'delete' => 'delete',
-			'add' => 'post',
-			'remove' => 'delete'
+			Types::PAGINATE => 'get',
+			Types::CREATE => 'post',
+			Types::READ => 'get',
+			Types::UPDATE => 'patch',
+			Types::DELETE => 'delete',
+			Types::ADD => 'post',
+			Types::REMOVE => 'delete'
 		];
 	
 		return $methods[$type];

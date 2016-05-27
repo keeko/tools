@@ -2,16 +2,18 @@
 namespace keeko\tools\command;
 
 use keeko\framework\schema\ActionSchema;
-use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\action\SkeletonActionGenerator;
 use keeko\tools\helpers\ActionCommandHelperTrait;
 use keeko\tools\model\Relationship;
 use keeko\tools\ui\ActionUI;
 use phootwork\lang\Text;
+use Propel\Generator\Model\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use keeko\tools\generator\Types;
+
 
 class GenerateActionCommand extends AbstractKeekoCommand {
 
@@ -30,14 +32,14 @@ class GenerateActionCommand extends AbstractKeekoCommand {
 				'classname',
 				'c',
 				InputOption::VALUE_OPTIONAL,
-				'The main class name (If ommited, class name will be guessed from action name)',
+				'The class name (If ommited, class name will be guessed from action name)',
 				null
 			)
 			->addOption(
 				'model',
 				'm',
 				InputOption::VALUE_OPTIONAL,
-				'The model for which the actions should be generated, when there is no name argument (if ommited all models will be generated)'
+				'The model for which the actions should be generated (if ommited all models will be generated)'
 			)
 			->addOption(
 				'title',
@@ -46,15 +48,10 @@ class GenerateActionCommand extends AbstractKeekoCommand {
 				'The title for the generated option'
 			)
 			->addOption(
-				'type',
-				'',
-				InputOption::VALUE_OPTIONAL,
-				'The type of this action (list|create|read|update|delete) (if ommited template is guessed from action name)'
-			)->addOption(
 				'acl',
 				'',
 				InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL,
-				'The acl\s for this action (guest, user and/or admin)'
+				'The acl\'s for this action (Options are: guest, user, admin)'
 			)
 		;
 		
@@ -71,7 +68,7 @@ class GenerateActionCommand extends AbstractKeekoCommand {
 	 * Checks whether actions can be generated at all by reading composer.json and verify
 	 * all required information are available
 	 */
-	private function preCheck() {
+	private function check() {
 		$module = $this->packageService->getModule();
 		if ($module === null) {
 			throw new \DomainException('No module definition found in composer.json - please run `keeko init`.');
@@ -79,206 +76,171 @@ class GenerateActionCommand extends AbstractKeekoCommand {
 	}
 	
 	protected function interact(InputInterface $input, OutputInterface $output) {
-		$this->preCheck();
+		$this->check();
 		
 		$ui = new ActionUI($this);
 		$ui->show();
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
-		$this->preCheck();
+		$this->check();
 
 		$name = $input->getArgument('name');
-		$model = $input->getOption('model');
+		$modelName = $input->getOption('model');
 
 		// generate a skeleton action (or model, if action name belongs to a model)
 		if ($name) {
-// 			$action = $this->getAction($name);
-// 			if ($this->modelService->isModelAction($action)) {
-// 				$this->generateModel($this->modelService->getModelNameByAction($action));
-// 			} else {
-				$this->generateSkeleton($name);
-// 			}
+			// stop if action belongs to a model ...
+			$action = $this->getAction($name);
+			if ($this->modelService->isModelAction($action)) {
+				throw new \RuntimeException(sprintf('The action (%s) belongs to a model', $name));
+			}
+
+			// ... anyway generate a skeleton action
+			$this->generateSkeleton($name);
 		}
 
 		// generate an action for a specific model
-		else if ($model) {
-			$this->generateModel($model);
+		else if ($modelName) {
+			if (!$this->modelService->hasModel($modelName)) {
+				throw new \RuntimeException(sprintf('Model (%s) does not exist.', $modelName));
+			}
+			$this->generateModel($this->modelService->getModel($modelName));
 		}
 
 		// generate actions for all models
 		else {
-			foreach ($this->modelService->getModelNames() as $modelName) {
-				$this->generateModel($modelName);
+			foreach ($this->modelService->getModels() as $model) {
+				$this->generateModel($model);
 			}
 		}
 		
 		$this->packageService->savePackage();
 	}
-
-	private function generateModel($modelName) {
-		$this->logger->info('Generate Actions from Model: ' . $modelName);
-		$input = $this->io->getInput();
-		$model = $this->modelService->getModel($modelName);
-
-		// generate action type(s)
-		$typeDump = $input->getOption('type');
-		if ($typeDump !== null) {
-			$types = [$typeDump];
-		} else {
-			$types = ['create', 'read', 'list', 'update', 'delete'];
-		}
-		
-		foreach ($types as $type) {
-			$input->setOption('acl', ['admin']);
-			$input->setOption('type', $type);
-			$actionName = $modelName . '-' . $type;
-			
-			if ($model->isReadOnly() && in_array($type, ['create', 'update', 'delete'])) {
-				$this->logger->info(sprintf('Skip generate Action (%s), because Model (%s) is read-only', $actionName, $modelName));
-				continue;
-			}
-			
-			$action = $this->getAction($actionName);
-			if (Text::create($action->getTitle())->isEmpty()) {
-				$action->setTitle($this->getActionTitle($modelName, $type));
-			}
-			$action = $this->generateAction($actionName);
-			
-			// generate code
-			$generator = $this->factory->createModelActionGenerator($type);
-			$class = $generator->generate($action);
-			$this->codegenService->dumpStruct($class, true);
-		}
-		
-		// generate relationship actions
-		if (!$model->isReadOnly()) {
-			$types = [
-				Relationship::ONE_TO_ONE => ['read', 'update'],
-				Relationship::ONE_TO_MANY => ['read', 'add', 'update', 'remove'],
-				Relationship::MANY_TO_MANY => ['read', 'add', 'update', 'remove']
-			];
-			$relationships = $this->modelService->getRelationships($model);
-			foreach ($relationships->getAll() as $relationship) {
-				foreach ($types[$relationship->getType()] as $type) {
-					$this->generateRelationshipAction($relationship, $type);
-				}
-			}
-		}
-		
-		$input->setOption('type', $typeDump);
-	}
-
-	private function getActionTitle($modelName, $type) {
-		$name = NameUtils::dasherize($modelName);
-		switch ($type) {
-			case 'list':
-				return 'List all ' . NameUtils::pluralize($name);
-
-			case 'create':
-			case 'read':
-			case 'update':
-			case 'delete':
-				return ucfirst($type) . 's ' . (in_array($name[0], ['a', 'e', 'i', 'o', 'u']) ? 'an' : 'a') . ' ' . $name;
-		}
-	}
 	
 	/**
-	 * Generates an action.
-	 *  
+	 * Generates a skeleton action
+	 *
 	 * @param string $actionName
 	 */
 	private function generateSkeleton($actionName) {
 		$this->logger->info('Generate Skeleton Action: ' . $actionName);
 		$input = $this->io->getInput();
-		
+	
 		// generate action
-		$action = $this->generateAction($actionName);
-		
+		$action = $this->getAction($actionName);
+	
+		// title
+		if (($title = $input->getOption('title')) !== null) {
+			$action->setTitle($title);
+		}
+	
+		if (Text::create($action->getTitle())->isEmpty()) {
+			throw new \RuntimeException(sprintf('Cannot create action %s, because I am missing a title for it', $actionName));
+		}
+	
+		// classname
+		if (($classname = $input->getOption('classname')) !== null) {
+			$action->setClass($classname);
+		}
+	
+		if (Text::create($action->getClass())->isEmpty()) {
+			$action->setClass($this->guessClassname($actionName));
+		}
+	
+// 		// guess title if there is none set yet
+// 		if (Text::create($action->getTitle())->isEmpty()
+// 				&& $this->modelService->isModelAction($action)
+// 				&& $this->modelService->isCrudAction($action)) {
+// 			$modelName = $this->modelService->getModelNameByAction($action);
+// 			$type = $this->modelService->getOperationByAction($action);
+// 			$action->setTitle($this->getActionTitle($modelName, $type));
+// 		}
+	
+		// acl
+		$action->setAcl($this->getAcl($action));
+	
 		// generate code
 		$generator = new SkeletonActionGenerator($this->service);
 		$class = $generator->generate($action);
 		$this->codegenService->dumpStruct($class, $input->getOption('force'));
 	}
-	
-	/**
-	 * Generates the action for the package
-	 * 
-	 * @param string $actionName
-	 * @throws \RuntimeException
-	 * @return ActionSchema
-	 */
-	private function generateAction($actionName) {
-		$input = $this->io->getInput();
-		
-		// get action and create it if it doesn't exist
-		$action = $this->getAction($actionName);
-		
-		if (($title = $input->getOption('title')) !== null) {
-			$action->setTitle($title);
-		}
-		
-		if (Text::create($action->getTitle())->isEmpty()) {
-			throw new \RuntimeException(sprintf('Cannot create action %s, because I am missing a title for it', $actionName));
-		}
-		
-		if (($classname = $input->getOption('classname')) !== null) {
-			$action->setClass($classname);
-		}
-		
-		// guess classname if there is none set yet
-		if (Text::create($action->getClass())->isEmpty()) {
-			$action->setClass($this->guessClassname($actionName));
-		}
-		
-		// guess title if there is none set yet
-		if (Text::create($action->getTitle())->isEmpty()
-				&& $this->modelService->isModelAction($action)
-				&& $this->modelService->isCrudAction($action)) {
-			$modelName = $this->modelService->getModelNameByAction($action);
-			$type = $this->modelService->getOperationByAction($action);
-			$action->setTitle($this->getActionTitle($modelName, $type));
-		}
 
-		// set acl
-		$action->setAcl($this->getAcl($action));
+	/**
+	 * Generates actions for a model
+	 * 
+	 * @param Table $model
+	 */
+	private function generateModel(Table $model) {
+		$this->logger->info('Generate Actions from Model: ' . $model->getOriginCommonName());
+
+		// generate action type(s)
+		foreach (Types::getModelTypes($model) as $type) {
+			$this->generateModelAction($model, $type);
+		}
 		
-		return $action;
+		// generate relationship actions
+		if (!$model->isReadOnly()) {
+			$relationships = $this->modelService->getRelationships($model);
+			foreach ($relationships->getAll() as $relationship) {
+				foreach (Types::getRelationshipTypes($relationship) as $type) {
+					$this->generateRelationshipAction($relationship, $type);
+				}
+			}
+		}
 	}
 	
-	private function generateRelationshipAction(Relationship $relationship, $type) {
-		$model = $relationship->getModel();
-		$module = $this->package->getKeeko()->getModule();
-		$relatedName = $relationship->getRelatedName();
-		$relatedActionName = NameUtils::toSnakeCase($relationship->getRelatedName());
-		$actionNamePrefix = sprintf('%s-to-%s-relationship', $model->getOriginCommonName(), $relatedActionName);
-		
-		$titles = [
-			'read' => 'Reads the relationship of {model} to {related}',
-			'update' => 'Updates the relationship of {model} to {related}',
-			'add' => 'Adds {related} as relationship to {model}',
-			'remove' => 'Removes {related} as relationship of {model}'
-		];
-		
-		// generate fqcn
-		$className = sprintf('%s%s%sAction', $model->getPhpName(), $relatedName, ucfirst($type));
-		$fqcn = $this->packageService->getNamespace() . '\\action\\' . $className;
-		
+	/**
+	 * Generates a model action
+	 * 
+	 * @param Table $model
+	 * @param string $type
+	 */
+	private function generateModelAction(Table $model, $type) {
 		// generate action
-		$action = new ActionSchema($actionNamePrefix . '-' . $type);
-		$action->addAcl('admin');
-		$action->setClass($fqcn);
-		$action->setTitle(str_replace(
-			['{model}', '{related}'],
-			[$model->getOriginCommonName(), $relatedActionName],
-			$titles[$type]
-		));
-		$module->addAction($action);
+		$action = $this->generateAction($model, $type);
 		
 		// generate class
-		$generator = $this->factory->createActionRelationshipGenerator($type, $relationship);
+		$generator = $this->factory->createModelActionGenerator($type);
+		$class = $generator->generate($action);
+		$this->codegenService->dumpStruct($class, true);
+	}
+	
+	/**
+	 * Generates a relationship action
+	 * 
+	 * @param Relationship $relationship
+	 * @param string $type
+	 */
+	private function generateRelationshipAction(Relationship $relationship, $type) {
+		// generate action
+		$action = $this->generateAction($relationship, $type);
+	
+		// generate class
+		$generator = $this->factory->createRelationshipActionGenerator($type, $relationship);
 		$class = $generator->generate($action, $relationship);
 		$this->codegenService->dumpStruct($class, true);
 	}
-
+	
+	/**
+	 * Generates an action
+	 * 
+	 * @param Table|Relationship $object
+	 * @param string $type
+	 * @return ActionSchema
+	 */
+	private function generateAction($object, $type) {
+		// generators
+		$nameGenerator = $this->factory->getActionNameGenerator();
+		$classNameGenerator = $this->factory->getActionClassNameGenerator();
+		$titleGenerator = $this->factory->getActionTitleGenerator();
+		
+		// generate action
+		$action = $this->getAction($nameGenerator->generate($type, $object));
+		$action->setClass($classNameGenerator->generate($type, $object));
+		$action->setTitle($titleGenerator->generate($type, $object));
+		$action->addAcl('admin');
+		
+		return $action;
+	}
 }

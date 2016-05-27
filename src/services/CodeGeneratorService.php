@@ -99,7 +99,7 @@ class CodeGeneratorService extends AbstractService {
 		foreach ($cols as $col) {
 			$prop = $col->getName();
 		
-			if (!in_array($prop, $filter)) {
+			if (!in_array($prop, $filter) && !$col->isForeignKey() && !$col->isPrimaryKey()) {
 				$fields[] = $prop;
 			}
 		}

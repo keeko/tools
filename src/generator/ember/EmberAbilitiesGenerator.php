@@ -1,9 +1,9 @@
 <?php
 namespace keeko\tools\generator\ember;
 
-use keeko\tools\generator\ActionNameGenerator;
 use keeko\tools\model\Relationship;
 use Propel\Generator\Model\Table;
+use keeko\tools\generator\Types;
 
 class EmberAbilitiesGenerator extends AbstractEmberGenerator {
 	
@@ -26,11 +26,12 @@ class EmberAbilitiesGenerator extends AbstractEmberGenerator {
 	}
 	
 	protected function generateActions(EmberClassGenerator $class, Table $model) {
-		$types = $model->isReadOnly() ? ['read', 'list'] : ['read', 'list', 'create', 'update', 'delete'];
+		$types = Types::getModelTypes($model);
 		$packageName = $this->getPackage()->getFullName();
+		$nameGenerator = $this->factory->getActionNameGenerator();
 		
 		foreach ($types as $type) {
-			$actionName = ActionNameGenerator::generate($type, $model);
+			$actionName = $nameGenerator->generate($type, $model);
 			$prop = sprintf('can%s', ucfirst($type));
 			$value = sprintf($this->template, $packageName, $actionName);
 			$class->setProperty($prop, $value);
@@ -40,14 +41,14 @@ class EmberAbilitiesGenerator extends AbstractEmberGenerator {
 	protected function generateRelationships(EmberClassGenerator $class, Table $model) {
 		$relationships = $this->modelService->getRelationships($model);
 		$packageName = $this->getPackage()->getFullName();
+		$nameGenerator = $this->factory->getActionNameGenerator();
 		
 		foreach ($relationships->getAll() as $relationship) {
-			$types = $relationship->getType() == Relationship::ONE_TO_ONE
-				? ['read', 'update'] : ['read', 'update', 'add', 'remove'];
+			$types = Types::getRelationshipTypes($relationship);
 			
 			foreach ($types as $type) {
 				$prop = sprintf('can%s%s', ucfirst($type), $relationship->getRelatedName());
-				$actionName = ActionNameGenerator::generateRelationship($type, $relationship);
+				$actionName = $nameGenerator->generateRelationship($type, $relationship);
 				$value = sprintf($this->template, $packageName, $actionName);
 				$class->setProperty($prop, $value);
 			}

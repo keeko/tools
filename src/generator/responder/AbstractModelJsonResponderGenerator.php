@@ -3,6 +3,7 @@ namespace keeko\tools\generator\responder;
 
 use keeko\framework\utils\NameUtils;
 use Propel\Generator\Model\Table;
+use keeko\tools\model\Relationship;
 
 class AbstractModelJsonResponderGenerator extends AbstractJsonResponderGenerator {
 	
@@ -13,18 +14,27 @@ class AbstractModelJsonResponderGenerator extends AbstractJsonResponderGenerator
 			return [];
 		}
 		
+		$processed[] = $model->getOriginCommonName();
+		
 		$relationships = $this->modelService->getRelationships($model);
 		$includes = [];
 	
 		foreach ($relationships->getAll() as $rel) {
-			$foreign = $rel->getForeign();
-			$processed[] = $foreign->getOriginCommonName();
-			
 			$typeName = $rel->getRelatedTypeName();
-			$includes[] = (!empty($root) ? $root . '.' : '') . $typeName;
-			$includes = array_merge($includes, $this->getRelationshipIncludes($foreign, $typeName, $processed));
+			if ($rel->getType() != Relationship::ONE_TO_ONE) {
+				$typeName = NameUtils::pluralize($typeName);
+			}
+			$includeName = (!empty($root) ? $root . '.' : '') . $typeName;
+			$includes[] = $includeName;
+			
+// 			$foreign = $rel->getForeign();
+// 			$includes = array_merge($includes, $this->getRelationshipIncludes($foreign, $includeName, $processed));
 		}
-	
+		
+		// load additional includes from codegen
+		$codegen = $this->codegenService->getCodegen();
+		$includes = array_merge($includes, $codegen->getIncludes($model->getOriginCommonName())->toArray());
+
 		return $includes;
 	}
 	

@@ -89,14 +89,11 @@ class ReadOnlyModelDomainTraitGenerator extends AbstractDomainGenerator {
 		);
 		
 		$trait->setMethod(PhpMethod::create('applyFilter')
-			->addParameter(PhpParameter::create('query')
-				->setType($model->getPhpName() . 'Query')
-			)
+			->addParameter(PhpParameter::create('query'))
 			->addParameter(PhpParameter::create('filter'))
 			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
-			->setAbstract(true)
 			->setType('void')
-			->setDescription('Implement this functionality at ' . $this->getClassName($model))
+			->setBody($this->twig->render('applyFilter.twig'))
 		);
 	}
 	

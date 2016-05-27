@@ -6,6 +6,7 @@ use phootwork\file\exception\FileException;
 use phootwork\file\File;
 use keeko\tools\utils\NamespaceResolver;
 use keeko\framework\schema\ActionSchema;
+use keeko\framework\schema\ModuleSchema;
 
 class PackageService extends AbstractService {
 

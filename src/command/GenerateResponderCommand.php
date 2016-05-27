@@ -2,13 +2,13 @@
 namespace keeko\tools\command;
 
 use gossi\codegen\model\PhpClass;
+use keeko\framework\schema\ActionSchema;
 use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\responder\ApiJsonResponderGenerator;
 use keeko\tools\generator\responder\SkeletonHtmlResponderGenerator;
 use keeko\tools\generator\responder\SkeletonJsonResponderGenerator;
-use keeko\tools\generator\responder\ToManyRelationshipJsonResponderGenerator;
-use keeko\tools\generator\responder\ToOneRelationshipJsonResponderGenerator;
 use keeko\tools\generator\responder\TwigHtmlResponderGenerator;
+use keeko\tools\generator\Types;
 use keeko\tools\helpers\QuestionHelperTrait;
 use keeko\tools\model\Relationship;
 use keeko\tools\ui\ResponseUI;
@@ -20,18 +20,19 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Propel\Generator\Model\Table;
 
-class GenerateResponseCommand extends AbstractKeekoCommand {
+class GenerateResponderCommand extends AbstractKeekoCommand {
 
 	use QuestionHelperTrait;
 	
-	protected $traits;
+	protected $generated;
 	
 	protected function configure() {
-		$this->traits = new Set();
+		$this->generated = new Set();
 		
 		$this
-			->setName('generate:response')
+			->setName('generate:responder')
 			->setDescription('Generates code for a responder')
 			->addArgument(
 				'name',
@@ -75,7 +76,7 @@ class GenerateResponseCommand extends AbstractKeekoCommand {
 	 * Checks whether actions can be generated at all by reading composer.json and verify
 	 * all required information are available
 	 */
-	private function preCheck() {
+	private function check() {
 		$module = $this->packageService->getModule();
 		if ($module === null || count($module->getActionNames()) == 0) {
 			throw new \DomainException('No action definition found in composer.json - please run `keeko generate:action`.');
@@ -83,17 +84,17 @@ class GenerateResponseCommand extends AbstractKeekoCommand {
 	}
 
 	protected function interact(InputInterface $input, OutputInterface $output) {
-		$this->preCheck();
+		$this->check();
 		
 		$ui = new ResponseUI($this);
 		$ui->show();
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
-		$this->preCheck();
+		$this->check();
 		
 		$name = $input->getArgument('name');
-		$model = $input->getOption('model');
+		$modelName = $input->getOption('model');
 
 		// generate responser for a specific action
 		if ($name) {
@@ -101,49 +102,43 @@ class GenerateResponseCommand extends AbstractKeekoCommand {
 		}
 		
 		// generate a responder for a specific model
-		else if ($model) {
-			$this->generateModel($model);
+		else if ($modelName) {
+			if (!$this->modelService->hasModel($modelName)) {
+				throw new \RuntimeException(sprintf('Model (%s) does not exist.', $modelName));
+			}
+			$this->generateModel($this->modelService->getModel($modelName));
 		}
 		
 		// generate responders for all models
 		else {
 			foreach ($this->modelService->getModels() as $model) {
-				$this->generateModel($model->getOriginCommonName());
+				$this->generateModel($model);
 			}
 		}
 		
 		$this->packageService->savePackage();
 	}
 	
-	protected function generateModel($modelName) {
-		$model = $this->modelService->getModel($modelName);
-		$types = $model->isReadOnly() ? ['read', 'list'] : ['read', 'list', 'create', 'update', 'delete'];
-	
+	private function generateModel(Table $model) {
 		// generate responders for crud actions
-		foreach ($types as $type) {
-			$actionName = $modelName . '-' . $type;
-	
+		foreach (Types::getModelTypes($model) as $type) {
+			$actionName = $this->factory->getActionNameGenerator()->generate($type, $model);
 			$this->generateResponder($actionName);
 		}
 		
 		// generate responders for relationships
 		if (!$model->isReadOnly()) {
-			$types = [
-				Relationship::ONE_TO_ONE => ['read', 'update'],
-				Relationship::ONE_TO_MANY => ['read', 'add', 'update', 'remove'],
-				Relationship::MANY_TO_MANY => ['read', 'add', 'update', 'remove'] 
-			];
 			$relationships = $this->modelService->getRelationships($model);
 			foreach ($relationships->getAll() as $relationship) {
-				$relatedName = NameUtils::toSnakeCase($relationship->getRelatedTypeName());
-				foreach ($types[$relationship->getType()] as $type) {
-					$this->generateResponder($modelName . '-to-' . $relatedName . '-relationship-' . $type);
+				foreach (Types::getRelationshipTypes($relationship) as $type) {
+					$actionName = $this->factory->getActionNameGenerator()->generate($type, $relationship);
+					$this->generateResponder($actionName);
 				}
 			}
 		}
 	}
 	
-	protected function generateResponder($actionName) {
+	private function generateResponder($actionName) {
 		$this->logger->info('Generate Responder for: ' . $actionName);
 		$module = $this->packageService->getModule();
 		
@@ -152,30 +147,39 @@ class GenerateResponseCommand extends AbstractKeekoCommand {
 		}
 		
 		$input = $this->io->getInput();
+		$force = $input->getOption('force');
 		$format = $input->getOption('format');
 		$template = $input->getOption('template');
+		$action = $module->getAction($actionName);
 		
 		// check if relationship response
 		if (Text::create($actionName)->contains('relationship') && $format == 'json') {
-			return $this->generateRelationshipResponder($actionName);
+			return $this->generateRelationshipResponder($action);
 		}
-
-		$action = $module->getAction($actionName);
-		$modelName = $this->modelService->getModelNameByAction($action);
-
-		if (!$action->hasResponse($format)) {
-			$className = str_replace('action', 'responder', $action->getClass());
+		
+		// responder class name
+		if (!$action->hasResponder($format)) {
+			$namespaceGenerator = $this->factory->getNamespaceGenerator();
+			$actionNamespace = $namespaceGenerator->getActionNamespace();
+			$className = Text::create($action->getClass())
+				->replace($actionNamespace, '')
+				->prepend($namespaceGenerator->getResponderNamespaceByFormat($format))
+				->toString();
 			$className = preg_replace('/Action$/', ucwords($format) . 'Responder', $className);
-			$action->setResponse($format, $className);
+			$action->setResponder($format, $className);
 		}
 
+		// action information
+		$parsed = $this->factory->getActionNameGenerator()->parseName($actionName);
+		$type = $parsed['type'];
+		$isModel = $type && $this->modelService->hasModel($parsed['modelName']);
+		
 		// find generator
 		$generator = null;
-		$type = $this->packageService->getActionType($actionName, $modelName);
-		$isModel = $type && $this->modelService->isModelAction($action); 
 
 		// model given and format is json
 		if ($isModel && $format == 'json') {
+			$force = true;
 			$generator = $this->factory->createModelJsonResponderGenerator($type);
 		}
 		
@@ -212,53 +216,36 @@ class GenerateResponseCommand extends AbstractKeekoCommand {
 
 			// write to file
 			$file = $this->codegenService->getFile($class);
-			$overwrite = !$file->exists() || $input->getOption('force');
+			$overwrite = !$file->exists() || $force;
 			$this->codegenService->dumpStruct($class, $overwrite);
 		}
 	}
 
-	protected function generateRelationshipResponder($actionName) {
-		$module = $this->packageService->getModule();
-		$action = $module->getAction($actionName);
-		$prefix = substr($actionName, 0, strpos($actionName, 'relationship') + 12);
-		$readAction = $module->getAction($prefix . '-read');
-		
-		// get modules names
-		$matches = [];
-		preg_match('/([a-z_]+)-to-([a-z_]+)-relationship.*/i', $actionName, $matches);
-		$model = $this->modelService->getModel($matches[1]);
-		$relatedName = NameUtils::dasherize($matches[2]);
+	private function generateRelationshipResponder(ActionSchema $action) {
+		// find relationship
+		$parsed = $this->factory->getActionNameGenerator()->parseRelationship($action->getName());
+		$model = $this->modelService->getModel($parsed['modelName']);
+		$relatedName = NameUtils::dasherize($parsed['relatedName']);
 		$relationship = $this->modelService->getRelationship($model, $relatedName);
 
-		// response class name
-		$responder = sprintf('%s\\responder\\%s%sJsonResponder',
-			$this->packageService->getNamespace(),
-			$model->getPhpName(),
-			$relationship->getRelatedName()
-		);
-		
-		$many = $module->hasAction($prefix . '-read')
-			&& $module->hasAction($prefix . '-update')
-			&& $module->hasAction($prefix . '-add')
-			&& $module->hasAction($prefix . '-remove')
-		;
-		$single = $module->hasAction($prefix . '-read')
-			&& $module->hasAction($prefix . '-update')
-			&& !$many
-		;
-		
-		$generator = null;
-		if ($many) {
-			$generator = new ToManyRelationshipJsonResponderGenerator($this->service, $relationship);
-		} else if ($single) {
-			$generator = new ToOneRelationshipJsonResponderGenerator($this->service, $relationship);
+		if ($relationship === null) {
+			return;
 		}
 		
-		if ($generator !== null) {
-			$action->setResponse('json', $responder);
-			$responder = $generator->generate($readAction);
-			$this->codegenService->dumpStruct($responder, true);
+		// class name
+		$className = $this->factory->getResponderClassNameGenerator()->generateJsonRelationshipResponder($relationship);
+		$action->setResponder('json', $className);
+
+		// return if already generated
+		if ($this->generated->contains($className)) {
+			return;
 		}
+		
+		// generate code
+		$generator = $this->factory->createRelationshipJsonResponderGenerator($relationship);
+		$responder = $generator->generate($action);
+		$this->codegenService->dumpStruct($responder, true);
+		$this->generated->add($className);
 	}
 	
 	private function getSerializer() {

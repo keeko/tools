@@ -69,17 +69,33 @@ class EmberModelGenerator extends AbstractEmberGenerator {
 	protected function generateRelationships(EmberClassGenerator $class, Table $model) {
 		$relationships = $this->modelService->getRelationships($model);
 		$imports = new Set();
+		$types = [];
+		$multiples = [];
 		
 		foreach ($relationships->getAll() as $relationship) {
-			$prop = NameUtils::toCamelCase($relationship->getRelatedTypeName());
-			$type = $relationship->getRelatedPluralTypeName();
-			$slug = $this->getSlug($relationship->getForeign());
+			$type = NameUtils::dasherize($relationship->getForeign()->getOriginCommonName());
+			if (in_array($type, $types)) {
+				$multiples[] = $type;
+			} else {
+				$types[] = $type;
+			}
+		}
+		
+		$multiples = array_unique($multiples);
+		
+		foreach ($relationships->getAll() as $relationship) {
 			
+			$type = NameUtils::dasherize($relationship->getForeign()->getOriginCommonName());
+			$slug = $this->getSlug($relationship->getForeign());
+
 			// check one-to-one
 			if ($relationship->getType() == Relationship::ONE_TO_ONE) {
-				$value = sprintf('belongsTo(\'%s/%s\')', $slug, $type);
+				$inverse = in_array($type, $multiples) ? ', {inverse: null}' : '';
+				$prop = NameUtils::toCamelCase($relationship->getRelatedTypeName());
+				$value = sprintf('belongsTo(\'%s/%s\'%s)', $slug, $type, $inverse);
 				$imports->add('belongsTo');
 			} else {
+				$prop = NameUtils::toCamelCase($relationship->getRelatedPluralTypeName());
 				$value = sprintf('hasMany(\'%s/%s\')', $slug, $type);
 				$imports->add('hasMany');
 			}

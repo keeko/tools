@@ -48,7 +48,7 @@ abstract class AbstractResponderGenerator extends AbstractCodeGenerator {
 	 * @return AbstractPhpStruct
 	 */
 	protected function generateStruct(ActionSchema $action, $format) {
-		return PhpClass::create($action->getResponse($format))
+		return PhpClass::create($action->getResponder($format))
 			->setParentClassName('AbstractResponder')
 			->setDescription('Automatically generated ' . ucwords($format) . 'Responder for ' . $action->getTitle())
 			->setLongDescription($action->getDescription());

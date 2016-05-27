@@ -1,1 +1,5 @@
-return $model->getId();
+if ($model !== null) {
+	return $model->getId();
+}
+
+return null;

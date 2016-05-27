@@ -16,6 +16,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Propel\Generator\Model\Table;
 
 class GenerateSerializerCommand extends AbstractKeekoCommand {
 
@@ -56,7 +57,7 @@ class GenerateSerializerCommand extends AbstractKeekoCommand {
 	 * Checks whether actions can be generated at all by reading composer.json and verify
 	 * all required information are available
 	 */
-	private function preCheck() {
+	private function check() {
 		$module = $this->packageService->getModule();
 		if ($module === null) {
 			throw new \DomainException('No module definition found in composer.json - please run `keeko init`.');
@@ -64,17 +65,17 @@ class GenerateSerializerCommand extends AbstractKeekoCommand {
 	}
 	
 	protected function interact(InputInterface $input, OutputInterface $output) {
-		$this->preCheck();
+		$this->check();
 		
 		$ui = new SerializerUI($this);
 		$ui->show();
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
-		$this->preCheck();
+		$this->check();
 		
 		$name = $input->getArgument('name');
-		$model = $input->getOption('model');
+		$modelName = $input->getOption('model');
 
 		// only a specific action
 		if ($name) {
@@ -82,23 +83,23 @@ class GenerateSerializerCommand extends AbstractKeekoCommand {
 		}
 
 		// create action(s) from a model
-		else if ($model) {
-			$this->generateModel($model);
+		else if ($modelName) {
+			if (!$this->modelService->hasModel($modelName)) {
+				throw new \RuntimeException(sprintf('Model (%s) does not exist.', $modelName));
+			}
+			$this->generateModel($this->modelService->getModel($modelName));
 		}
 
 		// anyway, generate all models
 		else {
 			foreach ($this->modelService->getModels() as $model) {
-				$modelName = $model->getOriginCommonName();
-				$input->setOption('model', $modelName);
-				$this->generateModel($modelName);
+				$this->generateModel($model);
 			}
 		}
 	}
 
-	private function generateModel($modelName) {
-		$this->logger->info('Generate Serializer from Model: ' . $modelName);
-		$model = $this->modelService->getModel($modelName);
+	private function generateModel(Table $model) {
+		$this->logger->info('Generate Serializer from Model: ' . $model->getOriginCommonName());
 		
 		// generate class
 		$generator = new ModelSerializerGenerator($this->service);

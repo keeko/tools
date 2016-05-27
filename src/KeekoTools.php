@@ -4,9 +4,10 @@ namespace keeko\tools;
 use keeko\tools\command\GenerateActionCommand;
 use keeko\tools\command\GenerateApiCommand;
 use keeko\tools\command\GenerateDomainCommand;
+use keeko\tools\command\GenerateEmberAbilitiesCommand;
 use keeko\tools\command\GenerateEmberModelsCommand;
 use keeko\tools\command\GenerateModelsCommand;
-use keeko\tools\command\GenerateResponseCommand;
+use keeko\tools\command\GenerateResponderCommand;
 use keeko\tools\command\GenerateSerializerCommand;
 use keeko\tools\command\InitCommand;
 use keeko\tools\command\MagicCommand;
@@ -14,7 +15,6 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use keeko\tools\command\GenerateEmberAbilitiesCommand;
 
 class KeekoTools extends Application {
 
@@ -45,7 +45,7 @@ class KeekoTools extends Application {
 		$cmds[] = new GenerateActionCommand();
 		$cmds[] = new GenerateDomainCommand();
 		$cmds[] = new GenerateSerializerCommand();
-		$cmds[] = new GenerateResponseCommand();
+		$cmds[] = new GenerateResponderCommand();
 		$cmds[] = new GenerateApiCommand();
 		$cmds[] = new GenerateEmberModelsCommand();
 		$cmds[] = new GenerateEmberAbilitiesCommand();

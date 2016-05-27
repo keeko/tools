@@ -61,7 +61,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		}
 		
 		if (count($field) > 0) {
-			$attrs = substr($attrs, 0, -1);
+			$attrs = substr($attrs, 0, -2);
 		}
 		
 		$class->setMethod(PhpMethod::create('getAttributes')

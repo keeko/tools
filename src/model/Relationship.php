@@ -26,6 +26,10 @@ abstract class Relationship {
 	 * @return string
 	 */
 	abstract public function getType();
+	
+	public function isOneToOne() {
+		return $this->getType() == Relationship::ONE_TO_ONE;
+	}
 
 	/**
 	 * Returns the model
