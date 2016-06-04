@@ -6,7 +6,7 @@ use Propel\Generator\Model\Table;
 use keeko\framework\utils\NameUtils;
 
 abstract class Relationship {
-	
+
 	const ONE_TO_ONE = 'one-to-one';
 	const ONE_TO_MANY = 'one-to-many';
 	const MANY_TO_MANY = 'many-to-many';
@@ -19,21 +19,21 @@ abstract class Relationship {
 
 	/** @var ForeignKey */
 	protected $fk;
-	
+
 	/**
 	 * Returns the type of this relationship
-	 * 
+	 *
 	 * @return string
 	 */
 	abstract public function getType();
-	
+
 	public function isOneToOne() {
 		return $this->getType() == Relationship::ONE_TO_ONE;
 	}
 
 	/**
 	 * Returns the model
-	 * 
+	 *
 	 * @return Table
 	 */
 	public function getModel() {
@@ -42,7 +42,7 @@ abstract class Relationship {
 
 	/**
 	 * Returns the foreign model
-	 * 
+	 *
 	 * @return Table
 	 */
 	public function getForeign() {
@@ -51,13 +51,13 @@ abstract class Relationship {
 
 	/**
 	 * Returns the foreign key
-	 * 
+	 *
 	 * @return ForeignKey
 	 */
 	public function getForeignKey() {
 		return $this->fk;
 	}
-	
+
 	/**
 	 * Returns the related name in studly case
 	 *
@@ -73,7 +73,7 @@ abstract class Relationship {
 	public function getRelatedPluralName() {
 		return NameUtils::pluralize($this->getRelatedName());
 	}
-	
+
 	/**
 	 * Returns the related type name for usage in api environment (slug, type-name, etc)
 	 *
@@ -82,18 +82,54 @@ abstract class Relationship {
 	public function getRelatedTypeName() {
 		return NameUtils::dasherize($this->getRelatedName());
 	}
-	
+
 	/**
 	 * Returns the pluralized related type name for usage in api environment (slug, type-name, etc)
-	 * 
+	 *
 	 * @return string
 	 */
 	public function getRelatedPluralTypeName() {
 		return NameUtils::pluralize($this->getRelatedTypeName());
 	}
-	
+
 	/**
 	 * Returns the reverse related name in studly case
 	 */
 	abstract public function getReverseRelatedName();
+
+	/**
+	 * Returns the pluralized reverse related name in studly case
+	 *
+	 * @return string
+	 */
+	public function getReverseRelatedPluralName() {
+		return NameUtils::pluralize($this->getReverseRelatedName());
+	}
+
+	/**
+	 * Returns the reverse related type name for usage in api environment (slug, type-name, etc)
+	 *
+	 * @return string
+	 */
+	public function getReverseRelatedTypeName() {
+		return NameUtils::dasherize($this->getReverseRelatedName());
+	}
+
+	/**
+	 * Returns the pluralized reverse related type name for usage in api environment (slug, type-name, etc)
+	 *
+	 * @return string
+	 */
+	public function getReverseRelatedPluralTypeName() {
+		return NameUtils::pluralize($this->getReverseRelatedTypeName());
+	}
+
+	/**
+	 * Returns whether the relationship refers to itself
+	 *
+	 * @return bool
+	 */
+	public function isReflexive() {
+		return $this->model == $this->foreign;
+	}
 }

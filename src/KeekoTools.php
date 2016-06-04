@@ -15,19 +15,21 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use keeko\tools\command\GenerateEmberSerializerCommand;
+use keeko\tools\command\GenerateEmberCommand;
 
 class KeekoTools extends Application {
 
 	protected $finishedCommands = [];
-	
+
 	protected $keekoDispatcher = null;
-	
+
 	/* (non-PHPdoc)
 	 * @see \Symfony\Component\Console\Application::__construct()
 	*/
 	public function __construct($name = 'UNKNOWN', $version = 'UNKNOWN') {
 		parent::__construct($name, $version);
-		
+
 		$dispatcher = new EventDispatcher();
 		$this->setDispatcher($dispatcher);
 		$this->keekoDispatcher = $dispatcher;
@@ -37,7 +39,7 @@ class KeekoTools extends Application {
 			$this->finishedCommands[] = $command->getName();
 		});
 	}
-	
+
 	protected function getDefaultCommands() {
 		$cmds = parent::getDefaultCommands();
 		$cmds[] = new InitCommand();
@@ -49,6 +51,8 @@ class KeekoTools extends Application {
 		$cmds[] = new GenerateApiCommand();
 		$cmds[] = new GenerateEmberModelsCommand();
 		$cmds[] = new GenerateEmberAbilitiesCommand();
+		$cmds[] = new GenerateEmberSerializerCommand();
+		$cmds[] = new GenerateEmberCommand();
 		$cmds[] = new MagicCommand();
 
 		return $cmds;
@@ -57,7 +61,7 @@ class KeekoTools extends Application {
 	public function commandRan($name) {
 		return in_array($name, $this->finishedCommands);
 	}
-	
+
 	public function getDispatcher() {
 		return $this->keekoDispatcher;
 	}

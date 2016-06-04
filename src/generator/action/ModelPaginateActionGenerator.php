@@ -5,14 +5,14 @@ use gossi\codegen\model\PhpClass;
 use keeko\framework\schema\ActionSchema;
 
 class ModelPaginateActionGenerator extends AbstractModelActionGenerator {
-		
+
 	/* (non-PHPdoc)
 	 * @see \keeko\tools\generator\AbstractTraitGenerator::addMethods()
 	 */
 	protected function addMethods(PhpClass $class, ActionSchema $action) {
 		$modelName = $this->modelService->getModelNameByAction($action);
 		$model = $this->modelService->getModel($modelName);
-		
+
 		// method: configureParams(OptionsResolver $resolver)
 		$this->addConfigureParamsMethod($class, $this->twig->render('paginate-configureParams.twig'));
 
@@ -22,7 +22,7 @@ class ModelPaginateActionGenerator extends AbstractModelActionGenerator {
 		$class->setMethod($this->generateRunMethod($this->twig->render('paginate-run.twig', [
 			'domain' => $model->getPhpName() . 'Domain'
 		])));
-			
+
 	}
 
 }

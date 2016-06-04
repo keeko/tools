@@ -24,44 +24,44 @@ use Propel\Generator\Model\Table;
 use keeko\tools\model\ReverseOneToOneRelationship;
 
 class ModelReader {
-	
+
 	/** @var Project */
 	private $project;
-	
+
 	/** @var Database */
 	private $database;
-	
+
 	/** @var CodegenSchema */
 	private $codegen;
-	
+
 	/** @var Map */
 	private $relationships;
-	
+
 	/** @var Set */
 	private $relationshipsLoaded;
-	
+
 	/** @var Map */
 	private $models;
-	
+
 	/** @var Set */
 	private $excluded;
-	
+
 	/** @var CommandService */
 	private $service;
-	
+
 	public function __construct(Project $project, CommandService $service) {
 		$this->project = $project;
 		$this->service = $service;
 		$this->relationships = new Map();
 		$this->relationshipsLoaded = new Set();
-		$this->codegen = $project->hasCodegenFile() 
+		$this->codegen = $project->hasCodegenFile()
 			? CodegenSchema::fromFile($project->getCodegenFileName())
 			: new CodegenSchema();
 		$this->excluded = $this->loadExcludedModels();
 
 		$this->load();
 	}
-	
+
 	private function loadExcludedModels() {
 		$list = new ArrayList();
 		$command = $this->service->getCommand();
@@ -76,44 +76,55 @@ class ModelReader {
 		} else if ($command instanceof GenerateSerializerCommand) {
 			$list = $this->codegen->getExcludedSerializer();
 		}
-		
+
 		return new Set($list);
 	}
-	
+
 	public function getExcluded() {
 		return $this->excluded;
 	}
-	
+
 	public function getProject() {
 		return $this->project;
 	}
-	
+
 	private function load() {
 		if ($this->project->hasSchemaFile()) {
 			$this->loadDatabase();
 			$this->loadRelationships();
 		}
 	}
-	
+
 	private function loadDatabase() {
 		if ($this->database === null) {
 			$dom = new \DOMDocument('1.0', 'UTF-8');
 			$dom->load($this->project->getSchemaFileName());
 			$this->includeExternalSchemas($dom);
-	
+
 			$config = new GeneratorConfig($this->project->getRootPath());
 			$reader = new SchemaReader($config->getConfiguredPlatform());
 			$reader->setGeneratorConfig($config);
 			$schema = $reader->parseString($dom->saveXML(), $this->project->getSchemaFileName());
 			$this->database = $schema->getDatabase();
-			
-			// extend excluded list with parents when using concrete_inheritance behavior
+
+			// extend excluded list with parents when using a certain behavior
 			foreach ($this->database->getTables() as $table) {
 				foreach ($table->getBehaviors() as $behavior) {
-					if ($behavior->getName() == 'concrete_inheritance') {
-						$parent = $behavior->getParameter('extends');
-						$this->excluded->add($parent);
-						$this->renameForeignKeys($table, $parent);
+
+					switch ($behavior->getName()) {
+						case 'concrete_inheritance':
+							$parent = $behavior->getParameter('extends');
+							$this->excluded->add($parent);
+							$this->renameForeignKeys($table, $parent);
+							break;
+
+						case 'versionable':
+							$versionTableName = $behavior->getParameter('version_table')
+								? $behavior->getParameter('version_table')
+								: ($table->getOriginCommonName() . '_version');
+
+							$this->excluded->add($versionTableName);
+							break;
 					}
 				}
 			}
@@ -124,14 +135,14 @@ class ModelReader {
 
 	private function renameForeignKeys(Table $table, $parent) {
 		$parent = $this->getModel($parent);
-		
+
 		foreach ($table->getForeignKeys() as $fk) {
 			// find fk in parent
 			foreach ($parent->getForeignKeys() as $pfk) {
 				if ($pfk->getForeignTableCommonName() == $fk->getForeignTableCommonName()
 						&& $pfk->getLocalColumnName() == $fk->getLocalColumnName()
 						&& $pfk->getForeignColumnName() == $fk->getForeignColumnName()) {
-				
+
 					// replace
 					$name = new Text($pfk->getName());
 					if ($name->contains($parent->getOriginCommonName())) {
@@ -143,19 +154,19 @@ class ModelReader {
 			}
 		}
 	}
-	
+
 	private function includeExternalSchemas(\DOMDocument $dom) {
 		$databaseNode = $dom->getElementsByTagName('database')->item(0);
 		$externalSchemaNodes = $dom->getElementsByTagName('external-schema');
-	
+
 		while ($externalSchema = $externalSchemaNodes->item(0)) {
 			$include = $externalSchema->getAttribute('filename');
 			$externalSchema->parentNode->removeChild($externalSchema);
-	
+
 			if (!is_readable($include)) {
 				throw new \RuntimeException("External schema '$include' does not exist");
 			}
-	
+
 			$externalSchemaDom = new \DOMDocument('1.0', 'UTF-8');
 			$externalSchemaDom->load(realpath($include));
 
@@ -166,17 +177,17 @@ class ModelReader {
 			}
 		}
 	}
-	
+
 	public function getDatabase() {
 		return $this->database;
 	}
-	
+
 	private function loadRelationships() {
 		foreach ($this->getModels() as $table) {
 			$this->loadRelationshipsForModel($table);
 		}
 	}
-	
+
 	/**
 	 * Returns all model relationships.
 	 *
@@ -186,14 +197,14 @@ class ModelReader {
 		if ($this->relationshipsLoaded->contains($model->getName())) {
 			return;
 		}
-		
+
 		if ($this->excluded->contains($model->getOriginCommonName())) {
 			return;
 		}
 
 		$relationships = $this->getRelationships($model);
 		$definition = $this->codegen->getRelationships($model->getOriginCommonName());
-	
+
 		// one-to-* relationships
 		foreach ($model->getForeignKeys() as $fk) {
 			// skip, if fk is excluded
@@ -207,21 +218,23 @@ class ModelReader {
 			}
 
 			$foreign = $fk->getForeignTable();
-			
+
 			switch ($type) {
 				case Relationship::ONE_TO_ONE:
 					$relationship = new OneToOneRelationship($model, $foreign, $fk);
 					$relationships->add($relationship);
-					
+
 					$reverse = new ReverseOneToOneRelationship($foreign, $model, $fk);
+					$relationship->setReverseRelationship($reverse);
 					$this->getRelationships($foreign)->add($reverse);
 					break;
-				
+
 				case Relationship::ONE_TO_MANY:
 					$relationship = new OneToManyRelationship($foreign, $model, $fk);
 					$this->getRelationships($foreign)->add($relationship);
-					
+
 					$reverse = new OneToOneRelationship($model, $foreign, $fk);
+					$relationship->setReverseRelationship($reverse);
 					$relationships->add($reverse);
 					break;
 			}
@@ -244,9 +257,9 @@ class ModelReader {
 
 		return $relationships;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param Table $model
 	 * @return Relationships
 	 */
@@ -256,7 +269,7 @@ class ModelReader {
 		}
 		return $this->relationships->get($model->getName());
 	}
-	
+
 	/**
 	 * Checks whether the given model exists
 	 *
@@ -266,7 +279,7 @@ class ModelReader {
 	public function hasModel($name) {
 		return $this->getDatabase()->hasTable($this->getTableName($name), true);
 	}
-	
+
 	/**
 	 * Returns the model for the given name
 	 *
@@ -277,10 +290,10 @@ class ModelReader {
 		$tableName = $this->getTableName($name);
 		$db = $this->getDatabase();
 		$table = $db->getTable($tableName);
-		
+
 		return $table;
 	}
-	
+
 	/**
 	 * Returns the tableName for a given name
 	 *
@@ -292,10 +305,10 @@ class ModelReader {
 		if (!Text::create($name)->startsWith($db->getTablePrefix())) {
 			$name = $db->getTablePrefix() . $name;
 		}
-	
+
 		return $name;
 	}
-	
+
 	/**
 	 * Returns the models from the database, where table namespace matches package namespace
 	 *
@@ -305,21 +318,21 @@ class ModelReader {
 		if ($this->models === null) {
 			$database = $this->getDatabase();
 			$namespace = $database->getNamespace();
-	
+
 			$this->models = new Map();
 
 			foreach ($database->getTables() as $table) {
-				if (!$table->isCrossRef() 
+				if (!$table->isCrossRef()
 						&& $table->getNamespace() == $namespace
 						&& !$this->excluded->contains($table->getOriginCommonName())) {
 					$this->models->set($table->getOriginCommonName(), $table);
 				}
 			}
 		}
-	
+
 		return $this->models;
 	}
-	
+
 	/**
 	 * Returns all model names
 	 *

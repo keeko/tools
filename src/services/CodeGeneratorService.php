@@ -12,13 +12,13 @@ use phootwork\file\Path;
 use Propel\Generator\Model\Table;
 
 class CodeGeneratorService extends AbstractService {
-	
+
 	private $codegen;
-	
+
 	public function getCodegenFile() {
 		return $this->project->getCodegenFileName();
 	}
-	
+
 	/**
 	 * Returns codegen from project
 	 *
@@ -29,7 +29,7 @@ class CodeGeneratorService extends AbstractService {
 	public function getCodegen() {
 		return $this->project->getCodegen();
 	}
-	
+
 	/**
 	 * Adds authors to the docblock of the given struct
 	 *
@@ -41,7 +41,7 @@ class CodeGeneratorService extends AbstractService {
 			$package = $this->packageService->getPackage();
 		}
 		$docblock = $struct->getDocblock();
-		
+
 		foreach ($package->getAuthors() as $author) {
 			/* @var $author AuthorSchema */
 			$tag = AuthorTag::create()->setName($author->getName());
@@ -72,18 +72,18 @@ class CodeGeneratorService extends AbstractService {
 		$cols = $model->getColumns();
 		foreach ($cols as $col) {
 			$prop = $col->getName();
-	
+
 			if (!in_array($prop, $filter)) {
 				$fields[] = $prop;
 			}
 		}
-	
+
 		return $fields;
 	}
-	
+
 	/**
 	 * Returns the fields for a model
-	 * 
+	 *
 	 * @param string $modelName
 	 * @return array
 	 */
@@ -93,20 +93,20 @@ class CodeGeneratorService extends AbstractService {
 // 		$computed = $this->getComputedFields($model);
 		$filter = $codegen->getReadFilter($modelName);
 // 		$filter = array_merge($filter, $computed);
-		
+
 		$fields = [];
 		$cols = $model->getColumns();
 		foreach ($cols as $col) {
 			$prop = $col->getName();
-		
+
 			if (!in_array($prop, $filter) && !$col->isForeignKey() && !$col->isPrimaryKey()) {
 				$fields[] = $prop;
 			}
 		}
-		
+
 		return $fields;
 	}
-	
+
 	/**
 	 * Returns computed model fields
 	 *
@@ -115,7 +115,7 @@ class CodeGeneratorService extends AbstractService {
 	 */
 	public function getComputedFields(Table $table) {
 		$fields = [];
-	
+
 		// iterate over behaviors to get their respective columns
 		foreach ($table->getBehaviors() as $behavior) {
 			switch ($behavior->getName()) {
@@ -123,16 +123,30 @@ class CodeGeneratorService extends AbstractService {
 					$fields[] = $behavior->getParameter('create_column');
 					$fields[] = $behavior->getParameter('update_column');
 					break;
-	
+
 				case 'aggregate_column':
 					$fields[] = $behavior->getParameter('name');
 					break;
 			}
 		}
-	
+
 		return $fields;
 	}
-	
+
+	/**
+	 * Returns all attributes that aren't written onto a model (because manually filter or computed)
+	 *
+	 * @param Table $model
+	 * @return array
+	 */
+	public function getWriteFilter(Table $model) {
+		$modelName = $model->getOriginCommonName();
+		$codegen = $this->getCodegen();
+		$filter = $codegen->getWriteFilter($modelName);
+		$computed = $this->getComputedFields($model);
+		return array_merge($filter, $computed);
+	}
+
 	/**
 	 * Helper to represent an array as php code
 	 *
@@ -144,24 +158,24 @@ class CodeGeneratorService extends AbstractService {
 		foreach ($array as $item) {
 			$fields .= sprintf("'%s', ", $item);
 		}
-	
+
 		if (strlen($fields) > 0) {
 			$fields = substr($fields, 0, -2);
 		}
-	
+
 		return sprintf('[%s]', $fields);
 	}
 
 	/**
 	 * Returns the filename for a given struct
-	 * 
+	 *
 	 * @param AbstractPhpStruct $struct
 	 * @return string
 	 */
 	public function getFilename(AbstractPhpStruct $struct) {
 		$package = $this->packageService->getPackage();
 		$relativeSourcePath = NamespaceResolver::getSourcePath($struct->getNamespace(), $package);
-		
+
 		if ($relativeSourcePath === null) {
 			return null;
 		}
@@ -172,17 +186,17 @@ class CodeGeneratorService extends AbstractService {
 		$path = $path->append($struct->getName() . '.php');
 		return $path->toString();
 	}
-	
+
 	/**
 	 * Returns a file object for a given struct
-	 * 
+	 *
 	 * @param AbstractPhpStruct $struct
 	 * @return File
 	 */
 	public function getFile(AbstractPhpStruct $struct) {
 		return new File($this->getFilename($struct));
 	}
-	
+
 	public function dumpStruct(AbstractPhpStruct $struct, $overwrite = false) {
 		$filename = $this->getFilename($struct);
 		$file = new File($filename);
@@ -194,7 +208,7 @@ class CodeGeneratorService extends AbstractService {
 
 			// write code to file
 			$file->write($code);
-			
+
 			// tell user about
 			$this->io->writeln(sprintf('Class <info>%s</info> written at <info>%s</info>', $struct->getQualifiedName(), $filename));
 		}

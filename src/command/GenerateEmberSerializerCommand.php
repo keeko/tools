@@ -2,19 +2,19 @@
 namespace keeko\tools\command;
 
 use keeko\framework\utils\NameUtils;
-use keeko\tools\generator\ember\EmberAbilitiesGenerator;
+use keeko\tools\generator\ember\EmberSerializerGenerator;
 use keeko\tools\model\Project;
 use keeko\tools\ui\EmberUI;
 use phootwork\file\File;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class GenerateEmberAbilitiesCommand extends AbstractEmberCommand {
+class GenerateEmberSerializerCommand extends AbstractEmberCommand {
 
 	protected function configure() {
 		$this
-			->setName('generate:ember:abilities')
-			->setDescription('Generates ember abilities');
+			->setName('generate:ember:serializer')
+			->setDescription('Generates ember serializers');
 
 		parent::configure();
 	}
@@ -33,17 +33,19 @@ class GenerateEmberAbilitiesCommand extends AbstractEmberCommand {
 		$module = $project->getPackage()->getKeeko()->getModule();
 		$this->modelService->read($project);
 		$models = $this->modelService->getModels();
-		$generator = new EmberAbilitiesGenerator($this->service, $project);
+		$generator = new EmberSerializerGenerator($this->service, $project);
 		$output = $this->io->getOutput();
 
 		foreach ($models as $model) {
 			$contents = $generator->generate($model);
-			$filename = sprintf('%s/ember/app/abilities/%s/%s.js', $this->project->getRootPath(),
-				str_replace('.', '/', $module->getSlug()), NameUtils::dasherize($model->getPhpName()));
-			$file = new File($filename);
-			$file->write($contents);
-			$output->writeln(sprintf('Ability <info>%s</info> written at <info>%s</info>',
-				$model->getOriginCommonName(), $filename));
+			if ($contents !== null) {
+				$filename = sprintf('%s/ember/app/serializers/%s/%s.js', $this->project->getRootPath(),
+					str_replace('.', '/', $module->getSlug()), NameUtils::dasherize($model->getPhpName()));
+				$file = new File($filename);
+				$file->write($contents);
+				$output->writeln(sprintf('Serializer <info>%s</info> written at <info>%s</info>',
+					$model->getOriginCommonName(), $filename));
+			}
 		}
 	}
 

@@ -3,7 +3,7 @@
 	"description" : "Keeko command line tools",
 	"license" : "MIT",
 	"authors" : [{
-			"name" : "gossi",
+			"name" : "Thomas Gossmann",
 			"homepage" : "http://gos.si"
 		}
 	],
@@ -21,7 +21,6 @@
 		"php" : ">=5.5.9",
 		"keeko/framework" : "dev-master",
 		"keeko/core" : "@dev",
-		"composer/composer" : "@dev",
 		"propel/propel" : "2.0.0-alpha5",
 		"puli/composer-plugin" : "@beta",
 		"puli/repository" : "@beta",

@@ -17,11 +17,12 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Propel\Generator\Model\Table;
+use keeko\tools\generator\serializer\TypeInferencerGenerator;
 
 class GenerateSerializerCommand extends AbstractKeekoCommand {
 
 	use QuestionHelperTrait;
-	
+
 	private $twig;
 
 	protected function configure() {
@@ -40,9 +41,9 @@ class GenerateSerializerCommand extends AbstractKeekoCommand {
 				'The model for which the serializer should be generated, when there is no name argument (if ommited all models will be generated)'
 			)
 		;
-		
+
 		$this->configureGenerateOptions();
-		
+
 		parent::configure();
 	}
 
@@ -63,17 +64,17 @@ class GenerateSerializerCommand extends AbstractKeekoCommand {
 			throw new \DomainException('No module definition found in composer.json - please run `keeko init`.');
 		}
 	}
-	
+
 	protected function interact(InputInterface $input, OutputInterface $output) {
 		$this->check();
-		
+
 		$ui = new SerializerUI($this);
 		$ui->show();
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$this->check();
-		
+
 		$name = $input->getArgument('name');
 		$modelName = $input->getOption('model');
 
@@ -96,21 +97,24 @@ class GenerateSerializerCommand extends AbstractKeekoCommand {
 				$this->generateModel($model);
 			}
 		}
+
+		// generate type inferencer
+		$this->generateInferencer();
 	}
 
 	private function generateModel(Table $model) {
 		$this->logger->info('Generate Serializer from Model: ' . $model->getOriginCommonName());
-		
+
 		// generate class
 		$generator = new ModelSerializerGenerator($this->service);
 		$serializer = $generator->generate($model);
 		$this->codegenService->dumpStruct($serializer, true);
-		
+
 		// generate trait
 		$generator = new ModelSerializerTraitGenerator($this->service);
 		$trait = $generator->generate($model);
 		$this->codegenService->dumpStruct($trait, true);
-		
+
 		// add serializer + ApiModelInterface on the model
 		$class = new PhpClass(str_replace('\\\\', '\\', $model->getNamespace() . '\\' . $model->getPhpName()));
 		$file = $this->codegenService->getFile($class);
@@ -132,14 +136,14 @@ class GenerateSerializerCommand extends AbstractKeekoCommand {
 					]))
 				)
 			;
-		
+
 			$this->codegenService->dumpStruct($class, true);
 		}
 	}
-	
+
 	/**
 	 * Generates a skeleton serializer
-	 *  
+	 *
 	 * @param string $name
 	 */
 	private function generateSkeleton($name) {
@@ -147,7 +151,7 @@ class GenerateSerializerCommand extends AbstractKeekoCommand {
 		$input = $this->io->getInput();
 
 		$className = NamespaceResolver::getNamespace('src/serializer', $this->package) . '\\' . $name;
-		
+
 		if (!Text::create($className)->endsWith('Serializer')) {
 			$className .= 'Serializer';
 		}
@@ -157,7 +161,11 @@ class GenerateSerializerCommand extends AbstractKeekoCommand {
 		$class = $generator->generate($className);
 		$this->codegenService->dumpStruct($class, $input->getOption('force'));
 	}
-	
-	
+
+	private function generateInferencer() {
+		$generator = new TypeInferencerGenerator($this->service);
+		$class = $generator->generate();
+		$this->codegenService->dumpStruct($class, true);
+	}
 
 }
