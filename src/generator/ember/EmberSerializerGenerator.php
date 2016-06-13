@@ -12,11 +12,11 @@ class EmberSerializerGenerator extends AbstractEmberGenerator {
 			return null;
 		}
 		$class = new EmberClassGenerator('JSONAPISerializer');
-		$class->addImport('JSONSerializer', 'ember-data/serializers/json');
+		$class->addImport('JSONAPISerializer', 'ember-data/serializers/json-api');
 
 		$attrs = '';
 		foreach ($filter as $field) {
-			$attrs .= sprintf("\t%s: {serialize: false },\n", NameUtils::toCamelCase($field));
+			$attrs .= sprintf("\t%s: {serialize: false},\n", NameUtils::toCamelCase($field));
 		}
 		$attrs = "{\n\t" . rtrim($attrs, "\n,") . "\n}";
 		$class->setProperty('attrs', $attrs);

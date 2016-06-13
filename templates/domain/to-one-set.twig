@@ -10,13 +10,12 @@ if ($model->get{{ local }}() !== $relatedId) {
 	$model->set{{ local }}($relatedId);
 
 	$event = new {{ class }}Event($model);
-	$dispatcher = $this->getServiceContainer()->getDispatcher();
-	$dispatcher->dispatch({{ class }}Event::PRE_{{ const }}_UPDATE, $event);
-	$dispatcher->dispatch({{ class }}Event::PRE_SAVE, $event);
+	$this->dispatch({{ class }}Event::PRE_{{ const }}_UPDATE, $event);
+	$this->dispatch({{ class }}Event::PRE_SAVE, $event);
 	$model->save();
-	$dispatcher->dispatch({{ class }}Event::POST_{{ const }}_UPDATE, $event);
-	$dispatcher->dispatch({{ class }}Event::POST_SAVE, $event);
-	
+	$this->dispatch({{ class }}Event::POST_{{ const }}_UPDATE, $event);
+	$this->dispatch({{ class }}Event::POST_SAVE, $event);
+
 	return Updated(['model' => $model]);
 }
 

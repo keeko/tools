@@ -8,6 +8,7 @@ use keeko\framework\utils\NameUtils;
 use keeko\tools\generator\serializer\AbstractSerializerGenerator;
 use keeko\tools\model\Relationship;
 use Propel\Generator\Model\Table;
+use gossi\codegen\model\PhpProperty;
 
 class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 
@@ -145,6 +146,8 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		}
 
 		$fields = [];
+		$methods = [];
+		$plural = [];
 		$relationships = $this->modelService->getRelationships($model);
 
 		if ($relationships->size() > 0) {
@@ -196,9 +199,19 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 				// read
 				$body = $this->twig->render('to-many-read.twig', [
 					'class' => $foreign->getPhpName(),
-					'related' => $rel->getRelatedPluralName(),
+					'related' => $typeName,
 					'related_type' => $rel->getRelatedTypeName()
 				]);
+
+				// method name for collection
+				$methods[$typeName] = NameUtils::toStudlyCase(NameUtils::singularize($typeName));
+				$plural[$typeName] = NameUtils::pluralize(NameUtils::toStudlyCase(NameUtils::singularize($typeName)));
+				if ($rel->getType() == Relationship::MANY_TO_MANY
+						&& $rel->getForeign() == $rel->getModel()) {
+					$lk = $rel->getLocalKey();
+					$methods[$typeName] = $foreign->getPhpName() . 'RelatedBy' . $lk->getLocalColumn()->getPhpName();
+					$plural[$typeName] = NameUtils::pluralize($foreign->getPhpName()) . 'RelatedBy' . $lk->getLocalColumn()->getPhpName();
+				}
 			}
 
 			// set read method on class
@@ -207,12 +220,64 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 				->setBody($body)
 				->setType('Relationship')
 			);
+
+			// add reverse many-to-many
+			if ($rel->getType() == Relationship::MANY_TO_MANY
+					&& $rel->getForeign() == $rel->getModel()) {
+				$foreign = $rel->getForeign();
+				$typeName = $rel->getReverseRelatedPluralTypeName();
+				$method = NameUtils::toCamelCase($rel->getReverseRelatedPluralName());
+				$fields[$typeName] = $foreign->getPhpName() . '::getSerializer()->getType(null)';
+				$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName());
+				$trait->addUseStatement('Tobscure\\JsonApi\\Collection');
+
+				// read
+				$body = $this->twig->render('to-many-read.twig', [
+					'class' => $foreign->getPhpName(),
+					'related' => $typeName,
+					'related_type' => $rel->getReverseRelatedTypeName()
+				]);
+
+				$fk = $rel->getForeignKey();
+				$methods[$typeName] = $foreign->getPhpName() . 'RelatedBy' . $fk->getLocalColumn()->getPhpName();
+				$plural[$typeName] = NameUtils::pluralize($foreign->getPhpName()) . 'RelatedBy' . $fk->getLocalColumn()->getPhpName();
+
+				// set read method on class
+				$trait->setMethod(PhpMethod::create($method)
+					->addParameter(PhpParameter::create('model'))
+					->setBody($body)
+					->setType('Relationship')
+				);
+			}
 		}
 
+		// method: getRelationships() : array
 		$trait->setMethod(PhpMethod::create('getRelationships')
 			->setBody($this->twig->render('getRelationships.twig', [
 				'fields' => $fields
 			]))
+		);
+
+		// method: getCollectionMethodName($relatedName) : string
+		$trait->setProperty(PhpProperty::create('methodNames')
+			->setExpression($this->codegenService->mapToCode($methods))
+			->setVisibility(PhpProperty::VISIBILITY_PRIVATE)
+		);
+		$trait->setMethod(PhpMethod::create('getCollectionMethodName')
+			->addParameter(PhpParameter::create('relatedName'))
+			->setBody($this->twig->render('getCollectionMethodName.twig'))
+			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+		);
+
+		// method: getCollectionMethodPluralName($relatedName) : string
+		$trait->setProperty(PhpProperty::create('methodPluralNames')
+			->setExpression($this->codegenService->mapToCode($plural))
+			->setVisibility(PhpProperty::VISIBILITY_PRIVATE)
+		);
+		$trait->setMethod(PhpMethod::create('getCollectionMethodPluralName')
+			->addParameter(PhpParameter::create('relatedName'))
+			->setBody($this->twig->render('getCollectionMethodPluralName.twig'))
+			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
 		);
 	}
 

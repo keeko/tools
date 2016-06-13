@@ -166,6 +166,19 @@ class CodeGeneratorService extends AbstractService {
 		return sprintf('[%s]', $fields);
 	}
 
+	public function mapToCode(array $array) {
+		$fields = '';
+		foreach ($array as $key => $value) {
+			$fields .= sprintf("\t'%s' => '%s',\n", $key, $value);
+		}
+
+		if (strlen($fields) > 0) {
+			$fields = substr($fields, 0, -2);
+		}
+
+		return sprintf("[\n%s\n]", $fields);
+	}
+
 	/**
 	 * Returns the filename for a given struct
 	 *

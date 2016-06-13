@@ -9,13 +9,15 @@ if ($model === null) {
 {{ middle_class }}Query::create()->filterBy{{ reverse_related }}($model)->delete();
 
 // add them
+$serializer = {{ class }}::getSerializer();
+$method = 'add' . $serializer->getCollectionMethodName('{{ related }}');
 $errors = [];
 foreach ($data as $entry) {
 	if (!isset($entry['id'])) {
 		$errors[] = 'Missing id for {{ foreign_class }}';
 	}
 	$related = {{ foreign_class }}Query::create()->findOneById($entry['id']);
-	$model->add{{ related }}($related);
+	$model->$method($related);
 }
 
 if (count($errors) > 0) {
@@ -24,12 +26,11 @@ if (count($errors) > 0) {
 
 // save and dispatch events
 $event = new {{ class }}Event($model);
-$dispatcher = $this->getServiceContainer()->getDispatcher();
-$dispatcher->dispatch({{ class }}Event::PRE_{{ const }}_UPDATE, $event);
-$dispatcher->dispatch({{ class }}Event::PRE_SAVE, $event);
+$this->dispatch({{ class }}Event::PRE_{{ const }}_UPDATE, $event);
+$this->dispatch({{ class }}Event::PRE_SAVE, $event);
 $rows = $model->save();
-$dispatcher->dispatch({{ class }}Event::POST_{{ const }}_UPDATE, $event);
-$dispatcher->dispatch({{ class }}Event::POST_SAVE, $event);
+$this->dispatch({{ class }}Event::POST_{{ const }}_UPDATE, $event);
+$this->dispatch({{ class }}Event::POST_SAVE, $event);
 
 if ($rows > 0) {
 	return Updated(['model' => $model]);

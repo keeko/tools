@@ -12,10 +12,9 @@ if ($validator !== null && !$validator->validate($model)) {
 
 // dispatch
 $event = new {{ class }}Event($model);
-$dispatcher = $this->getServiceContainer()->getDispatcher();
-$dispatcher->dispatch({{ class }}Event::PRE_CREATE, $event);
-$dispatcher->dispatch({{ class }}Event::PRE_SAVE, $event);
+$this->dispatch({{ class }}Event::PRE_CREATE, $event);
+$this->dispatch({{ class }}Event::PRE_SAVE, $event);
 $model->save();
-$dispatcher->dispatch({{ class }}Event::POST_CREATE, $event);
-$dispatcher->dispatch({{ class }}Event::POST_SAVE, $event);
+$this->dispatch({{ class }}Event::POST_CREATE, $event);
+$this->dispatch({{ class }}Event::POST_SAVE, $event);
 return new Created(['model' => $model]);

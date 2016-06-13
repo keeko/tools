@@ -1,0 +1,21 @@
+$model = $event->get{{ class }}();
+$methods = [
+	{{ class }}Event::PRE_CREATE => 'preCreate',
+	{{ class }}Event::POST_CREATE => 'postCreate',
+	{{ class }}Event::PRE_UPDATE => 'preUpdate',
+	{{ class }}Event::POST_UPDATE => 'postUpdate',
+	{{ class }}Event::PRE_DELETE => 'preDelete',
+	{{ class }}Event::POST_DELETE => 'postDelete',
+	{{ class }}Event::PRE_SAVE => 'preSave',
+	{{ class }}Event::POST_SAVE => 'postSave'
+];
+
+if (isset($methods[$type])) {
+	$method = $methods[$type];
+	if (method_exists($this, $method)) {
+		$this->$method($model);
+	}
+}
+
+$dispatcher = $this->getServiceContainer()->getDispatcher();
+$dispatcher->dispatch($type, $event);

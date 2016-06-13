@@ -13,13 +13,14 @@ use keeko\tools\model\ManyToManyRelationship;
 use keeko\tools\model\OneToManyRelationship;
 
 class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
-	
+
 	public function generate(Table $model) {
 		$trait = parent::generate($model);
-		
+
 		// generate event
 		$event = $this->generateEvent($model);
 		$trait->addUseStatement($event->getQualifiedName());
+		$this->generateDispatch($trait, $model);
 
 		// generate CUD methods
 		$this->generateCreate($trait, $model);
@@ -29,19 +30,19 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		// generate relationship methods
 		if (!$model->isReadOnly()) {
 			$relationships = $this->modelService->getRelationships($model);
-			
+
 			foreach ($relationships->getAll() as $relationship) {
 				switch ($relationship->getType()) {
 					case Relationship::ONE_TO_ONE:
 						$this->generateToOneRelationshipSet($trait, $relationship);
 						break;
-						
+
 					case Relationship::ONE_TO_MANY:
 						$this->generateToManyRelationshipAdd($trait, $relationship);
 						$this->generateToManyRelationshipRemove($trait, $relationship);
 						$this->generateOneToManyRelationshipUpdate($trait, $relationship);
 						break;
-					
+
 					case Relationship::MANY_TO_MANY:
 						$this->generateToManyRelationshipAdd($trait, $relationship);
 						$this->generateToManyRelationshipRemove($trait, $relationship);
@@ -53,9 +54,9 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 
 		return $trait;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param Table $model
 	 * @return PhpClass
 	 */
@@ -63,7 +64,7 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		$package = $this->packageService->getPackage();
 		$slug = $package->getKeeko()->getModule()->getSlug();
 		$modelName = $model->getOriginCommonName();
-		
+
 		$class = new PhpClass();
 		$class->setNamespace(str_replace('model', 'event', $model->getNamespace()));
 		$class->setName($model->getPhpName() . 'Event');
@@ -74,7 +75,7 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName());
 		}
 		$class->addUseStatement('Symfony\Component\EventDispatcher\Event');
-		
+
 		// constants
 		$class->setConstant('PRE_CREATE', sprintf('%s.%s.pre_create', $slug, $modelName));
 		$class->setConstant('POST_CREATE', sprintf('%s.%s.post_create', $slug, $modelName));
@@ -84,11 +85,11 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		$class->setConstant('POST_SAVE', sprintf('%s.%s.post_save', $slug, $modelName));
 		$class->setConstant('PRE_DELETE', sprintf('%s.%s.pre_delete', $slug, $modelName));
 		$class->setConstant('POST_DELETE', sprintf('%s.%s.post_delete', $slug, $modelName));
-		
+
 		// generate relationship constants
 		if (!$model->isReadOnly()) {
 			$relationships = $this->modelService->getRelationships($model);
-			
+
 			foreach ($relationships->getAll() as $relationship) {
 				// one-to-one relationships
 				if ($relationship->getType() == Relationship::ONE_TO_ONE) {
@@ -97,7 +98,7 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 					$class->setConstant('PRE_' . $name . '_UPDATE', sprintf('%s.%s.pre_%s_update', $slug, $modelName, $snake));
 					$class->setConstant('POST_' . $name . '_UPDATE', sprintf('%s.%s.post_%s_update', $slug, $modelName, $snake));
 				}
-				
+
 				// others
 				else {
 					$snake = NameUtils::toSnakeCase($relationship->getRelatedPluralName());
@@ -111,37 +112,52 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 				}
 			}
 		}
-		
+
 		// properties
 		$modelVariableName = $model->getCamelCaseName();
 		$class->setProperty(PhpProperty::create($modelVariableName)
 			->setType($model->getPackage())
 			->setVisibility(PhpProperty::VISIBILITY_PROTECTED)
 		);
-		
+
 		// constructor
 		$type = $model->getPhpName() == 'Event' ? 'Model' : $model->getPhpName();
 		$class->setMethod(PhpMethod::create('__construct')
 			->addParameter(PhpParameter::create($modelVariableName)->setType($type))
 			->setBody('$this->' . $modelVariableName . ' = $' . $modelVariableName .';')
 		);
-		
+
 		// getModel()
 		$class->setMethod(PhpMethod::create('get' . $model->getPhpName())
 			->setType($model->getPhpName())
 			->setBody('return $this->' . $modelVariableName .';')
 		);
-		
+
 		$this->codegenService->dumpStruct($class, true);
-		
+
 		return $class;
 	}
-	
+
+	protected function generateDispatch(PhpTrait $trait, Table $model) {
+		$trait->setMethod(PhpMethod::create('dispatch')
+			->addParameter(PhpParameter::create('type')
+				->setType('string')
+			)
+			->addParameter(PhpParameter::create('event')
+				->setType($model->getPhpName() . 'Event')
+			)
+			->setBody($this->twig->render('dispatch.twig', [
+				'class' => $model->getPhpName()
+			]))
+			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+		);
+	}
+
 	protected function generateCreate(PhpTrait $trait, Table $model) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\Created');
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotFound');
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
-	
+
 		$trait->setMethod(PhpMethod::create('create')
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('create.twig', [
@@ -151,13 +167,13 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->setType('PayloadInterface')
 		);
 	}
-	
+
 	protected function generateUpdate(PhpTrait $trait, Table $model) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\Updated');
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotUpdated');
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotFound');
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
-		
+
 		$trait->setMethod(PhpMethod::create('update')
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))
@@ -169,12 +185,12 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->setType('PayloadInterface')
 		);
 	}
-	
+
 	protected function generateDelete(PhpTrait $trait, Table $model) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\Deleted');
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotDeleted');
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotFound');
-		
+
 		$trait->setMethod(PhpMethod::create('delete')
 			->addParameter(PhpParameter::create('id'))
 			->setBody($this->twig->render('delete.twig', [
@@ -184,7 +200,7 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->setType('PayloadInterface')
 		);
 	}
-	
+
 	protected function generateToOneRelationshipSet(PhpTrait $trait, Relationship $relationship) {
 		$model = $relationship->getModel();
 		$name = $relationship->getRelatedName();
@@ -200,10 +216,10 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->setType('PayloadInterface')
 		);
 	}
-	
+
 	protected function generateToManyRelationshipAdd(PhpTrait $trait, Relationship $relationship) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
-		
+
 		$model = $relationship->getModel();
 		$foreign = $relationship->getForeign();
 		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
@@ -212,18 +228,18 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('id'))
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('to-many-add.twig', [
-				'class' => $model->getPhpName(),			
-				'related' => $relationship->getRelatedName(),
+				'class' => $model->getPhpName(),
+				'related' => $relationship->getRelatedPluralTypeName(),
 				'foreign_class' => $foreign->getPhpName(),
 				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
 			]))
 			->setType('PayloadInterface')
 		);
 	}
-	
+
 	protected function generateToManyRelationshipRemove(PhpTrait $trait, Relationship $relationship) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
-		
+
 		$model = $relationship->getModel();
 		$foreign = $relationship->getForeign();
 		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
@@ -233,17 +249,17 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('to-many-remove.twig', [
 				'class' => $model->getPhpName(),
-				'related' => $relationship->getRelatedName(),
+				'related' => $relationship->getRelatedPluralTypeName(),
 				'foreign_class' => $foreign->getPhpName(),
 				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
 			]))
 			->setType('PayloadInterface')
 		);
 	}
-	
+
 	protected function generateOneToManyRelationshipUpdate(PhpTrait $trait, OneToManyRelationship $relationship) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
-	
+
 		$model = $relationship->getModel();
 		$foreign = $relationship->getForeign();
 		$trait->addUseStatement($foreign->getNamespace() . '\\' . $foreign->getPhpName() . 'Query');
@@ -261,10 +277,10 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->setType('PayloadInterface')
 		);
 	}
-	
+
 	protected function generateManyToManyRelationshipUpdate(PhpTrait $trait, ManyToManyRelationship $relationship) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
-	
+
 		$model = $relationship->getModel();
 		$foreign = $relationship->getForeign();
 		$middle = $relationship->getMiddle();
@@ -276,7 +292,7 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('many-to-many-update.twig', [
 				'class' => $model->getPhpName(),
-				'related' => $relationship->getRelatedName(),
+				'related' => $relationship->getRelatedPluralTypeName(),
 				'reverse_related' => $relationship->getReverseRelatedName(),
 				'foreign_class' => $foreign->getPhpName(),
 				'middle_class' => $middle->getPhpName(),
