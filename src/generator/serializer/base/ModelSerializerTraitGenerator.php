@@ -123,13 +123,13 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 				'normalizer' => $normalizer->size() > 0
 			]);
 
-			$trait->setMethod(PhpMethod::create('hydrateRelationships')
-				->addParameter(PhpParameter::create('model'))
-				->addParameter(PhpParameter::create('data'))
-				->setAbstract(true)
-				->setType('void')
-				->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
-			);
+// 			$trait->setMethod(PhpMethod::create('hydrateRelationships')
+// 				->addParameter(PhpParameter::create('model'))
+// 				->addParameter(PhpParameter::create('data'))
+// 				->setAbstract(true)
+// 				->setType('void')
+// 				->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+// 			);
 		}
 
 		$trait->setMethod(PhpMethod::create('hydrate')
@@ -149,7 +149,9 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		$methods = [];
 		$plural = [];
 		$relationships = $this->modelService->getRelationships($model);
+		$methodNameGenerator = $this->factory->getRelationshipMethodNameGenerator();
 
+		// add self link for relationships if there are any
 		if ($relationships->size() > 0) {
 			$trait->addUseStatement('Tobscure\\JsonApi\\Relationship');
 			$trait->setMethod(PhpMethod::create('addRelationshipSelfLink')
@@ -168,6 +170,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 			);
 		}
 
+		// iterate all relationships
 		foreach ($relationships->getAll() as $rel) {
 			// one-to-one
 			if ($rel->getType() == Relationship::ONE_TO_ONE) {
@@ -204,14 +207,14 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 				]);
 
 				// method name for collection
-				$methods[$typeName] = NameUtils::toStudlyCase(NameUtils::singularize($typeName));
-				$plural[$typeName] = NameUtils::pluralize(NameUtils::toStudlyCase(NameUtils::singularize($typeName)));
-				if ($rel->getType() == Relationship::MANY_TO_MANY
-						&& $rel->getForeign() == $rel->getModel()) {
-					$lk = $rel->getLocalKey();
-					$methods[$typeName] = $foreign->getPhpName() . 'RelatedBy' . $lk->getLocalColumn()->getPhpName();
-					$plural[$typeName] = NameUtils::pluralize($foreign->getPhpName()) . 'RelatedBy' . $lk->getLocalColumn()->getPhpName();
-				}
+				$methods[$typeName] = $methodNameGenerator->generateMethodName($rel);
+				$plural[$typeName] = $methodNameGenerator->generatePluralMethodName($rel);
+// 				if ($rel->getType() == Relationship::MANY_TO_MANY
+// 						&& $rel->getForeign() == $rel->getModel()) {
+// 					$lk = $rel->getLocalKey();
+// 					$methods[$typeName] = $foreign->getPhpName() . 'RelatedBy' . $lk->getLocalColumn()->getPhpName();
+// 					$plural[$typeName] = NameUtils::pluralize($foreign->getPhpName()) . 'RelatedBy' . $lk->getLocalColumn()->getPhpName();
+// 				}
 			}
 
 			// set read method on class
@@ -222,8 +225,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 			);
 
 			// add reverse many-to-many
-			if ($rel->getType() == Relationship::MANY_TO_MANY
-					&& $rel->getForeign() == $rel->getModel()) {
+			if ($rel->getType() == Relationship::MANY_TO_MANY && $rel->isReflexive()) {
 				$foreign = $rel->getForeign();
 				$typeName = $rel->getReverseRelatedPluralTypeName();
 				$method = NameUtils::toCamelCase($rel->getReverseRelatedPluralName());
@@ -238,9 +240,8 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 					'related_type' => $rel->getReverseRelatedTypeName()
 				]);
 
-				$fk = $rel->getForeignKey();
-				$methods[$typeName] = $foreign->getPhpName() . 'RelatedBy' . $fk->getLocalColumn()->getPhpName();
-				$plural[$typeName] = NameUtils::pluralize($foreign->getPhpName()) . 'RelatedBy' . $fk->getLocalColumn()->getPhpName();
+				$methods[$typeName] = $methodNameGenerator->generateReverseMethodName($rel);
+				$plural[$typeName] = $methodNameGenerator->generateReversePluralMethodName($rel);
 
 				// set read method on class
 				$trait->setMethod(PhpMethod::create($method)

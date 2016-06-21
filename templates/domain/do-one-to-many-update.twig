@@ -1,0 +1,17 @@
+// remove all relationships before
+{{ foreign_class }}Query::create()->filterBy{{ reverse_related }}($model)->delete();
+
+// add them
+$errors = [];
+foreach ($data as $entry) {
+	if (!isset($entry['id'])) {
+		$errors[] = 'Missing id for {{ foreign_class }}';
+	} else {
+		$related = {{ foreign_class }}Query::create()->findOneById($entry['id']);
+		$model->add{{ related }}($related);
+	}
+}
+
+if (count($errors) > 0) {
+	throw new ErrorsException($errors);
+}

@@ -6,6 +6,6 @@ $attribs = isset($data['attributes']) ? $data['attributes'] : [];
 $model = HydrateUtils::hydrate($attribs, $model, {{ code|raw }});
 
 // relationships
-$this->hydrateRelationships($model, $data);
+//$this->hydrateRelationships($model, $data);
 
 return $model;

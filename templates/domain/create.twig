@@ -1,6 +1,7 @@
 // hydrate
 $serializer = {{ class }}::getSerializer();
 $model = $serializer->hydrate(new {{ class }}(), $data);
+$this->hydrateRelationships($model, $data);
 
 // validate
 $validator = $this->getValidator();

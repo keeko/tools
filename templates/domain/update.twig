@@ -8,6 +8,7 @@ if ($model === null) {
 // hydrate
 $serializer = {{ class }}::getSerializer();
 $model = $serializer->hydrate($model, $data);
+$this->hydrateRelationships($model, $data);
 
 // validate
 $validator = $this->getValidator();

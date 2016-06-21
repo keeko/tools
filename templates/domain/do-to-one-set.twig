@@ -1,0 +1,7 @@
+if ($model->get{{ local }}() !== $relatedId) {
+	$model->set{{ local }}($relatedId);
+
+	return true;
+}
+
+return false;

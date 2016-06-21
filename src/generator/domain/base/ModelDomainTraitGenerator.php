@@ -210,10 +210,22 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('relatedId'))
 			->setBody($this->twig->render('to-one-set.twig', [
 				'class' => $model->getPhpName(),
-				'local' => $relationship->getForeignKey()->getLocalColumn()->getPhpName(),
+				'related_name' => $name,
 				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedName()))
 			]))
 			->setType('PayloadInterface')
+		);
+
+		$trait->setMethod(PhpMethod::create('doSet' . $name . 'Id')
+			->setDescription(str_replace('{foreign}', $relationship->getRelatedName(), 'Internal mechanism to set the {foreign} id'))
+			->addParameter(PhpParameter::create('model')
+				->setType($model->getPhpName())
+			)
+			->addParameter(PhpParameter::create('relatedId'))
+			->setBody($this->twig->render('do-to-one-set.twig', [
+				'local' => $relationship->getForeignKey()->getLocalColumn()->getPhpName()
+			]))
+			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
 		);
 	}
 
@@ -229,12 +241,54 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('to-many-add.twig', [
 				'class' => $model->getPhpName(),
-				'related' => $relationship->getRelatedPluralTypeName(),
-				'foreign_class' => $foreign->getPhpName(),
+				'related_name' => $relationship->getRelatedPluralName(),
 				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
 			]))
 			->setType('PayloadInterface')
 		);
+
+		$methodNameGenerator = $this->factory->getRelationshipMethodNameGenerator();
+		$trait->setMethod(PhpMethod::create('doAdd' . $relationship->getRelatedPluralName())
+			->setDescription('Interal mechanism to add ' . $relationship->getRelatedPluralName() . ' to ' . $model->getPhpName())
+			->addParameter(PhpParameter::create('model')
+				->setType($model->getPhpName())
+			)
+			->addParameter(PhpParameter::create('data'))
+			->setBody($this->twig->render('do-to-many-add.twig', [
+				'foreign_class' => $foreign->getPhpName(),
+				'method_name' => $methodNameGenerator->generateMethodName($relationship)
+			]))
+			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+		);
+
+		// reflexive add method on many-to-many relationship
+		if ($relationship->getType() == Relationship::MANY_TO_MANY && $relationship->isReflexive()) {
+			$trait->setMethod(PhpMethod::create('add' . $relationship->getReverseRelatedPluralName())
+				->setDescription('Adds ' . $relationship->getReverseRelatedPluralName() . ' to ' . $model->getPhpName())
+				->addParameter(PhpParameter::create('id'))
+				->addParameter(PhpParameter::create('data'))
+				->setBody($this->twig->render('to-many-add.twig', [
+					'class' => $model->getPhpName(),
+					'related_name' => $relationship->getReverseRelatedPluralName(),
+					'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
+				]))
+				->setType('PayloadInterface')
+			);
+
+			$methodNameGenerator = $this->factory->getRelationshipMethodNameGenerator();
+			$trait->setMethod(PhpMethod::create('doAdd' . $relationship->getReverseRelatedPluralName())
+				->setDescription('Interal mechanism to add ' . $relationship->getReverseRelatedPluralName() . ' to ' . $model->getPhpName())
+				->addParameter(PhpParameter::create('model')
+					->setType($model->getPhpName())
+				)
+				->addParameter(PhpParameter::create('data'))
+				->setBody($this->twig->render('do-to-many-add.twig', [
+					'foreign_class' => $foreign->getPhpName(),
+					'method_name' => $methodNameGenerator->generateReverseMethodName($relationship)
+				]))
+				->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+			);
+		}
 	}
 
 	protected function generateToManyRelationshipRemove(PhpTrait $trait, Relationship $relationship) {
@@ -249,16 +303,59 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('to-many-remove.twig', [
 				'class' => $model->getPhpName(),
-				'related' => $relationship->getRelatedPluralTypeName(),
-				'foreign_class' => $foreign->getPhpName(),
+				'related_name' => $relationship->getRelatedPluralName(),
 				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
 			]))
 			->setType('PayloadInterface')
 		);
+
+		$methodNameGenerator = $this->factory->getRelationshipMethodNameGenerator();
+		$trait->setMethod(PhpMethod::create('doRemove' . $relationship->getRelatedPluralName())
+			->setDescription('Interal mechanism to remove ' . $relationship->getRelatedPluralName() . ' from ' . $model->getPhpName())
+			->addParameter(PhpParameter::create('model')
+				->setType($model->getPhpName())
+				)
+			->addParameter(PhpParameter::create('data'))
+			->setBody($this->twig->render('do-to-many-remove.twig', [
+				'foreign_class' => $foreign->getPhpName(),
+				'method_name' => $methodNameGenerator->generateMethodName($relationship)
+			]))
+			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+		);
+
+		// reflexive remove method on many-to-many relationship
+		if ($relationship->getType() == Relationship::MANY_TO_MANY && $relationship->isReflexive()) {
+			$trait->setMethod(PhpMethod::create('remove' . $relationship->getReverseRelatedPluralName())
+				->setDescription('Removes ' . $relationship->getReverseRelatedPluralName() . ' from ' . $model->getPhpName())
+				->addParameter(PhpParameter::create('id'))
+				->addParameter(PhpParameter::create('data'))
+				->setBody($this->twig->render('to-many-remove.twig', [
+					'class' => $model->getPhpName(),
+					'related_name' => $relationship->getReverseRelatedPluralName(),
+					'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
+				]))
+				->setType('PayloadInterface')
+			);
+
+			$methodNameGenerator = $this->factory->getRelationshipMethodNameGenerator();
+			$trait->setMethod(PhpMethod::create('doRemove' . $relationship->getReverseRelatedPluralName())
+				->setDescription('Interal mechanism to remove ' . $relationship->getReverseRelatedPluralName() . ' from ' . $model->getPhpName())
+				->addParameter(PhpParameter::create('model')
+					->setType($model->getPhpName())
+				)
+				->addParameter(PhpParameter::create('data'))
+				->setBody($this->twig->render('do-to-many-remove.twig', [
+					'foreign_class' => $foreign->getPhpName(),
+					'method_name' => $methodNameGenerator->generateMethodName($relationship)
+				]))
+				->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+			);
+		}
 	}
 
 	protected function generateOneToManyRelationshipUpdate(PhpTrait $trait, OneToManyRelationship $relationship) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
+		$trait->addUseStatement('keeko\\framework\\exceptions\\ErrorsException');
 
 		$model = $relationship->getModel();
 		$foreign = $relationship->getForeign();
@@ -269,17 +366,30 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('one-to-many-update.twig', [
 				'class' => $model->getPhpName(),
-				'related' => $relationship->getRelatedName(),
-				'reverse_related' => $relationship->getReverseRelatedName(),
-				'foreign_class' => $foreign->getPhpName(),
+				'related_name' => $relationship->getRelatedPluralName(),
 				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
 			]))
 			->setType('PayloadInterface')
+		);
+
+		$trait->setMethod(PhpMethod::create('doUpdate' . $relationship->getRelatedPluralName())
+			->setDescription('Internal update mechanism of ' . $relationship->getRelatedPluralName() . ' on ' . $model->getPhpName())
+			->addParameter(PhpParameter::create('model')
+				->setType($model->getPhpName())
+			)
+			->addParameter(PhpParameter::create('data'))
+			->setBody($this->twig->render('do-one-to-many-update.twig', [
+				'related' => $relationship->getRelatedName(),
+				'reverse_related' => $relationship->getReverseRelatedName(),
+				'foreign_class' => $foreign->getPhpName()
+			]))
+			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
 		);
 	}
 
 	protected function generateManyToManyRelationshipUpdate(PhpTrait $trait, ManyToManyRelationship $relationship) {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\NotValid');
+		$trait->addUseStatement('keeko\\framework\\exceptions\\ErrorsException');
 
 		$model = $relationship->getModel();
 		$foreign = $relationship->getForeign();
@@ -292,13 +402,57 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->addParameter(PhpParameter::create('data'))
 			->setBody($this->twig->render('many-to-many-update.twig', [
 				'class' => $model->getPhpName(),
-				'related' => $relationship->getRelatedPluralTypeName(),
-				'reverse_related' => $relationship->getReverseRelatedName(),
-				'foreign_class' => $foreign->getPhpName(),
-				'middle_class' => $middle->getPhpName(),
+				'related_name' => $relationship->getRelatedPluralName(),
 				'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
 			]))
 			->setType('PayloadInterface')
 		);
+
+		$methodNameGenerator = $this->factory->getRelationshipMethodNameGenerator();
+		$trait->setMethod(PhpMethod::create('doUpdate' . $relationship->getRelatedPluralName())
+			->setDescription('Internal update mechanism of ' . $relationship->getRelatedPluralName() . ' on ' . $model->getPhpName())
+			->addParameter(PhpParameter::create('model')
+				->setType($model->getPhpName())
+			)
+			->addParameter(PhpParameter::create('data'))
+			->setBody($this->twig->render('do-many-to-many-update.twig', [
+				'method_name' => $methodNameGenerator->generateMethodName($relationship),
+				'reverse_related' => $methodNameGenerator->generateReverseMethodName($relationship),
+				'foreign_class' => $foreign->getPhpName(),
+				'middle_class' => $middle->getPhpName(),
+			]))
+			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+		);
+
+		// reflexive update methods
+		if ($relationship->isReflexive()) {
+			$trait->setMethod(PhpMethod::create('update' . $relationship->getReverseRelatedPluralName())
+				->setDescription('Updates ' . $relationship->getReverseRelatedPluralName() . ' on ' . $model->getPhpName())
+				->addParameter(PhpParameter::create('id'))
+				->addParameter(PhpParameter::create('data'))
+				->setBody($this->twig->render('many-to-many-update.twig', [
+					'class' => $model->getPhpName(),
+					'related_name' => $relationship->getReverseRelatedName(),
+					'const' => strtoupper(NameUtils::toSnakeCase($relationship->getRelatedPluralName()))
+				]))
+				->setType('PayloadInterface')
+			);
+
+			$methodNameGenerator = $this->factory->getRelationshipMethodNameGenerator();
+			$trait->setMethod(PhpMethod::create('doUpdate' . $relationship->getReverseRelatedPluralName())
+				->setDescription('Internal update mechanism of ' . $relationship->getReverseRelatedPluralName() . ' on ' . $model->getPhpName())
+				->addParameter(PhpParameter::create('model')
+					->setType($model->getPhpName())
+				)
+				->addParameter(PhpParameter::create('data'))
+				->setBody($this->twig->render('do-many-to-many-update.twig', [
+					'method_name' => $methodNameGenerator->generateReverseMethodName($relationship),
+					'reverse_related' => $methodNameGenerator->generateMethodName($relationship),
+					'foreign_class' => $foreign->getPhpName(),
+					'middle_class' => $middle->getPhpName(),
+				]))
+				->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+			);
+		}
 	}
 }

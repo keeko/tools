@@ -6,9 +6,7 @@ if ($model === null) {
 }
 
 // update
-if ($model->get{{ local }}() !== $relatedId) {
-	$model->set{{ local }}($relatedId);
-
+if ($this->doSet{{ related_name }}Id($model, $relatedId)) {
 	$event = new {{ class }}Event($model);
 	$this->dispatch({{ class }}Event::PRE_{{ const }}_UPDATE, $event);
 	$this->dispatch({{ class }}Event::PRE_SAVE, $event);

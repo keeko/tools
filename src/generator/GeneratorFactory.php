@@ -35,31 +35,35 @@ use keeko\tools\generator\responder\ToManyRelationshipJsonResponderGenerator;
 use keeko\tools\generator\responder\ToOneRelationshipJsonResponderGenerator;
 use keeko\tools\model\Relationship;
 use keeko\tools\services\CommandService;
+use keeko\tools\generator\name\RelationshipMethodNameGenerator;
 
 class GeneratorFactory {
-	
+
 	/** @var CommandService */
 	private $service;
-	
+
 	/** @var ActionNameGenerator */
 	private $actionNameGenerator;
-	
+
 	/** @var ActionClassNameGenerator */
 	private $actionClassNameGenerator;
-	
+
 	/** @var ActionTitleGenerator */
 	private $actionTitleGenerator;
-	
+
 	/** @var NamespaceGenerator */
 	private $namespaceGenerator;
-	
+
 	/** @var ResponderClassNameGenerator */
 	private $responderClassNameGenerator;
-	
+
+	/** @var RelationshipMethodNameGenerator */
+	private $relationshipMethodNameGenerator;
+
 	public function __construct(CommandService $service) {
 		$this->service = $service;
 	}
-	
+
 	/**
 	 * Creates a new package generator
 	 *
@@ -71,12 +75,12 @@ class GeneratorFactory {
 		switch ($type) {
 			case 'app':
 				return new AppPackageGenerator($this->service);
-	
+
 			case 'module':
 				return new ModulePackageGenerator($this->service);
 		}
 	}
-	
+
 	/**
 	 * Creates a generator for the given trait type
 	 *
@@ -87,24 +91,24 @@ class GeneratorFactory {
 		switch ($type) {
 			case Types::PAGINATE:
 				return new ModelPaginateActionGenerator($this->service);
-	
+
 			case Types::CREATE:
 				return new ModelCreateActionGenerator($this->service);
-	
+
 			case Types::UPDATE:
 				return new ModelUpdateActionGenerator($this->service);
-	
+
 			case Types::READ:
 				return new ModelReadActionGenerator($this->service);
-	
+
 			case Types::DELETE:
 				return new ModelDeleteActionGenerator($this->service);
 		}
 	}
-	
+
 	/**
 	 * Creates a generator for a relationship action
-	 * 
+	 *
 	 * @param string $type
 	 * @param Relationship $relationship
 	 * @return AbstractActionGenerator
@@ -114,7 +118,7 @@ class GeneratorFactory {
 			switch ($type) {
 				case Types::READ:
 					return new ToOneRelationshipReadActionGenerator($this->service);
-					
+
 				case Types::UPDATE:
 					return new ToOneRelationshipUpdateActionGenerator($this->service);
 			}
@@ -122,22 +126,22 @@ class GeneratorFactory {
 			switch ($type) {
 				case Types::READ:
 					return new ToManyRelationshipReadActionGenerator($this->service);
-					
+
 				case Types::UPDATE:
 					return new ToManyRelationshipUpdateActionGenerator($this->service);
-					
+
 				case Types::ADD:
 					return new ToManyRelationshipAddActionGenerator($this->service);
-					
+
 				case Types::REMOVE:
 					return new ToManyRelationshipRemoveActionGenerator($this->service);
 			}
 		}
 	}
-	
+
 	/**
 	 * Creates a generator for the given json respose
-	 * 
+	 *
 	 * @param string $type
 	 * @param CommandService $this->service
 	 * @return AbstractModelJsonResponderGenerator
@@ -149,21 +153,21 @@ class GeneratorFactory {
 
 			case Types::CREATE:
 				return new ModelCreateJsonResponderGenerator($this->service);
-		
+
 			case Types::UPDATE:
 				return new ModelUpdateJsonResponderGenerator($this->service);
-		
+
 			case Types::READ:
 				return new ModelReadJsonResponderGenerator($this->service);
-		
+
 			case Types::DELETE:
 				return new ModelDeleteJsonResponderGenerator($this->service);
 		}
 	}
-	
+
 	/**
 	 * Creates a json generator for a relationship
-	 * 
+	 *
 	 * @param Relationship $relationship
 	 * @return AbstractModelJsonResponderGenerator
 	 */
@@ -172,10 +176,10 @@ class GeneratorFactory {
 			? new ToOneRelationshipJsonResponderGenerator($this->service, $relationship)
 			: new ToManyRelationshipJsonResponderGenerator($this->service, $relationship);
 	}
-	
+
 	/**
 	 * Creates a payload responder for the given format
-	 *  
+	 *
 	 * @param string $format
 	 * @return AbstractResponderGenerator
 	 */
@@ -183,12 +187,12 @@ class GeneratorFactory {
 		switch ($format) {
 			case 'json':
 				return new PayloadJsonResponderGenerator($this->service);
-	
+
 			case 'html':
 				return new PayloadHtmlResponderGenerator($this->service);
 		}
 	}
-	
+
 	/**
 	 * @return ActionNameGenerator
 	 */
@@ -196,10 +200,10 @@ class GeneratorFactory {
 		if ($this->actionNameGenerator === null) {
 			$this->actionNameGenerator = new ActionNameGenerator($this->service);
 		}
-		
+
 		return $this->actionNameGenerator;
 	}
-	
+
 	/**
 	 * @return ActionClassNameGenerator
 	 */
@@ -207,10 +211,10 @@ class GeneratorFactory {
 		if ($this->actionClassNameGenerator === null) {
 			$this->actionClassNameGenerator = new ActionClassNameGenerator($this->service);
 		}
-	
+
 		return $this->actionClassNameGenerator;
 	}
-	
+
 	/**
 	 * @return ActionTitleGenerator
 	 */
@@ -218,7 +222,7 @@ class GeneratorFactory {
 		if ($this->actionTitleGenerator === null) {
 			$this->actionTitleGenerator = new ActionTitleGenerator($this->service);
 		}
-	
+
 		return $this->actionTitleGenerator;
 	}
 
@@ -229,10 +233,10 @@ class GeneratorFactory {
 		if ($this->namespaceGenerator === null) {
 			$this->namespaceGenerator = new NamespaceGenerator($this->service);
 		}
-		
+
 		return $this->namespaceGenerator;
 	}
-	
+
 	/**
 	 * @return ResponderClassNameGenerator
 	 */
@@ -240,7 +244,18 @@ class GeneratorFactory {
 		if ($this->responderClassNameGenerator === null) {
 			$this->responderClassNameGenerator = new ResponderClassNameGenerator($this->service);
 		}
-		
+
 		return $this->responderClassNameGenerator;
+	}
+
+	/**
+	 * @return RelationshipMethodNameGenerator
+	 */
+	public function getRelationshipMethodNameGenerator() {
+		if ($this->relationshipMethodNameGenerator === null) {
+			$this->relationshipMethodNameGenerator = new RelationshipMethodNameGenerator($this->service);
+		}
+
+		return $this->relationshipMethodNameGenerator;
 	}
 }

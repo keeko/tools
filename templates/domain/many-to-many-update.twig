@@ -5,23 +5,11 @@ if ($model === null) {
 	return new NotFound(['message' => '{{ class }} not found.']);
 }
 
-// remove all relationships before
-{{ middle_class }}Query::create()->filterBy{{ reverse_related }}($model)->delete();
-
-// add them
-$serializer = {{ class }}::getSerializer();
-$method = 'add' . $serializer->getCollectionMethodName('{{ related }}');
-$errors = [];
-foreach ($data as $entry) {
-	if (!isset($entry['id'])) {
-		$errors[] = 'Missing id for {{ foreign_class }}';
-	}
-	$related = {{ foreign_class }}Query::create()->findOneById($entry['id']);
-	$model->$method($related);
-}
-
-if (count($errors) > 0) {
-	return new NotValid(['errors' => $errors]);
+// pass update to internal logic
+try {
+	$this->doUpdate{{ related_name }}($model, $data);
+} catch (ErrorsException $e) {
+	return new NotValid(['errors' => $e->getErrors()]);
 }
 
 // save and dispatch events

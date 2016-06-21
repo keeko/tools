@@ -1,0 +1,13 @@
+$errors = [];
+foreach ($data as $entry) {
+	if (!isset($entry['id'])) {
+		$errors[] = 'Missing id for {{ foreign_class }}';
+	} else {
+		$related = {{ foreign_class }}Query::create()->findOneById($entry['id']);
+		$model->remove{{ method_name }}($related);
+	}
+}
+
+if (count($errors) > 0) {
+	return new ErrorsException($errors);
+}
