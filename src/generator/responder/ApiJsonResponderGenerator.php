@@ -14,7 +14,7 @@ class ApiJsonResponderGenerator extends AbstractJsonResponderGenerator {
 	public function setSerializer($serializer) {
 		$this->serializer = $serializer;
 	}
-	
+
 	protected function addMethods(PhpClass $class, ActionSchema $action) {
 		$serializer = new PhpClass($this->serializer);
 

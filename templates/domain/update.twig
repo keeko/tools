@@ -10,6 +10,10 @@ $serializer = {{ class }}::getSerializer();
 $model = $serializer->hydrate($model, $data);
 $this->hydrateRelationships($model, $data);
 
+// dispatch pre save hooks
+$this->dispatch({{ class }}Event::PRE_UPDATE, $model, $data);
+$this->dispatch({{ class }}Event::PRE_SAVE, $model, $data);
+
 // validate
 $validator = $this->getValidator();
 if ($validator !== null && !$validator->validate($model)) {
@@ -18,13 +22,10 @@ if ($validator !== null && !$validator->validate($model)) {
 	]);
 }
 
-// dispatch
-$event = new {{ class }}Event($model);
-$this->dispatch({{ class }}Event::PRE_UPDATE, $event);
-$this->dispatch({{ class }}Event::PRE_SAVE, $event);
+// save and dispath post save hooks
 $rows = $model->save();
-$this->dispatch({{ class }}Event::POST_UPDATE, $event);
-$this->dispatch({{ class }}Event::POST_SAVE, $event);
+$this->dispatch({{ class }}Event::POST_UPDATE, $model, $data);
+$this->dispatch({{ class }}Event::POST_SAVE, $model, $data);
 
 $payload = ['model' => $model];
 

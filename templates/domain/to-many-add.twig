@@ -13,12 +13,11 @@ try {
 }
 
 // save and dispatch events
-$event = new {{ class }}Event($model);
-$this->dispatch({{ class }}Event::PRE_{{ const }}_ADD, $event);
-$this->dispatch({{ class }}Event::PRE_SAVE, $event);
+$this->dispatch({{ class }}Event::PRE_{{ const }}_ADD, $model, $data);
+$this->dispatch({{ class }}Event::PRE_SAVE, $model, $data);
 $rows = $model->save();
-$this->dispatch({{ class }}Event::POST_{{ const }}_ADD, $event);
-$this->dispatch({{ class }}Event::POST_SAVE, $event);
+$this->dispatch({{ class }}Event::POST_{{ const }}_ADD, $model, $data);
+$this->dispatch({{ class }}Event::POST_SAVE, $model, $data);
 
 if ($rows > 0) {
 	return Updated(['model' => $model]);

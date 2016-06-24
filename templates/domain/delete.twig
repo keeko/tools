@@ -6,12 +6,11 @@ if ($model === null) {
 }
 
 // delete
-$event = new {{ class }}Event($model);
-$this->dispatch({{ class }}Event::PRE_DELETE, $event);
+$this->dispatch({{ class }}Event::PRE_DELETE, $model);
 $model->delete();
 
 if ($model->isDeleted()) {
-	$this->dispatch({{ class }}Event::POST_DELETE, $event);
+	$this->dispatch({{ class }}Event::POST_DELETE, $model);
 	return new Deleted(['model' => $model]);
 }
 

@@ -1,4 +1,3 @@
-$model = $event->get{{ class }}();
 $methods = [
 	{{ class }}Event::PRE_CREATE => 'preCreate',
 	{{ class }}Event::POST_CREATE => 'postCreate',
@@ -13,9 +12,9 @@ $methods = [
 if (isset($methods[$type])) {
 	$method = $methods[$type];
 	if (method_exists($this, $method)) {
-		$this->$method($model);
+		$this->$method($model, $data);
 	}
 }
 
 $dispatcher = $this->getServiceContainer()->getDispatcher();
-$dispatcher->dispatch($type, $event);
+$dispatcher->dispatch($type, new {{ class }}Event($model));

@@ -2,13 +2,11 @@
 namespace keeko\tools\services;
 
 use keeko\framework\schema\ActionSchema;
-use keeko\framework\schema\PackageSchema;
 use keeko\tools\model\Project;
 use keeko\tools\model\Relationship;
 use keeko\tools\model\Relationships;
 use phootwork\collection\Map;
 use phootwork\collection\Set;
-use phootwork\file\Path;
 use Propel\Generator\Model\Database;
 use Propel\Generator\Model\Table;
 
@@ -16,14 +14,14 @@ class ModelService extends AbstractService {
 
 	private $models = null;
 	private $schema = null;
-	
+
 	/** @var Database */
 	private $database = null;
-	
+
 	private $relationships = null;
-	
+
 	private $reader = null;
-	
+
 	public function read(Project $project = null) {
 		if ($project === null) {
 			if ($this->project->hasSchemaFile()) {
@@ -34,7 +32,7 @@ class ModelService extends AbstractService {
 		}
 		$this->reader = new ModelReader($project, $this->service);
 	}
-	
+
 	/**
 	 * @return ModelReader
 	 */
@@ -57,11 +55,11 @@ class ModelService extends AbstractService {
 
 		return null;
 	}
-	
+
 	public function isCoreSchema() {
 		return $this->getReader()->getProject()->getPackage()->getFullName() == 'keeko/core';
 	}
-	
+
 	public function hasSchema() {
 		return $this->getReader()->getProject()->hasSchemaFile();
 	}
@@ -74,7 +72,7 @@ class ModelService extends AbstractService {
 	public function getDatabase() {
 		return $this->getReader()->getDatabase();
 	}
-	
+
 	/**
 	 * Returns the tableName for a given name
 	 *
@@ -84,7 +82,7 @@ class ModelService extends AbstractService {
 	public function getTableName($name) {
 		return $this->getReader()->getTableName($name);
 	}
-	
+
 	/**
 	 * Returns all model names
 	 *
@@ -93,7 +91,7 @@ class ModelService extends AbstractService {
 	public function getModelNames() {
 		return $this->getReader()->getModelNames();
 	}
-	
+
 	/**
 	 * Returns the propel models from the database, where table namespace matches package namespace
 	 *
@@ -115,7 +113,7 @@ class ModelService extends AbstractService {
 
 // 	/**
 // 	 * Returns the model names for a given package
-// 	 * 
+// 	 *
 // 	 * @param PackageSchema $package a package to search models for, if omitted global package is used
 // 	 * @return array array with string of model names
 // 	 */
@@ -123,7 +121,7 @@ class ModelService extends AbstractService {
 // 		if ($package === null) {
 // 			$package = $this->packageService->getPackage();
 // 		}
-		
+
 // 		$models = [];
 // 		// if this is a core-module, find the related model
 // 		if ($package->getVendor() == 'keeko' && $this->isCoreSchema()) {
@@ -132,17 +130,17 @@ class ModelService extends AbstractService {
 // 				$models [] = $model;
 // 			}
 // 		}
-		
+
 // 		// anyway, generate all
 // 		else {
 // 			foreach ($this->getModels() as $model) {
 // 				$models [] = $model->getOriginCommonName();
 // 			}
 // 		}
-		
+
 // 		return $models;
 // 	}
-	
+
 	/**
 	 * Checks whether the given model exists
 	 *
@@ -152,7 +150,7 @@ class ModelService extends AbstractService {
 	public function hasModel($name) {
 		return $this->getReader()->hasModel($name);
 	}
-	
+
 	/**
 	 * Parses the model name from a given action name
 	 *
@@ -170,7 +168,7 @@ class ModelService extends AbstractService {
 
 	/**
 	 * Returns the full model object name, including namespace
-	 * 
+	 *
 	 * @param ActionSchema $action
 	 * @return String fullModelObjectName
 	 */
@@ -182,15 +180,15 @@ class ModelService extends AbstractService {
 
 		return $database->getNamespace() . '\\' . $modelObjectName;
 	}
-	
+
 	/**
 	 * Returns wether the given action refers to a model.
-	 * 
+	 *
 	 * Examples:
-	 * 
+	 *
 	 * Action: user-create => model: user
 	 * Action: recover-password => no model
-	 * 
+	 *
 	 * @param ActionSchema $action
 	 * @return boolean
 	 */
@@ -201,17 +199,17 @@ class ModelService extends AbstractService {
 
 	/**
 	 * Returns all model relationships.
-	 * 
+	 *
 	 * @param Table $model
 	 * @return Relationships
 	 */
 	public function getRelationships(Table $model) {
 		return $this->getReader()->getRelationships($model);
 	}
-	
+
 	/**
 	 * Returns a relationship for a given related type name on a given model
-	 * 
+	 *
 	 * @param Table $model
 	 * @param string $relatedTypeName
 	 * @return Relationship

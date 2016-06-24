@@ -3,6 +3,10 @@ $serializer = {{ class }}::getSerializer();
 $model = $serializer->hydrate(new {{ class }}(), $data);
 $this->hydrateRelationships($model, $data);
 
+// dispatch pre save hooks
+$this->dispatch({{ class }}Event::PRE_CREATE, $model, $data);
+$this->dispatch({{ class }}Event::PRE_SAVE, $model, $data);
+
 // validate
 $validator = $this->getValidator();
 if ($validator !== null && !$validator->validate($model)) {
@@ -11,11 +15,9 @@ if ($validator !== null && !$validator->validate($model)) {
 	]);
 }
 
-// dispatch
-$event = new {{ class }}Event($model);
-$this->dispatch({{ class }}Event::PRE_CREATE, $event);
-$this->dispatch({{ class }}Event::PRE_SAVE, $event);
+// save and dispatch post save hooks
 $model->save();
-$this->dispatch({{ class }}Event::POST_CREATE, $event);
-$this->dispatch({{ class }}Event::POST_SAVE, $event);
+$this->dispatch({{ class }}Event::POST_CREATE, $model, $data);
+$this->dispatch({{ class }}Event::POST_SAVE, $model, $data);
+
 return new Created(['model' => $model]);

@@ -38,7 +38,7 @@ class GenerateEmberModelsCommand extends AbstractEmberCommand {
 		$output = $this->io->getOutput();
 
 		foreach ($models as $model) {
-			$contents = $generator->generate($model);
+			$code = $generator->generate($model);
 			$filename = sprintf('%s/ember/app/models/%s/%s.js', $this->project->getRootPath(),
 				str_replace('.', '/', $module->getSlug()), NameUtils::dasherize($model->getPhpName()));
 			$file = new File($filename);
@@ -49,7 +49,7 @@ class GenerateEmberModelsCommand extends AbstractEmberCommand {
 			}
 
 			if ($overwrite) {
-				$file->write($contents);
+				$file->write($code);
 				$output->writeln(sprintf('Model <info>%s</info> written at <info>%s</info>',
 					$model->getOriginCommonName(), $filename));
 			}
