@@ -25,12 +25,12 @@ use Propel\Generator\Model\Table;
 class GenerateResponderCommand extends AbstractKeekoCommand {
 
 	use QuestionHelperTrait;
-	
+
 	protected $generated;
-	
+
 	protected function configure() {
 		$this->generated = new Set();
-		
+
 		$this
 			->setName('generate:responder')
 			->setDescription('Generates code for a responder')
@@ -66,7 +66,7 @@ class GenerateResponderCommand extends AbstractKeekoCommand {
 				'The serializer to be used for the json api template'
 			)
 		;
-		
+
 		$this->configureGenerateOptions();
 
 		parent::configure();
@@ -85,14 +85,14 @@ class GenerateResponderCommand extends AbstractKeekoCommand {
 
 	protected function interact(InputInterface $input, OutputInterface $output) {
 		$this->check();
-		
+
 		$ui = new ResponseUI($this);
 		$ui->show();
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$this->check();
-		
+
 		$name = $input->getArgument('name');
 		$modelName = $input->getOption('model');
 
@@ -100,7 +100,7 @@ class GenerateResponderCommand extends AbstractKeekoCommand {
 		if ($name) {
 			$this->generateResponder($name);
 		}
-		
+
 		// generate a responder for a specific model
 		else if ($modelName) {
 			if (!$this->modelService->hasModel($modelName)) {
@@ -108,24 +108,24 @@ class GenerateResponderCommand extends AbstractKeekoCommand {
 			}
 			$this->generateModel($this->modelService->getModel($modelName));
 		}
-		
+
 		// generate responders for all models
 		else {
 			foreach ($this->modelService->getModels() as $model) {
 				$this->generateModel($model);
 			}
 		}
-		
+
 		$this->packageService->savePackage();
 	}
-	
+
 	private function generateModel(Table $model) {
 		// generate responders for crud actions
 		foreach (Types::getModelTypes($model) as $type) {
 			$actionName = $this->factory->getActionNameGenerator()->generate($type, $model);
 			$this->generateResponder($actionName);
 		}
-		
+
 		// generate responders for relationships
 		if (!$model->isReadOnly()) {
 			$relationships = $this->modelService->getRelationships($model);
@@ -137,26 +137,26 @@ class GenerateResponderCommand extends AbstractKeekoCommand {
 			}
 		}
 	}
-	
+
 	private function generateResponder($actionName) {
 		$this->logger->info('Generate Responder for: ' . $actionName);
 		$module = $this->packageService->getModule();
-		
+
 		if (!$module->hasAction($actionName)) {
 			throw new \RuntimeException(sprintf('action (%s) not found', $actionName));
 		}
-		
+
 		$input = $this->io->getInput();
 		$force = $input->getOption('force');
 		$format = $input->getOption('format');
 		$template = $input->getOption('template');
 		$action = $module->getAction($actionName);
-		
+
 		// check if relationship response
 		if (Text::create($actionName)->contains('relationship') && $format == 'json') {
 			return $this->generateRelationshipResponder($action);
 		}
-		
+
 		// responder class name
 		if (!$action->hasResponder($format)) {
 			$namespaceGenerator = $this->factory->getNamespaceGenerator();
@@ -173,7 +173,7 @@ class GenerateResponderCommand extends AbstractKeekoCommand {
 		$parsed = $this->factory->getActionNameGenerator()->parseName($actionName);
 		$type = $parsed['type'];
 		$isModel = $type && $this->modelService->hasModel($parsed['modelName']);
-		
+
 		// find generator
 		$generator = null;
 
@@ -182,42 +182,42 @@ class GenerateResponderCommand extends AbstractKeekoCommand {
 			$force = true;
 			$generator = $this->factory->createModelJsonResponderGenerator($type);
 		}
-		
+
 		// payload
 		else if ($template == 'payload') {
 			$generator = $this->factory->createPayloadGenerator($format);
 		}
-		
+
 		// json + dump
 		else if ($format == 'json' && $template == 'api') {
 			$generator = new ApiJsonResponderGenerator($this->service);
 			$generator->setSerializer($this->getSerializer());
 		}
-		
+
 		// blank json
 		else if ($format == 'json') {
 			$generator = new SkeletonJsonResponderGenerator($this->service);
 		}
-		
+
 		// html + twig
 		else if ($format == 'html' && $template == 'twig') {
 			$generator = new TwigHtmlResponderGenerator($this->service);
 		}
-		
+
 		// blank html as default
 		else if ($format == 'html') {
 			$generator = new SkeletonHtmlResponderGenerator($this->service);
 		}
-		
+
 		// run generation, if generator was chosen
 		if ($generator !== null) {
 			/* @var $class PhpClass */
 			$class = $generator->generate($action);
 
 			// write to file
-			$file = $this->codegenService->getFile($class);
+			$file = $this->codeService->getFile($class);
 			$overwrite = !$file->exists() || $force;
-			$this->codegenService->dumpStruct($class, $overwrite);
+			$this->codeService->dumpStruct($class, $overwrite);
 		}
 	}
 
@@ -231,7 +231,7 @@ class GenerateResponderCommand extends AbstractKeekoCommand {
 		if ($relationship === null) {
 			return;
 		}
-		
+
 		// class name
 		$className = $this->factory->getResponderClassNameGenerator()->generateJsonRelationshipResponder($relationship);
 		$action->setResponder('json', $className);
@@ -240,31 +240,31 @@ class GenerateResponderCommand extends AbstractKeekoCommand {
 		if ($this->generated->contains($className)) {
 			return;
 		}
-		
+
 		// generate code
 		$generator = $this->factory->createRelationshipJsonResponderGenerator($relationship);
 		$responder = $generator->generate($action);
-		$this->codegenService->dumpStruct($responder, true);
+		$this->codeService->dumpStruct($responder, true);
 		$this->generated->add($className);
 	}
-	
+
 	private function getSerializer() {
 		$input = $this->io->getInput();
 		$serializer = $input->getOption('serializer');
-		
+
 		if (empty($serializer)) {
 			throw new \RuntimeException('No serializer given, please pass --serializer for template');
 		}
-		
+
 		// check fqcn
 		$class = PhpClass::create($serializer);
 		if ($class->getQualifiedName() == $serializer) {
-			$class->setQualifiedName(NamespaceResolver::getNamespace('src/serializer', $this->package) . 
+			$class->setQualifiedName(NamespaceResolver::getNamespace('src/serializer', $this->package) .
 				'\\' . $serializer);
 		}
-		
+
 		// check serializer exists
-		$file = new File($this->codegenService->getFilename($class));
+		$file = $this->codeService->getFile($class);
 		if (!$file->exists()) {
 			$this->io->writeln(sprintf('<error>Warning:</error> Serializer <info>%s</info> does not exists, please run `keeko generate:serializer %s`', $serializer, $class->getName()));
 		}

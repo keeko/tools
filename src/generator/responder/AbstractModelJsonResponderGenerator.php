@@ -38,8 +38,8 @@ class AbstractModelJsonResponderGenerator extends AbstractJsonResponderGenerator
 		}
 
 		// load additional includes from codegen
-		$codegen = $this->codegenService->getCodegen();
-		$includes = array_merge($includes, $codegen->getIncludes($model->getOriginCommonName())->toArray());
+		$generatorDefinition = $this->project->getGeneratorDefinition();
+		$includes = array_merge($includes, $generatorDefinition->getIncludes($model->getOriginCommonName())->toArray());
 
 		return $includes;
 	}

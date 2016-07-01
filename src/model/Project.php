@@ -1,41 +1,41 @@
 <?php
 namespace keeko\tools\model;
 
-use phootwork\file\File;
+use keeko\framework\schema\GeneratorDefinitionSchema;
 use keeko\framework\schema\PackageSchema;
-use keeko\framework\schema\CodegenSchema;
+use phootwork\file\File;
 
 class Project {
-	
+
 	/** @var string */
 	private $root;
-	
+
 	/** @var PackageSchema */
 	private $package;
-	
-	/** @var CodegenSchema */
-	private $codegen;
-	
+
+	/** @var GeneratorDefinitionSchema */
+	private $generatorDefinition;
+
 	public function __construct($workdir) {
 		$this->root = $workdir;
 	}
-	
+
 	/**
 	 * @return string
 	 */
 	public function getRootPath() {
 		return $this->root;
 	}
-	
+
 	/**
 	 * @return string
 	 */
 	public function getComposerFileName() {
-		return $this->root . '/composer.json'; 
+		return $this->root . '/composer.json';
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @return boolean
 	 */
 	public function hasComposerFile() {
@@ -49,7 +49,7 @@ class Project {
 	public function getApiFileName() {
 		return $this->root . '/api.json';
 	}
-	
+
 	/**
 	 * @return boolean
 	 */
@@ -57,14 +57,14 @@ class Project {
 		$file = new File($this->getApiFileName());
 		return $file->exists();
 	}
-	
+
 	/**
 	 * @return string
 	 */
 	public function getSchemaFileName() {
 		return $this->root . '/res/database/schema.xml';
 	}
-	
+
 	/**
 	 * @return boolean
 	 */
@@ -72,26 +72,26 @@ class Project {
 		$file = new File($this->getSchemaFileName());
 		return $file->exists();
 	}
-	
+
 	/**
 	 * @return string
 	 */
-	public function getCodegenFileName() {
-		return $this->root . '/codegen.json';
+	public function getGeneratorDefinitionFileName() {
+		return $this->root . '/generator.json';
 	}
-	
+
 	/**
 	 * @return boolean
 	 */
-	public function hasCodegenFile() {
-		$file = new File($this->getCodegenFileName());
+	public function hasGeneratorDefinitionFile() {
+		$file = new File($this->getGeneratorDefinitionFileName());
 		return $file->exists();
 	}
 
 	/**
 	 * Returns the package from 'composer.json' or creates a blank one, if composer.json
 	 * doesn't exist.
-	 * 
+	 *
 	 * @return PackageSchema
 	 */
 	public function getPackage() {
@@ -102,22 +102,22 @@ class Project {
 		}
 		return $this->package;
 	}
-	
+
 	/**
-	 * Returns a codegen schema from 'codegen.json' or creates a blank one, if 'codegen.json'
-	 * doesn't exist.
+	 * Returns a generator definition from 'generator.json' or creates a blank one, if
+	 * the file doesn't exist
 	 *
 	 * @throws JsonEmptyException
 	 * @throws \RuntimeException
-	 * @return CodegenSchema
+	 * @return GeneratorDefinitionSchema
 	 */
-	public function getCodegen() {
-		if ($this->codegen === null) {
-			$this->codegen = $this->hasCodegenFile()
-				? CodegenSchema::fromFile($this->getCodegenFileName())
-				: new CodegenSchema();
+	public function getGeneratorDefinition() {
+		if ($this->generatorDefinition === null) {
+			$this->generatorDefinition = $this->hasGeneratorDefinitionFile()
+				? GeneratorDefinitionSchema::fromFile($this->getGeneratorDefinitionFileName())
+				: new GeneratorDefinitionSchema();
 		}
-	
-		return $this->codegen;
+
+		return $this->generatorDefinition;
 	}
 }

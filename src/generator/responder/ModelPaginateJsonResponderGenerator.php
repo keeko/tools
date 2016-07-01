@@ -16,14 +16,14 @@ class ModelPaginateJsonResponderGenerator extends AbstractModelJsonResponderGene
 		foreach ($fields as $field) {
 			$class->addUseStatement($field->getNamespace() . '\\' . $field->getPhpName());
 		}
-		
-		$includes = $this->codegenService->arrayToCode($this->getRelationshipIncludes($model));
+
+		$includes = $this->codeService->arrayToCode($this->getRelationshipIncludes($model));
 		$found = $this->generatePayloadMethod('found', $this->twig->render('model/paginate.twig', [
 			'class' => $model->getPhpName(),
 			'includes' => $includes,
 			'fields' => $this->getFieldsCode($fields)
 		]), 'Found');
-		
+
 		$class->setMethod($found);
 		$class->addUseStatement('keeko\\framework\\domain\\payload\\Found');
 		$class->addUseStatement('Tobscure\\JsonApi\\Document');

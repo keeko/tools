@@ -4,18 +4,18 @@ namespace keeko\tools\generator\action;
 use gossi\codegen\model\PhpClass;
 use gossi\codegen\model\PhpMethod;
 use gossi\codegen\model\PhpParameter;
-use keeko\tools\generator\AbstractCodeGenerator;
 use keeko\framework\schema\ActionSchema;
+use keeko\tools\generator\AbstractGenerator;
 
-class AbstractActionGenerator extends AbstractCodeGenerator {
+class AbstractActionGenerator extends AbstractGenerator {
 
 	protected function getTemplateFolder() {
 		return 'action';
 	}
-	
+
 	/**
 	 * Generates the basic class
-	 * 
+	 *
 	 * @param ActionSchema $action
 	 * @return PhpClass
 	 */
@@ -24,12 +24,12 @@ class AbstractActionGenerator extends AbstractCodeGenerator {
 		$class->setDescription($action->getTitle());
 		$class->setLongDescription($action->getDescription() . "\n\n".
 			'This code is automatically created. Modifications will probably be overwritten.');
-		$this->codegenService->addAuthors($class);
+		$this->codeService->addAuthors($class);
 		$this->ensureBasicSetup($class);
-		
+
 		return $class;
 	}
-	
+
 	protected function generateRunMethod($body = '') {
 		return PhpMethod::create('run')
 			->setDescription('Automatically generated run method')
@@ -45,13 +45,13 @@ class AbstractActionGenerator extends AbstractCodeGenerator {
 			->setBody($body)
 		);
 	}
-	
+
 	protected function ensureUseStatements(PhpClass $class) {
 		$class->addUseStatement('keeko\\framework\\foundation\\AbstractAction');
 		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Request');
 		$class->addUseStatement('Symfony\\Component\\HttpFoundation\\Response');
 	}
-	
+
 	protected function ensureBasicSetup(PhpClass $class) {
 		$this->ensureUseStatements($class);
 		$class->setParentClassName('AbstractAction');

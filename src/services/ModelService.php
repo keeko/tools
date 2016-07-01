@@ -12,14 +12,7 @@ use Propel\Generator\Model\Table;
 
 class ModelService extends AbstractService {
 
-	private $models = null;
-	private $schema = null;
-
-	/** @var Database */
-	private $database = null;
-
-	private $relationships = null;
-
+	/** @var ModelReader */
 	private $reader = null;
 
 	public function read(Project $project = null) {

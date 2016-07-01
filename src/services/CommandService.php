@@ -10,19 +10,39 @@ use keeko\tools\command\AbstractKeekoCommand;
 
 class CommandService {
 
+	/** @var IOService */
 	private $io;
+
+	/** @var Command */
 	private $command;
+
+	/** @var ToolsConfig */
 	private $config;
+
+	/** @var ConsoleLogger */
 	private $logger;
+
+	/** @var Project */
 	private $project;
-	
-	private $packageService;
-	private $modelService;
-	private $jsonService;
-	private $codegenService;
-	
+
+	/** @var GeneratorFactory */
 	private $factory;
-	
+
+	/** @var PackageService */
+	private $packageService;
+
+	/** @var ModelService */
+	private $modelService;
+
+	/** @var JsonService */
+	private $jsonService;
+
+	/** @var CodeService */
+	private $codeService;
+
+	/** @var GeneratorDefinitionService */
+	private $generatorDefinitionService;
+
 	public function __construct(Command $command, ConsoleLogger $logger) {
 		$this->io = new IOService($command);
 		$this->command = $command;
@@ -34,19 +54,21 @@ class CommandService {
 		$wd = $input->getOption('workdir');
 		$workdir = $wd !== null ? $wd : getcwd();
 		$this->project = new Project($workdir);
-		
+
 		$this->packageService = new PackageService();
 		$this->modelService = new ModelService();
 		$this->jsonService = new JsonService();
-		$this->codegenService = new CodeGeneratorService();
-		
+		$this->codeService = new CodeService();
+		$this->generatorDefinitionService = new GeneratorDefinitionService();
+
 		$this->packageService->setService($this);
 		$this->modelService->setService($this);
 		$this->jsonService->setService($this);
-		$this->codegenService->setService($this);
-		
+		$this->codeService->setService($this);
+		$this->generatorDefinitionService->setService($this);
+
 	}
-	
+
 	/**
 	 * @return AbstractKeekoCommand
 	 */
@@ -67,21 +89,21 @@ class CommandService {
 	public function getIOService() {
 		return $this->io;
 	}
-	
+
 	/**
 	 * @return Project
 	 */
 	public function getProject() {
 		return $this->project;
 	}
-	
+
 	/**
 	 * @return ConsoleLogger
 	 */
 	public function getLogger() {
 		return $this->logger;
 	}
-	
+
 	/**
 	 * @return GeneratorFactory
 	 */
@@ -109,11 +131,18 @@ class CommandService {
 	public function getJsonService() {
 		return $this->jsonService;
 	}
-	
+
 	/**
-	 * @return CodeGeneratorService
+	 * @return CodeService
 	 */
-	public function getCodeGeneratorService() {
-		return $this->codegenService;
+	public function getCodeService() {
+		return $this->codeService;
+	}
+
+	/**
+	 * @return GeneratorDefinitionService
+	 */
+	public function getGeneratorDefinitionService() {
+		return $this->generatorDefinitionService;
 	}
 }

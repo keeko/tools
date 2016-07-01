@@ -51,7 +51,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 	}
 
 	protected function generateAttributeMethods(PhpTrait $trait, Table $model) {
-		$readFields = $this->codegenService->getReadFields($model->getOriginCommonName());
+		$readFields = $this->generatorDefinitionService->getReadFields($model->getOriginCommonName());
 		$attrs = '';
 
 		foreach ($readFields as $field) {
@@ -76,16 +76,16 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 
 		$trait->setMethod(PhpMethod::create('getSortFields')
 			->setBody($this->twig->render('getFields.twig', [
-				'fields' => $this->codegenService->arrayToCode(array_map(function ($field) {
+				'fields' => $this->codeService->arrayToCode(array_map(function ($field) {
 					return NameUtils::dasherize($field);
 				}, $readFields))
 			]))
 		);
 
-		$readFields = $this->codegenService->getReadFields($model->getOriginCommonName());
+		$readFields = $this->generatorDefinitionService->getReadFields($model->getOriginCommonName());
 		$trait->setMethod(PhpMethod::create('getFields')
 			->setBody($this->twig->render('getFields.twig', [
-				'fields' => $this->codegenService->arrayToCode(array_map(function ($field) {
+				'fields' => $this->codeService->arrayToCode(array_map(function ($field) {
 					return NameUtils::dasherize($field);
 				}, $readFields))
 			]))
@@ -98,8 +98,8 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		} else {
 			$trait->addUseStatement('keeko\\framework\\utils\\HydrateUtils');
 			$modelName = $model->getOriginCommonName();
-			$normalizer = $this->codegenService->getCodegen()->getNormalizer($modelName);
-			$fields = $this->codegenService->getWriteFields($modelName);
+			$normalizer = $this->project->getGeneratorDefinition()->getNormalizer($modelName);
+			$fields = $this->generatorDefinitionService->getWriteFields($modelName);
 			$code = '';
 
 			foreach ($fields as $field) {
@@ -261,7 +261,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 
 		// method: getCollectionMethodName($relatedName) : string
 		$trait->setProperty(PhpProperty::create('methodNames')
-			->setExpression($this->codegenService->mapToCode($methods))
+			->setExpression($this->codeService->mapToCode($methods))
 			->setVisibility(PhpProperty::VISIBILITY_PRIVATE)
 		);
 		$trait->setMethod(PhpMethod::create('getCollectionMethodName')
@@ -272,7 +272,7 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 
 		// method: getCollectionMethodPluralName($relatedName) : string
 		$trait->setProperty(PhpProperty::create('methodPluralNames')
-			->setExpression($this->codegenService->mapToCode($plural))
+			->setExpression($this->codeService->mapToCode($plural))
 			->setVisibility(PhpProperty::VISIBILITY_PRIVATE)
 		);
 		$trait->setMethod(PhpMethod::create('getCollectionMethodPluralName')

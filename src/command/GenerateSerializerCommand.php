@@ -108,18 +108,18 @@ class GenerateSerializerCommand extends AbstractKeekoCommand {
 		// generate class
 		$generator = new ModelSerializerGenerator($this->service);
 		$serializer = $generator->generate($model);
-		$this->codegenService->dumpStruct($serializer, true);
+		$this->codeService->dumpStruct($serializer, true);
 
 		// generate trait
 		$generator = new ModelSerializerTraitGenerator($this->service);
 		$trait = $generator->generate($model);
-		$this->codegenService->dumpStruct($trait, true);
+		$this->codeService->dumpStruct($trait, true);
 
 		// add serializer + ApiModelInterface on the model
 		$class = new PhpClass(str_replace('\\\\', '\\', $model->getNamespace() . '\\' . $model->getPhpName()));
-		$file = $this->codegenService->getFile($class);
+		$file = $this->codeService->getFile($class);
 		if ($file->exists()) {
-			$class = PhpClass::fromFile($this->codegenService->getFilename($class));
+			$class = PhpClass::fromFile($this->codeService->getFilename($class));
 			$class
 				->addUseStatement($serializer->getQualifiedName())
 				->addUseStatement('keeko\\framework\\model\\ApiModelInterface')
@@ -137,7 +137,7 @@ class GenerateSerializerCommand extends AbstractKeekoCommand {
 				)
 			;
 
-			$this->codegenService->dumpStruct($class, true);
+			$this->codeService->dumpStruct($class, true);
 		}
 	}
 
@@ -159,13 +159,13 @@ class GenerateSerializerCommand extends AbstractKeekoCommand {
 		// generate code
 		$generator = new SkeletonSerializerGenerator($this->service);
 		$class = $generator->generate($className);
-		$this->codegenService->dumpStruct($class, $input->getOption('force'));
+		$this->codeService->dumpStruct($class, $input->getOption('force'));
 	}
 
 	private function generateInferencer() {
 		$generator = new TypeInferencerGenerator($this->service);
 		$class = $generator->generate();
-		$this->codegenService->dumpStruct($class, true);
+		$this->codeService->dumpStruct($class, true);
 	}
 
 }

@@ -162,7 +162,7 @@ class GenerateActionCommand extends AbstractKeekoCommand {
 		// generate code
 		$generator = new SkeletonActionGenerator($this->service);
 		$class = $generator->generate($action);
-		$this->codegenService->dumpStruct($class, $input->getOption('force'));
+		$this->codeService->dumpStruct($class, $input->getOption('force'));
 	}
 
 	/**
@@ -202,7 +202,7 @@ class GenerateActionCommand extends AbstractKeekoCommand {
 		// generate class
 		$generator = $this->factory->createModelActionGenerator($type);
 		$class = $generator->generate($action);
-		$this->codegenService->dumpStruct($class, true);
+		$this->codeService->dumpStruct($class, true);
 	}
 
 	/**
@@ -218,7 +218,7 @@ class GenerateActionCommand extends AbstractKeekoCommand {
 		// generate class
 		$generator = $this->factory->createRelationshipActionGenerator($type, $relationship);
 		$class = $generator->generate($action, $relationship);
-		$this->codegenService->dumpStruct($class, true);
+		$this->codeService->dumpStruct($class, true);
 	}
 
 	/**

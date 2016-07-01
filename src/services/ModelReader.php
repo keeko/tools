@@ -1,7 +1,7 @@
 <?php
 namespace keeko\tools\services;
 
-use keeko\framework\schema\CodegenSchema;
+use keeko\framework\schema\GeneratorDefinitionSchema;
 use keeko\tools\command\GenerateActionCommand;
 use keeko\tools\command\GenerateApiCommand;
 use keeko\tools\command\GenerateDomainCommand;
@@ -13,6 +13,7 @@ use keeko\tools\model\OneToOneRelationship;
 use keeko\tools\model\Project;
 use keeko\tools\model\Relationship;
 use keeko\tools\model\Relationships;
+use keeko\tools\model\ReverseOneToOneRelationship;
 use phootwork\collection\ArrayList;
 use phootwork\collection\Map;
 use phootwork\collection\Set;
@@ -21,7 +22,6 @@ use Propel\Generator\Builder\Util\SchemaReader;
 use Propel\Generator\Config\GeneratorConfig;
 use Propel\Generator\Model\Database;
 use Propel\Generator\Model\Table;
-use keeko\tools\model\ReverseOneToOneRelationship;
 
 class ModelReader {
 
@@ -31,8 +31,8 @@ class ModelReader {
 	/** @var Database */
 	private $database;
 
-	/** @var CodegenSchema */
-	private $codegen;
+	/** @var GeneratorDefinitionSchema */
+	private $generatorDefinition;
 
 	/** @var Map */
 	private $relationships;
@@ -54,9 +54,7 @@ class ModelReader {
 		$this->service = $service;
 		$this->relationships = new Map();
 		$this->relationshipsLoaded = new Set();
-		$this->codegen = $project->hasCodegenFile()
-			? CodegenSchema::fromFile($project->getCodegenFileName())
-			: new CodegenSchema();
+		$this->generatorDefinition = $project->getGeneratorDefinition();
 		$this->excluded = $this->loadExcludedModels();
 
 		$this->load();
@@ -66,15 +64,15 @@ class ModelReader {
 		$list = new ArrayList();
 		$command = $this->service->getCommand();
 		if ($command instanceof GenerateActionCommand) {
-			$list = $this->codegen->getExcludedAction();
+			$list = $this->generatorDefinition->getExcludedAction();
 		} else if ($command instanceof GenerateApiCommand) {
-			$list = $this->codegen->getExcludedApi();
+			$list = $this->generatorDefinition->getExcludedApi();
 		} else if ($command instanceof GenerateDomainCommand) {
-			$list = $this->codegen->getExcludedDomain();
+			$list = $this->generatorDefinition->getExcludedDomain();
 		} else if ($command instanceof GenerateEmberModelsCommand) {
-			$list = $this->codegen->getExcludedEmber();
+			$list = $this->generatorDefinition->getExcludedEmber();
 		} else if ($command instanceof GenerateSerializerCommand) {
-			$list = $this->codegen->getExcludedSerializer();
+			$list = $this->generatorDefinition->getExcludedSerializer();
 		}
 
 		return new Set($list);
@@ -203,7 +201,7 @@ class ModelReader {
 		}
 
 		$relationships = $this->getRelationships($model);
-		$definition = $this->codegen->getRelationships($model->getOriginCommonName());
+		$definition = $this->generatorDefinition->getRelationships($model->getOriginCommonName());
 
 		// one-to-* relationships
 		foreach ($model->getForeignKeys() as $fk) {

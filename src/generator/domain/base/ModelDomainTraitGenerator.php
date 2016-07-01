@@ -133,7 +133,7 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 			->setBody('return $this->' . $modelVariableName .';')
 		);
 
-		$this->codegenService->dumpStruct($class, true);
+		$this->codeService->dumpStruct($class, true);
 
 		return $class;
 	}

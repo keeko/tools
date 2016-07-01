@@ -6,7 +6,7 @@ use keeko\tools\helpers\ServiceLoaderTrait;
 use keeko\tools\services\CommandService;
 use phootwork\file\File;
 
-abstract class AbstractCodeGenerator {
+abstract class AbstractGenerator {
 	
 	use ServiceLoaderTrait;
 
@@ -32,7 +32,7 @@ abstract class AbstractCodeGenerator {
 	}
 
 	protected function loadClass(PhpClass $class) {
-		$file = $this->codegenService->getFile($class);
+		$file = $this->codeService->getFile($class);
 		
 		// load from file, if exists
 		if ($file->exists()) {

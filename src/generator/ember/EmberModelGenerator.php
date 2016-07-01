@@ -1,11 +1,11 @@
 <?php
 namespace keeko\tools\generator\ember;
 
-use keeko\framework\schema\CodegenSchema;
 use keeko\framework\utils\NameUtils;
 use keeko\tools\model\Relationship;
 use phootwork\collection\Set;
 use Propel\Generator\Model\Table;
+use keeko\framework\schema\GeneratorSchema;
 
 class EmberModelGenerator extends AbstractEmberGenerator {
 
@@ -24,8 +24,8 @@ class EmberModelGenerator extends AbstractEmberGenerator {
 	}
 
 	protected function generateColumns(EmberClassGenerator $class, Table $model) {
-		$codegen = $this->getCodegen();
-		$filter = $this->getColumnFilter($codegen, $model);
+		$generator = $this->getGenerator();
+		$filter = $this->getColumnFilter($generator, $model);
 		foreach ($model->getColumns() as $col) {
 			if (in_array($col, $filter)) {
 				continue;
@@ -143,7 +143,7 @@ class EmberModelGenerator extends AbstractEmberGenerator {
 			}
 		}
 
-		$dupes = [];
+// 		$dupes = [];
 		foreach ($relationships->getAll() as $relationship) {
 			$rels = $this->modelService->getRelationships($relationship->getForeign());
 
@@ -151,11 +151,12 @@ class EmberModelGenerator extends AbstractEmberGenerator {
 			foreach ($rels->getOneToOne() as $rel) {
 				if ($rel->getForeign() == $model) {
 					$prop = NameUtils::toCamelCase($relationship->getRelatedName());
-					if (in_array($prop, $dupes) && !isset($inverses[$prop])) {
-						$inverses[$prop] = 'null';
-					} else {
-						$dupes[] = $prop;
-					}
+					$inverses[$prop] = 'null';
+// 					if (in_array($prop, $dupes) && !isset($inverses[$prop])) {
+// 						$inverses[$prop] = 'null';
+// 					} else {
+// 						$dupes[] = $prop;
+// 					}
 				}
 			}
 
@@ -171,9 +172,9 @@ class EmberModelGenerator extends AbstractEmberGenerator {
 		return $inverses;
 	}
 
-	private function getColumnFilter(CodegenSchema $codegen, Table $model) {
-		$read = $codegen->getReadFilter($model->getOriginCommonName());
-		$write = $codegen->getWriteFilter($model->getOriginCommonName());
+	private function getColumnFilter(GeneratorSchema $generator, Table $model) {
+		$read = $generator->getReadFilter($model->getOriginCommonName());
+		$write = $generator->getWriteFilter($model->getOriginCommonName());
 
 		$merge = [];
 		foreach ($read as $field) {

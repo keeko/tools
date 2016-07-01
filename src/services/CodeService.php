@@ -4,31 +4,13 @@ namespace keeko\tools\services;
 use gossi\codegen\generator\CodeFileGenerator;
 use gossi\codegen\model\AbstractPhpStruct;
 use gossi\docblock\tags\AuthorTag;
-use keeko\framework\schema\CodegenSchema;
 use keeko\framework\schema\PackageSchema;
 use keeko\tools\utils\NamespaceResolver;
 use phootwork\file\File;
 use phootwork\file\Path;
 use Propel\Generator\Model\Table;
 
-class CodeGeneratorService extends AbstractService {
-
-	private $codegen;
-
-	public function getCodegenFile() {
-		return $this->project->getCodegenFileName();
-	}
-
-	/**
-	 * Returns codegen from project
-	 *
-	 * @throws JsonEmptyException
-	 * @throws \RuntimeException
-	 * @return CodegenSchema
-	 */
-	public function getCodegen() {
-		return $this->project->getCodegen();
-	}
+class CodeService extends AbstractService {
 
 	/**
 	 * Adds authors to the docblock of the given struct
@@ -53,98 +35,6 @@ class CodeGeneratorService extends AbstractService {
 
 			$docblock->appendTag($tag);
 		}
-	}
-
-	/**
-	 * Returns code for hydrating a propel model
-	 *
-	 * @param string $modelName
-	 * @return string
-	 */
-	public function getWriteFields($modelName) {
-		$codegen = $this->getCodegen();
-		$filter = $codegen->getWriteFilter($modelName);
-		$model = $this->modelService->getModel($modelName);
-		$computed = $this->getComputedFields($model);
-		$filter = array_merge($filter, $computed);
-
-		$fields = [];
-		$cols = $model->getColumns();
-		foreach ($cols as $col) {
-			$prop = $col->getName();
-
-			if (!in_array($prop, $filter)) {
-				$fields[] = $prop;
-			}
-		}
-
-		return $fields;
-	}
-
-	/**
-	 * Returns the fields for a model
-	 *
-	 * @param string $modelName
-	 * @return array
-	 */
-	public function getReadFields($modelName) {
-		$codegen = $this->getCodegen();
-		$model = $this->modelService->getModel($modelName);
-// 		$computed = $this->getComputedFields($model);
-		$filter = $codegen->getReadFilter($modelName);
-// 		$filter = array_merge($filter, $computed);
-
-		$fields = [];
-		$cols = $model->getColumns();
-		foreach ($cols as $col) {
-			$prop = $col->getName();
-
-			if (!in_array($prop, $filter) && !$col->isForeignKey() && !$col->isPrimaryKey()) {
-				$fields[] = $prop;
-			}
-		}
-
-		return $fields;
-	}
-
-	/**
-	 * Returns computed model fields
-	 *
-	 * @param Table $table
-	 * @return array<string>
-	 */
-	public function getComputedFields(Table $table) {
-		$fields = [];
-
-		// iterate over behaviors to get their respective columns
-		foreach ($table->getBehaviors() as $behavior) {
-			switch ($behavior->getName()) {
-				case 'timestampable':
-					$fields[] = $behavior->getParameter('create_column');
-					$fields[] = $behavior->getParameter('update_column');
-					break;
-
-				case 'aggregate_column':
-					$fields[] = $behavior->getParameter('name');
-					break;
-			}
-		}
-
-		return $fields;
-	}
-
-	/**
-	 * Returns all attributes that aren't written onto a model (because manually filter or computed)
-	 *
-	 * @param Table $model
-	 * @return array
-	 */
-	public function getWriteFilter(Table $model) {
-		$modelName = $model->getOriginCommonName();
-		$codegen = $this->getCodegen();
-		$filter = $codegen->getWriteFilter($modelName);
-		$computed = $this->getComputedFields($model);
-		return array_merge($filter, $computed);
 	}
 
 	/**

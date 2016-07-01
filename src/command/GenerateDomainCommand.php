@@ -17,7 +17,7 @@ use Propel\Generator\Model\Table;
 class GenerateDomainCommand extends AbstractKeekoCommand {
 
 	use QuestionHelperTrait;
-	
+
 	private $twig;
 
 	protected function configure() {
@@ -36,9 +36,9 @@ class GenerateDomainCommand extends AbstractKeekoCommand {
 				'The model for which the actions should be generated, when there is no name argument (if ommited all models will be generated)'
 			)
 		;
-		
+
 		$this->configureGenerateOptions();
-		
+
 		parent::configure();
 	}
 
@@ -59,21 +59,21 @@ class GenerateDomainCommand extends AbstractKeekoCommand {
 			throw new \DomainException('No module definition found in composer.json - please run `keeko init`.');
 		}
 	}
-	
+
 	protected function interact(InputInterface $input, OutputInterface $output) {
 		$this->check();
-		
+
 		$ui = new DomainUI($this);
 		$ui->show();
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$this->check();
-		
+
 		// 1. find out which action(s) to generate
 		// 2. generate the information in the package
 		// 3. generate the code for the action
-		
+
 		$name = $input->getArgument('name');
 		$modelName = $input->getOption('model');
 
@@ -100,27 +100,27 @@ class GenerateDomainCommand extends AbstractKeekoCommand {
 
 	private function generateModel(Table $model) {
 		$this->logger->info('Generate Domain from Model: ' . $model->getOriginCommonName());
-		
+
 		// generate class
 		$generator = new ModelDomainGenerator($this->service);
 		$class = $generator->generate($model);
-		$this->codegenService->dumpStruct($class, true);
-		
+		$this->codeService->dumpStruct($class, true);
+
 		// generate trait
 		$generator = $model->isReadOnly()
 			? new ReadOnlyModelDomainTraitGenerator($this->service)
 			: new ModelDomainTraitGenerator($this->service);
 		$trait = $generator->generate($model);
-		$this->codegenService->dumpStruct($trait, true);
+		$this->codeService->dumpStruct($trait, true);
 	}
-	
+
 	private function generateSkeleton($name) {
 		$this->logger->info('Generate Skeleton Domain: ' . $name);
 		$input = $this->io->getInput();
 
 		$namespace = $this->factory->getNamespaceGenerator()->getDomainNamespace();
 		$className = $namespace . '\\' . $name;
-		
+
 		if (!Text::create($className)->endsWith('Domain')) {
 			$className .= 'Domain';
 		}
@@ -128,7 +128,7 @@ class GenerateDomainCommand extends AbstractKeekoCommand {
 		// generate code
 		$generator = new SkeletonDomainGenerator($this->service);
 		$class = $generator->generate($className);
-		$this->codegenService->dumpStruct($class, $input->getOption('force'));
+		$this->codeService->dumpStruct($class, $input->getOption('force'));
 	}
-	
+
 }
