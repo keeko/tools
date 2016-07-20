@@ -7,7 +7,7 @@ use keeko\framework\utils\NameUtils;
 class EmberSerializerGenerator extends AbstractEmberGenerator {
 
 	public function generate(Table $model) {
-		$filter = $this->codegenService->getWriteFilter($model);
+		$filter = $this->generatorDefinitionService->getWriteFilter($model);
 		if (count($filter) == 0) {
 			return null;
 		}

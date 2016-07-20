@@ -60,10 +60,11 @@ class ApiGenerator extends AbstractGenerator {
 	protected function generatePagedMeta(Definitions $definitions) {
 		if ($this->needsPagedMeta) {
 			$props = $definitions->get('PagedMeta')->setType('object')->getProperties();
-			$names = ['total', 'first', 'next', 'previous', 'last'];
+			$props->get('total')->setType('integer');
 
+			$names = ['first', 'next', 'previous', 'last'];
 			foreach ($names as $name) {
-				$props->get($name)->setType('integer');
+				$props->get($name)->setType('string');
 			}
 		}
 	}

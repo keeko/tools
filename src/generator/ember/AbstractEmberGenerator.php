@@ -1,12 +1,12 @@
 <?php
 namespace keeko\tools\generator\ember;
 
-use keeko\framework\schema\GeneratorSchema;
 use keeko\framework\schema\PackageSchema;
 use keeko\tools\generator\AbstractGenerator;
 use keeko\tools\model\Project;
 use keeko\tools\services\CommandService;
 use Propel\Generator\Model\Table;
+use keeko\framework\schema\GeneratorDefinitionSchema;
 
 class AbstractEmberGenerator extends AbstractGenerator {
 
@@ -45,13 +45,9 @@ class AbstractEmberGenerator extends AbstractGenerator {
 	}
 
 	/**
-	 * @return GeneratorSchema
+	 * @return GeneratorDefinitionSchema
 	 */
 	protected function getGenerator() {
-		if ($this->prj->hasGeneratorFile()) {
-			return GeneratorSchema::fromFile($this->prj->getGeneratorFileName());
-		}
-
-		return new GeneratorSchema();
+		$this->prj->getGeneratorDefinition();
 	}
 }

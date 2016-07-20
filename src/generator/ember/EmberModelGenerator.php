@@ -5,7 +5,7 @@ use keeko\framework\utils\NameUtils;
 use keeko\tools\model\Relationship;
 use phootwork\collection\Set;
 use Propel\Generator\Model\Table;
-use keeko\framework\schema\GeneratorSchema;
+use keeko\framework\schema\GeneratorDefinitionSchema;
 
 class EmberModelGenerator extends AbstractEmberGenerator {
 
@@ -24,7 +24,7 @@ class EmberModelGenerator extends AbstractEmberGenerator {
 	}
 
 	protected function generateColumns(EmberClassGenerator $class, Table $model) {
-		$generator = $this->getGenerator();
+		$generator = $this->prj->getGeneratorDefinition();
 		$filter = $this->getColumnFilter($generator, $model);
 		foreach ($model->getColumns() as $col) {
 			if (in_array($col, $filter)) {
@@ -172,7 +172,7 @@ class EmberModelGenerator extends AbstractEmberGenerator {
 		return $inverses;
 	}
 
-	private function getColumnFilter(GeneratorSchema $generator, Table $model) {
+	private function getColumnFilter(GeneratorDefinitionSchema $generator, Table $model) {
 		$read = $generator->getReadFilter($model->getOriginCommonName());
 		$write = $generator->getWriteFilter($model->getOriginCommonName());
 

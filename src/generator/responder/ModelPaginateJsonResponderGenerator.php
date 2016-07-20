@@ -26,9 +26,9 @@ class ModelPaginateJsonResponderGenerator extends AbstractModelJsonResponderGene
 
 		$class->setMethod($found);
 		$class->addUseStatement('keeko\\framework\\domain\\payload\\Found');
+		$class->addUseStatement('keeko\\framework\\utils\\Parameters');
 		$class->addUseStatement('Tobscure\\JsonApi\\Document');
 		$class->addUseStatement('Tobscure\\JsonApi\\Collection');
-		$class->addUseStatement('Tobscure\\JsonApi\\Parameters');
 		$class->addUseStatement($model->getNamespace() . '\\' . $model->getPhpName());
 	}
 

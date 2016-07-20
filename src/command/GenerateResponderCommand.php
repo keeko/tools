@@ -185,7 +185,7 @@ class GenerateResponderCommand extends AbstractKeekoCommand {
 
 		// payload
 		else if ($template == 'payload') {
-			$generator = $this->factory->createPayloadGenerator($format);
+			$generator = $this->factory->createPayloadResponderGenerator($format);
 		}
 
 		// json + dump
