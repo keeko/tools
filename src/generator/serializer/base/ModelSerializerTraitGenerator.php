@@ -104,12 +104,6 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 
 			foreach ($fields as $field) {
 				$code .= sprintf("'%s'", NameUtils::dasherize($field));
-				if ($normalizer->has($field)) {
-					$code .= $this->twig->render('normalizer.twig', [
-						'class' => $normalizer->get($field)
-					]);
-				}
-
 				$code .= ', ';
 			}
 
@@ -119,17 +113,8 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 
 			$code = sprintf('[%s]', $code);
 			$body = $this->twig->render('hydrate.twig', [
-				'code' => $code,
-				'normalizer' => $normalizer->size() > 0
+				'code' => $code
 			]);
-
-// 			$trait->setMethod(PhpMethod::create('hydrateRelationships')
-// 				->addParameter(PhpParameter::create('model'))
-// 				->addParameter(PhpParameter::create('data'))
-// 				->setAbstract(true)
-// 				->setType('void')
-// 				->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
-// 			);
 		}
 
 		$trait->setMethod(PhpMethod::create('hydrate')

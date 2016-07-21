@@ -1,0 +1,5 @@
+if (isset($attribs['{{ field }}']) && class_exists('{{ class }}')) {
+	$normalizer = new {{ class }}();
+	$normalizer->setServiceContainer($service);
+	$attribs['{{ field }}'] =  $normalizer->normalize($attribs['{{ field }}']);
+}

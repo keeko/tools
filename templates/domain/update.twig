@@ -6,6 +6,7 @@ if ($model === null) {
 }
 
 // hydrate
+$data = $this->normalize($data);
 $serializer = {{ class }}::getSerializer();
 $model = $serializer->hydrate($model, $data);
 $this->hydrateRelationships($model, $data);
@@ -15,7 +16,7 @@ $this->dispatch({{ class }}Event::PRE_UPDATE, $model, $data);
 $this->dispatch({{ class }}Event::PRE_SAVE, $model, $data);
 
 // validate
-$validator = $this->getValidator();
+$validator = $this->getValidator($model);
 if ($validator !== null && !$validator->validate($model)) {
 	return new NotValid([
 		'errors' => $validator->getValidationFailures()

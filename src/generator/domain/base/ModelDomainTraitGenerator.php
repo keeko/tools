@@ -11,6 +11,7 @@ use keeko\tools\model\Relationship;
 use Propel\Generator\Model\Table;
 use keeko\tools\model\ManyToManyRelationship;
 use keeko\tools\model\OneToManyRelationship;
+use phootwork\lang\Text;
 
 class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 
@@ -23,6 +24,7 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 		$this->generateDispatch($trait, $model);
 
 		// generate CUD methods
+		$this->generateNormalize($trait, $model);
 		$this->generateCreate($trait, $model);
 		$this->generateUpdate($trait, $model);
 		$this->generateDelete($trait, $model);
@@ -154,6 +156,40 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 				'class' => $model->getPhpName()
 			]))
 			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+		);
+	}
+
+	protected function generateNormalize(PhpTrait $trait, Table $model) {
+		if ($model->isReadOnly()) {
+			$body = 'return $data';
+		} else {
+			$modelName = $model->getOriginCommonName();
+			$normalizer = $this->project->getGeneratorDefinition()->getNormalizer($modelName);
+			$fields = $this->generatorDefinitionService->getWriteFields($modelName);
+			$code = '';
+
+			foreach ($fields as $field) {
+				if ($normalizer->has($field)) {
+					$class = new Text($normalizer->get($field));
+					if (!$class->startsWith('\\')) {
+						$class = $class->prepend('\\');
+					}
+					$code .= $this->twig->render('normalizer-field.twig', [
+						'class' => $class->toString(),
+						'field' => $field
+					]);
+				}
+			}
+
+			$body = $this->twig->render('normalizer.twig', [
+				'code' => $code
+			]);
+		}
+
+		$trait->setMethod(PhpMethod::create('normalize')
+			->addParameter(PhpParameter::create('data')->setType('array'))
+			->setBody($body)
+			->setType('array', 'normalized data')
 		);
 	}
 

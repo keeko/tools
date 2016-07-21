@@ -1,0 +1,7 @@
+$service = $this->getServiceContainer();
+$attribs = isset($data['attributes']) ? $data['attributes'] : [];
+
+{{ code|raw }}
+$data['attributes'] = $attribs;
+
+return $data;

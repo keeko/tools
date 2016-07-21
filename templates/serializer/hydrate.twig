@@ -1,8 +1,7 @@
 // attributes
 $attribs = isset($data['attributes']) ? $data['attributes'] : [];
 
-{% if normalizer %}$service = $this->getServiceContainer();
-{% endif %}
+// hydrate
 $model = HydrateUtils::hydrate($attribs, $model, {{ code|raw }});
 
 // relationships
