@@ -35,7 +35,7 @@ abstract class AbstractPackageGenerator extends AbstractGenerator {
 		$package = $this->packageService->getPackage();
 		$docblock = $class->getDocblock();
 		$docblock->appendTag(new LicenseTag($package->getLicense()));
-		$this->codegenService->addAuthors($class, $package);
+		$this->codeService->addAuthors($class, $package);
 
 		return $class;
 	}

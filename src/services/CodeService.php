@@ -8,7 +8,6 @@ use keeko\framework\schema\PackageSchema;
 use keeko\tools\utils\NamespaceResolver;
 use phootwork\file\File;
 use phootwork\file\Path;
-use Propel\Generator\Model\Table;
 
 class CodeService extends AbstractService {
 

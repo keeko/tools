@@ -2,7 +2,6 @@
 namespace keeko\tools\command;
 
 use keeko\framework\schema\AuthorSchema;
-use keeko\tools\generator\GeneratorFactory;
 use keeko\tools\helpers\InitCommandHelperTrait;
 use keeko\tools\services\IOService;
 use keeko\tools\ui\InitUI;
@@ -202,18 +201,22 @@ class InitCommand extends AbstractKeekoCommand {
 
 		// add require dev statements
 		$requireDev = $this->package->getRequireDev();
-		$requireDev->set('keeko/core', 'dev-master');
-		$requireDev->set('composer/composer', '@dev');
-		$requireDev->set('propel/propel', '@dev');
+		$requireDev->set('keeko/framework', 'dev-master');
+		$requireDev->set('keeko/core', '@dev');
+		$requireDev->set('propel/propel', '@alpha');
+		$requireDev->set('puli/repository', '@beta');
 		$requireDev->set('puli/composer-plugin', '@beta');
+		$requireDev->set('puli/twig-extension', '@beta');
+		$requireDev->set('puli/url-generator', '@beta');
+		$requireDev->set('puli/discovery', '@beta');
 	}
 
 	private function generateCode() {
 		$type = $this->getPackageType();
 		$package = $this->package->getKeeko()->getKeekoPackage($type);
-		$generator = GeneratorFactory::createPackageGenerator($type, $this->service);
+		$generator = $this->factory->createPackageGenerator($type);
 		$class = $generator->generate($package);
 
-		$this->codegenService->dumpStruct($class, true);
+		$this->codeService->dumpStruct($class, true);
 	}
 }
