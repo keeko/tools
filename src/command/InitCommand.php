@@ -10,7 +10,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class InitCommand extends AbstractKeekoCommand {
-	
+
 	use InitCommandHelperTrait;
 
 	protected function configure() {
@@ -74,21 +74,21 @@ class InitCommand extends AbstractKeekoCommand {
 				'Allows to overwrite existing values'
 			)
 		;
-		
+
 		$this->configureGlobalOptions();
 	}
 
 	protected function initialize(InputInterface $input, OutputInterface $output) {
 		parent::initialize($input, $output);
 	}
-	
+
 	/**
 	 * @return PackageSchema
 	 */
 	protected function getPackage() {
 		return $this->package;
 	}
-	
+
 	/**
 	 * @return IOService
 	 */
@@ -105,7 +105,7 @@ class InitCommand extends AbstractKeekoCommand {
 		$this->generatePackage();
 		$this->generateCode();
 	}
-	
+
 	private function generatePackage() {
 		$input = $this->io->getInput();
 		$force = $input->getOption('force');
@@ -115,42 +115,42 @@ class InitCommand extends AbstractKeekoCommand {
 		if (empty($localName) && $input->getOption('name') === null) {
 			throw new \RuntimeException('No name for the package given');
 		}
-		
+
 		if (($force || empty($localName)) && ($name = $input->getOption('name')) !== null) {
 			$this->validateName($name);
 			$this->package->setFullName($name);
 		}
-		
+
 		// description
 		if (($desc = $input->getOption('description')) !== null) {
 			$this->package->setDescription($desc);
 		}
-		
+
 		// type
 		if (($type = $input->getOption('type')) !== null) {
 			if (in_array($type, ['app', 'module'])) {
 				$this->package->setType('keeko-' . $type);
 			}
 		}
-		
+
 		// license
 		if (($license = $input->getOption('license')) !== null) {
 			$this->package->setLicense($license);
 		}
-		
+
 		// author
 		if (($author = $input->getOption('author')) !== null
 				&& ($this->package->getAuthors()->isEmpty() || $force)) {
 			list($name, $email) = sscanf($author, '%s <%s>');
-		
+
 			$author = new AuthorSchema();
 			$author->setName($name);
-		
+
 			if (substr($email, -1) == '>') {
 				$email = substr($email, 0, -1);
 			}
 			$author->setEmail($email);
-				
+
 			$this->package->getAuthors()->add($author);
 		}
 
@@ -165,25 +165,25 @@ class InitCommand extends AbstractKeekoCommand {
 			}
 			$this->setAutoload($namespace);
 		}
-		
+
 		$this->manageDependencies();
-		
+
 		// KEEKO
 		if ($type === null) {
 			$type = $this->getPackageType();
 		}
-		
+
 		// title
 		$keeko = $this->packageService->getKeeko()->getKeekoPackage($type);
 		if (($title = $this->getPackageTitle()) !== null) {
 			$keeko->setTitle($title);
 		}
-		
+
 		// class
 		if (($classname = $this->getPackageClass()) !== null) {
 			$keeko->setClass($classname);
 		}
-		
+
 		$this->packageService->savePackage($this->package);
 	}
 
@@ -192,7 +192,7 @@ class InitCommand extends AbstractKeekoCommand {
 		$require = $this->package->getRequire();
 
 		if (!$require->has('php')) {
-			$require->set('php', '>=5.4');
+			$require->set('php', '>=5.5');
 		}
 
 		if (!$require->has('keeko/composer-installer')) {
