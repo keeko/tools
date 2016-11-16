@@ -202,6 +202,11 @@ class GenerateResponderCommand extends AbstractKeekoCommand {
 		// html + twig
 		else if ($format == 'html' && $template == 'twig') {
 			$generator = new TwigHtmlResponderGenerator($this->service);
+			
+			// create twig template
+			$path = $this->project->getRootPath() . '/res/templates/' . $actionName . '.twig';
+			$file = new File($path);
+			$file->touch();
 		}
 
 		// blank html as default

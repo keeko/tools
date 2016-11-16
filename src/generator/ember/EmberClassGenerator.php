@@ -1,9 +1,9 @@
 <?php
 namespace keeko\tools\generator\ember;
 
+use gossi\codegen\generator\utils\Writer;
 use phootwork\collection\ArrayList;
 use phootwork\collection\Map;
-use gossi\codegen\utils\Writer;
 
 class EmberClassGenerator {
 	
