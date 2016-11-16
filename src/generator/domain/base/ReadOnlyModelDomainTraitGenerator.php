@@ -76,6 +76,7 @@ class ReadOnlyModelDomainTraitGenerator extends AbstractDomainGenerator {
 		$trait->addUseStatement('keeko\\framework\\domain\\payload\\Found');
 		$trait->addUseStatement('keeko\\framework\\utils\\Parameters');
 		$trait->addUseStatement('keeko\\framework\\utils\\NameUtils');
+		$trait->addUseStatement('Propel\\Runtime\\ActiveQuery\\Criteria');
 
 		$trait->setMethod(PhpMethod::create('paginate')
 			->addParameter(PhpParameter::create('params')
@@ -95,6 +96,14 @@ class ReadOnlyModelDomainTraitGenerator extends AbstractDomainGenerator {
 			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
 			->setType('void')
 			->setBody($this->twig->render('applyFilter.twig'))
+		);
+		
+		$trait->setMethod(PhpMethod::create('filterFields')
+			->addParameter(PhpParameter::create('query'))
+			->addParameter(PhpParameter::create('filter'))
+			->setVisibility(PhpMethod::VISIBILITY_PROTECTED)
+			->setType('void')
+			->setBody($this->twig->render('filterFields.twig'))
 		);
 	}
 

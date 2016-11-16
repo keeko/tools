@@ -24,7 +24,6 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 
 		$this->generateIdentifyingMethods($trait, $model);
 		$this->generateAttributeMethods($trait, $model);
-		$this->generateHydrateMethod($trait, $model);
 		$this->generateRelationshipMethods($trait, $model);
 		$this->generateTypeInferencerAccess($trait);
 
@@ -92,43 +91,10 @@ class ModelSerializerTraitGenerator extends AbstractSerializerGenerator {
 		);
 	}
 
-	protected function generateHydrateMethod(PhpTrait $trait, Table $model) {
-		if ($model->isReadOnly()) {
-			$body = $this->twig->render('hydrate-readonly.twig');
-		} else {
-			$trait->addUseStatement('keeko\\framework\\utils\\HydrateUtils');
-			$modelName = $model->getOriginCommonName();
-			$normalizer = $this->project->getGeneratorDefinition()->getNormalizer($modelName);
-			$fields = $this->generatorDefinitionService->getWriteFields($modelName);
-			$code = '';
-
-			foreach ($fields as $field) {
-				$code .= sprintf("'%s'", NameUtils::dasherize($field));
-				$code .= ', ';
-			}
-
-			if (strlen($code) > 0) {
-				$code = substr($code, 0, -2);
-			}
-
-			$code = sprintf('[%s]', $code);
-			$body = $this->twig->render('hydrate.twig', [
-				'code' => $code
-			]);
-		}
-
-		$trait->setMethod(PhpMethod::create('hydrate')
-			->addParameter(PhpParameter::create('model'))
-			->addParameter(PhpParameter::create('data'))
-			->setBody($body)
-			->setType('mixed', 'The model')
-		);
-	}
-
 	protected function generateRelationshipMethods(PhpTrait $trait, Table $model) {
-		if ($model->isReadOnly()) {
-			return;
-		}
+// 		if ($model->isReadOnly()) {
+// 			return;
+// 		}
 
 		$fields = [];
 		$methods = [];

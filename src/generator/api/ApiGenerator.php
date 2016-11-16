@@ -12,7 +12,7 @@ class ApiGenerator extends AbstractGenerator {
 
 	private $definitionGenerator;
 
-	private $needsPagedMeta = false;
+	private $needsPaginationDefinition = false;
 
 	private $needsResourceIdentifier = false;
 
@@ -35,13 +35,13 @@ class ApiGenerator extends AbstractGenerator {
 
 		foreach ($this->modelService->getModels() as $model) {
 			$this->definitionGenerator->generate($definitions, $model);
-			$this->needsPagedMeta = $this->needsPagedMeta || $this->definitionGenerator->needsPagedMeta();
+			$this->needsPaginationDefinition = $this->needsPaginationDefinition || $this->definitionGenerator->needsPaginationDefinition();
 			$this->needsResourceIdentifier = $this->needsResourceIdentifier || $this->definitionGenerator->needsResourceIdentifier();
 		}
 
 		// general definitions
 		$this->generateErrorDefinition($definitions);
-		$this->generatePagedMeta($definitions);
+		$this->generatePaginationDefinitions($definitions);
 		$this->generateResourceIdentifier($definitions);
 	}
 
@@ -57,14 +57,15 @@ class ApiGenerator extends AbstractGenerator {
 		$error->get('meta')->setType('object');
 	}
 
-	protected function generatePagedMeta(Definitions $definitions) {
-		if ($this->needsPagedMeta) {
-			$props = $definitions->get('PagedMeta')->setType('object')->getProperties();
-			$props->get('total')->setType('integer');
+	protected function generatePaginationDefinitions(Definitions $definitions) {
+		if ($this->needsPaginationDefinition) {
+			$meta = $definitions->get('PaginationMeta')->setType('object')->getProperties();
+			$meta->get('total')->setType('integer');
 
+			$links = $definitions->get('PaginationLinks')->setType('object')->getProperties();
 			$names = ['first', 'next', 'previous', 'last'];
 			foreach ($names as $name) {
-				$props->get($name)->setType('string');
+				$links->get($name)->setType('string');
 			}
 		}
 	}

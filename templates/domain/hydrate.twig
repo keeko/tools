@@ -4,7 +4,4 @@ $attribs = isset($data['attributes']) ? $data['attributes'] : [];
 // hydrate
 $model = HydrateUtils::hydrate($attribs, $model, {{ code|raw }});
 
-// relationships
-//$this->hydrateRelationships($model, $data);
-
 return $model;

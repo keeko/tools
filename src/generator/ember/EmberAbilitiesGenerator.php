@@ -7,7 +7,7 @@ use keeko\tools\generator\Types;
 
 class EmberAbilitiesGenerator extends AbstractEmberGenerator {
 	
-	private $template = 'Ember.computed(function() {
+	private $template = 'Ember.computed(\'session.permissions\', function() {
 	return this.get(\'session\').hasPermission(\'%s\', \'%s\');
 })';
 	

@@ -1,7 +1,6 @@
 // hydrate
 $data = $this->normalize($data);
-$serializer = {{ class }}::getSerializer();
-$model = $serializer->hydrate(new {{ class }}(), $data);
+$model = $this->hydrate(new {{ class }}(), $data);
 $this->hydrateRelationships($model, $data);
 
 // dispatch pre save hooks

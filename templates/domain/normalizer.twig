@@ -1,4 +1,5 @@
-$service = $this->getServiceContainer();
+{% if code %}$service = $this->getServiceContainer();
+{% endif %}
 $attribs = isset($data['attributes']) ? $data['attributes'] : [];
 
 {{ code|raw }}

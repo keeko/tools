@@ -9,7 +9,7 @@ use keeko\tools\model\Relationship;
 
 class ApiDefinitionGenerator extends AbstractGenerator {
 
-	private $needsPagedMeta = false;
+	private $needsPaginationDefinition = false;
 	private $needsResourceIdentifier = false;
 
 	public function generate(Definitions $definitions, Table $model) {
@@ -23,13 +23,14 @@ class ApiDefinitionGenerator extends AbstractGenerator {
 		$modelObjectName = $model->getPhpName();
 
 		// paged model
-		$this->needsPagedMeta = true;
+		$this->needsPaginationDefinition = true;
 		$pagedModel = 'Paged' . NameUtils::pluralize($modelObjectName);
 		$paged = $definitions->get($pagedModel)->setType('object')->getProperties();
 		$paged->get('data')
 			->setType('array')
 			->getItems()->setRef('#/definitions/' . $modelObjectName);
-		$paged->get('meta')->setRef('#/definitions/PagedMeta');
+		$paged->get('meta')->setRef('#/definitions/PaginationMeta');
+		$paged->get('links')->setRef('#/definitions/PaginationLinks');
 
 		// writable model
 		$writable = $definitions->get('Writable' . $modelObjectName)->setType('object')->getProperties();
@@ -142,8 +143,8 @@ class ApiDefinitionGenerator extends AbstractGenerator {
 		return $data;
 	}
 
-	public function needsPagedMeta() {
-		return $this->needsPagedMeta;
+	public function needsPaginationDefinition() {
+		return $this->needsPaginationDefinition;
 	}
 
 	public function needsResourceIdentifier() {

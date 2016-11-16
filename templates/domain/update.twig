@@ -7,8 +7,7 @@ if ($model === null) {
 
 // hydrate
 $data = $this->normalize($data);
-$serializer = {{ class }}::getSerializer();
-$model = $serializer->hydrate($model, $data);
+$model = $this->hydrate($model, $data);
 $this->hydrateRelationships($model, $data);
 
 // dispatch pre save hooks

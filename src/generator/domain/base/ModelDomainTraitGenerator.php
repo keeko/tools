@@ -25,6 +25,7 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 
 		// generate CUD methods
 		$this->generateNormalize($trait, $model);
+		$this->generateHydrate($trait, $model);
 		$this->generateCreate($trait, $model);
 		$this->generateUpdate($trait, $model);
 		$this->generateDelete($trait, $model);
@@ -160,36 +161,61 @@ class ModelDomainTraitGenerator extends ReadOnlyModelDomainTraitGenerator {
 	}
 
 	protected function generateNormalize(PhpTrait $trait, Table $model) {
-		if ($model->isReadOnly()) {
-			$body = 'return $data';
-		} else {
-			$modelName = $model->getOriginCommonName();
-			$normalizer = $this->project->getGeneratorDefinition()->getNormalizer($modelName);
-			$fields = $this->generatorDefinitionService->getWriteFields($modelName);
-			$code = '';
+		$modelName = $model->getOriginCommonName();
+		$normalizer = $this->project->getGeneratorDefinition()->getNormalizer($modelName);
+		$fields = $this->generatorDefinitionService->getWriteFields($modelName);
+		$code = '';
 
-			foreach ($fields as $field) {
-				if ($normalizer->has($field)) {
-					$class = new Text($normalizer->get($field));
-					if (!$class->startsWith('\\')) {
-						$class = $class->prepend('\\');
-					}
-					$code .= $this->twig->render('normalizer-field.twig', [
-						'class' => $class->toString(),
-						'field' => $field
-					]);
+		foreach ($fields as $field) {
+			if ($normalizer->has($field)) {
+				$class = new Text($normalizer->get($field));
+				if (!$class->startsWith('\\')) {
+					$class = $class->prepend('\\');
 				}
+				$code .= $this->twig->render('normalizer-field.twig', [
+					'class' => $class->toString(),
+					'field' => $field
+				]);
 			}
-
-			$body = $this->twig->render('normalizer.twig', [
-				'code' => $code
-			]);
 		}
+
+		$body = $this->twig->render('normalizer.twig', [
+			'code' => $code
+		]);		
 
 		$trait->setMethod(PhpMethod::create('normalize')
 			->addParameter(PhpParameter::create('data')->setType('array'))
 			->setBody($body)
 			->setType('array', 'normalized data')
+		);
+	}
+	
+	protected function generateHydrate(PhpTrait $trait, Table $model) {
+		$trait->addUseStatement('keeko\\framework\\utils\\HydrateUtils');
+		$modelName = $model->getOriginCommonName();
+		$fields = $this->generatorDefinitionService->getWriteFields($modelName);
+		$code = '';
+
+		foreach ($fields as $field) {
+			$code .= sprintf("'%s'", NameUtils::dasherize($field));
+			$code .= ', ';
+		}
+
+		if (strlen($code) > 0) {
+			$code = substr($code, 0, -2);
+		}
+
+		$code = sprintf('[%s]', $code);
+		$body = $this->twig->render('hydrate.twig', [
+			'code' => $code
+		]);
+		
+	
+		$trait->setMethod(PhpMethod::create('hydrate')
+			->addParameter(PhpParameter::create('model'))
+			->addParameter(PhpParameter::create('data'))
+			->setBody($body)
+			->setType('mixed', 'The model')
 		);
 	}
 

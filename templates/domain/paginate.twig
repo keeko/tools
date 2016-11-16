@@ -14,13 +14,11 @@ foreach ($sort as $field => $order) {
 
 // filtering
 $filter = $params->getFilter();
-if (!empty($filter)) {
-	$this->applyFilter($query, $filter);
-}
+$this->applyFilter($query, $filter);
 
 // paginate
 if ($size == -1) {
-	$model = $query->findAll();
+	$model = $query->find();
 } else {
 	$model = $query->paginate($page, $size);
 }
